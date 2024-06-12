@@ -22,7 +22,7 @@ return {
       vim.keymap.set({'n', 'v'},'D', vim.lsp.buf.definition,{}) -- This takes you to the module or place where a function is usually defined (shift and d)
       vim.keymap.set({'n','v'}, '<leader>a', vim.lsp.buf.code_action,{}) -- To use code actions (space and a) this allows you to see warnings given by the LSP
 
-      -- Function to get the root directory for LSP servers
+      --  Function to get the root directory for LSP servers
       local function get_root_dir()
         local bufnr = vim.api.nvim_get_current_buf()
         local fname = vim.api.nvim_buf_get_name(bufnr)
@@ -36,12 +36,13 @@ return {
       lspconfig.pyright.setup({})
       lspconfig.tsserver.setup({})
 
-      -- Autocommand to re-setup the LSP servers on BufEnter event
+      --  Autocommand to re-setup the LSP servers on BufEnter event
       vim.api.nvim_create_autocmd("BufEnter", {
       pattern = "*",
       callback = function()
         end
       })
+      --  Add comment later 
     end
   }
 }
