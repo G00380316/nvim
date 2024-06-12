@@ -1,4 +1,4 @@
-return { 
+return {
    "nvim-neo-tree/neo-tree.nvim",
     branch = "v3.x",
     dependencies = {
@@ -7,6 +7,6 @@ return {
       "MunifTanjim/nui.nvim",
     },
   config = function()
-    vim.keymap.set('n', '<C-e>', ':Neotree filesystem reveal left', {})
+    vim.keymap.set('n', '<C-e>', ':Neotree filesystem reveal left<CR>', {}) -- <CR> immitates enter so we don't have to press enter after Ctrl and e 
   end
 }
