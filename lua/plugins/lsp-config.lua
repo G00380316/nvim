@@ -26,6 +26,59 @@ return {
       lspconfig.lua_ls.setup({})
       lspconfig.pyright.setup({})
       lspconfig.tsserver.setup({})
+
+      -- Function to get the root directory for LSP servers
+      local function get_root_dir()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local fname = vim.api.nvim_buf_get_name(bufnr)
+        if fname == "" then
+          return nil
+        end
+        return vim.fn.fnamemodify(fname, ":p:h")
+      end
+
+      -- Function to re-setup the LSP servers
+      local function setup_servers()
+        local new_root = get_root_dir()
+
+      -- List of LSP servers to setup
+      local servers = {
+        lua_ls = {},
+        pyright = {},
+        tsserver = {}
+        -- Add more servers as needed
+      }
+
+      for server, config in pairs(servers) do
+        config.root_dir = get_root_dir
+        lspconfig[server].setup(config)
+        end
+      end
+
+    -- Initial setup of LSP servers
+    setup_servers()
+
+    -- Autocommand to re-setup the LSP servers on BufEnter event
+    vim.api.nvim_create_autocmd("BufEnter", {
+    pattern = "*",
+    callback = function()
+      setup_servers()
+      end
+    })    
     end
   }
+
+    -- Function to Setup Servers:
+
+    -- The setup_servers function gets the current buffer and file name, and then determines the new root directory as the directory of the current file.
+    -- It sets up the LSP servers (Lua, Pyright, TSServer) with this new root directory.
+
+    -- Initial LSP Setup:
+
+    -- The initial call to setup_servers ensures that the LSP servers are set up when Neovim starts.
+
+    -- Autocommand for BufEnter:
+
+    -- The vim.api.nvim_create_autocmd function creates an autocommand that triggers the setup_servers function whenever a new buffer is entered. This ensures that the LSP servers are reconfigured to use the directory of the current file as the root directory each time you open a new file.
+
 }
