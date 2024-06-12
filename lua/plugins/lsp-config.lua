@@ -64,7 +64,7 @@ return {
     callback = function()
       setup_servers()
       end
-    })    
+    })
     end
   }
 
