@@ -16,7 +16,22 @@ return {
   {
     "neovim/nvim-lspconfig",
     config = function()
+      local capabilities = require("cmp_nvim_lsp").default_capabilities()
+
       local lspconfig = require("lspconfig")
+
+      lspconfig.tsserver.setup({
+        capabilities = capabilities
+      })
+      lspconfig.solargraph.setup({
+        capabilities = capabilities
+      })
+      lspconfig.html.setup({
+        capabilities = capabilities
+      })
+      lspconfig.lua_ls.setup({
+        capabilities = capabilities
+      })
 
       vim.keymap.set({'n', 'v'},'I', vim.lsp.buf.hover,{}) -- This gives you information on the function or keyword (shift and i)
       vim.keymap.set({'n', 'v'},'D', vim.lsp.buf.definition,{}) -- This takes you to the module or place where a function is usually defined (shift and d)
