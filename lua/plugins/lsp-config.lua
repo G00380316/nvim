@@ -33,8 +33,8 @@ return {
         capabilities = capabilities
       })
 
-      vim.keymap.set({'n', 'v'},'I', vim.lsp.buf.hover,{}) -- This gives you information on the function or keyword (shift and i)
-      vim.keymap.set({'n', 'v'},'D', vim.lsp.buf.definition,{}) -- This takes you to the module or place where a function is usually defined (shift and d)
+      vim.keymap.set({'n', 'v'},'<C-i>', vim.lsp.buf.hover,{}) -- This gives you information on the function or keyword (shift and i)
+      vim.keymap.set({'n', 'v'},'<C-d>', vim.lsp.buf.definition,{}) -- This takes you to the module or place where a function is usually defined (shift and d)
       vim.keymap.set({'n','v'}, '<leader>a', vim.lsp.buf.code_action,{}) -- To use code actions (space and a) this allows you to see warnings given by the LSP
 
       --  Function to get the root directory for LSP servers
