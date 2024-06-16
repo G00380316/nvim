@@ -12,7 +12,15 @@ vim.api.nvim_set_keymap('n', '<C-s>', '<C-w>w', { noremap = true, silent = true 
 vim.api.nvim_set_keymap('i', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('v', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('t', '<C-s>', '<C-\\><C-n><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
+vim.api.nvim_set_keymap('n', '<leader>s', ':10sp<CR>', { noremap = true, silent = true })
 
-vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
+--vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
+
+vim.opt.shell = "powershell"
+vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
+vim.opt.shellquote = "\""
+vim.opt.shellpipe = "| Out-File -Encoding UTF8"
+vim.opt.shellredir = "| Out-File -Encoding UTF8"
+vim.opt.shellxquote = ""
 
 vim.g.mapleader = " "
