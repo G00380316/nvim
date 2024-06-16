@@ -12,7 +12,9 @@ vim.api.nvim_set_keymap('n', '<C-s>', '<C-w>w', { noremap = true, silent = true 
 vim.api.nvim_set_keymap('i', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('v', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('t', '<C-s>', '<C-\\><C-n><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
-vim.api.nvim_set_keymap('n', '<leader>s', ':10sp<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true }) -- Opens the terminal bottom of nvim with 10 lines
+vim.api.nvim_set_keymap('v', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('i', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true })
 
 --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
 
