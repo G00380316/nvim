@@ -4,6 +4,7 @@ vim.cmd("set softtabstop=2")
 vim.cmd("set shiftwidth=2")
 vim.cmd("set cursorline")
 vim.cmd("set background=dark")
+vim.cmd("set relativenumber")
 
 vim.wo.number = true
 
