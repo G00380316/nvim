@@ -6,6 +6,7 @@ vim.cmd("set cursorline")
 vim.cmd("set background=dark")
 vim.cmd("set relativenumber")
 
+vim.g.mapleader = " "
 vim.wo.number = true
 
 vim.opt.swapfile = false
@@ -20,6 +21,17 @@ vim.api.nvim_set_keymap('n', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true,
 vim.api.nvim_set_keymap('v', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('i', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true })
 
+
+-- This is remapping of Keys to use system clipboard in Neovim more easily 
+
+vim.api.nvim_set_keymap('v', '<leader>c', '"+y', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>c', '"+y', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>v', '"+p', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('i', '<leader>v', '<C-r>+', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<leader>v', '"+p', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('v', '<leader>x', '"+d', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', '<leader>x', '"+d', { noremap = true, silent = true })
+
 --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
 
 vim.opt.shell = "powershell"
@@ -28,5 +40,3 @@ vim.opt.shellquote = "\""
 vim.opt.shellpipe = "| Out-File -Encoding UTF8"
 vim.opt.shellredir = "| Out-File -Encoding UTF8"
 vim.opt.shellxquote = ""
-
-vim.g.mapleader = " "
