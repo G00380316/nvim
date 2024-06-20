@@ -9,7 +9,20 @@ return {
     "williamboman/mason-lspconfig.nvim",
     config = function()
       require("mason-lspconfig").setup({
-        ensure_installed = { "lua_ls", "pyright", "tsserver" },
+        ensure_installed = {
+          "lua_ls",
+          "pyright",
+          "tsserver",
+          "jdtls",
+          "html",
+          "clangd",
+          "vimls",
+          "tailwindcss",
+          "jsonls",
+          "angularls",
+          "arduino_language_server",
+          "rust_analyzer"
+        },
       })
     end,
   },
@@ -31,19 +44,40 @@ return {
       end
 
       local function setup_servers()
-        lspconfig.tsserver.setup({
+        lspconfig.tsserver.setup({ -- JavaScript
           capabilities = capabilities,
         })
-        lspconfig.solargraph.setup({
+        lspconfig.jdtls.setup({ -- Java
           capabilities = capabilities,
         })
-        lspconfig.html.setup({
+        lspconfig.html.setup({ -- Html
           capabilities = capabilities,
         })
-        lspconfig.lua_ls.setup({
+        lspconfig.lua_ls.setup({ -- Lua
           capabilities = capabilities,
         })
-        lspconfig.pyright.setup({
+        lspconfig.pyright.setup({ -- Python
+          capabilities = capabilities,
+        })
+        lspconfig.clangd.setup({ -- C/C++
+          capabilities = capabilities,
+        })
+        lspconfig.vimls.setup({ --  Vim
+          capabilities = capabilities,
+        })
+        lspconfig.jsonls.setup({ -- JSON
+          capabilities = capabilities,
+        })
+        lspconfig.angularls.setup({ -- Angular JS
+          capabilities = capabilities,
+        })
+        lspconfig.arduino_language_server.setup({ -- Arduino
+          capabilities = capabilities,
+        })
+        lspconfig.tailwindcss.setup({ -- Tailwind CSS
+          capabilities = capabilities,
+        })
+        lspconfig.rust_analyzer.setup({ -- Rust
           capabilities = capabilities,
         })
       end
