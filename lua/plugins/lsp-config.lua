@@ -3,15 +3,15 @@ return {
     "williamboman/mason.nvim",
     config = function()
       require("mason").setup()
-    end
+    end,
   },
   {
     "williamboman/mason-lspconfig.nvim",
     config = function()
       require("mason-lspconfig").setup({
-        ensure_installed = {"lua_ls","pyright","tsserver"}
+        ensure_installed = { "lua_ls", "pyright", "tsserver" },
       })
-    end
+    end,
   },
   {
     "neovim/nvim-lspconfig",
@@ -20,22 +20,39 @@ return {
 
       local lspconfig = require("lspconfig")
 
-      lspconfig.tsserver.setup({
-        capabilities = capabilities
-      })
-      lspconfig.solargraph.setup({
-        capabilities = capabilities
-      })
-      lspconfig.html.setup({
-        capabilities = capabilities
-      })
-      lspconfig.lua_ls.setup({
-        capabilities = capabilities
-      })
+      local original_notify = vim.notify
+      vim.notify = function(msg, log_level, opts)
+        -- Suppress specific messages
+        if msg:match("language server") or msg:match("LSP") or msg:match("lsp.log") then
+          -- Filter out the specific LSP errors
+          return
+        end
+        original_notify(msg, log_level, opts)
+      end
 
-      vim.keymap.set({'n', 'v'},'<C-i>', vim.lsp.buf.hover,{}) -- This gives you information on the function or keyword (shift and i)
-      vim.keymap.set({'n', 'v'},'<C-d>', vim.lsp.buf.definition,{}) -- This takes you to the module or place where a function is usually defined (shift and d)
-      vim.keymap.set({'n','v'}, '<leader>a', vim.lsp.buf.code_action,{}) -- To use code actions (space and a) this allows you to see warnings given by the LSP
+      local function setup_servers()
+        lspconfig.tsserver.setup({
+          capabilities = capabilities,
+        })
+        lspconfig.solargraph.setup({
+          capabilities = capabilities,
+        })
+        lspconfig.html.setup({
+          capabilities = capabilities,
+        })
+        lspconfig.lua_ls.setup({
+          capabilities = capabilities,
+        })
+        lspconfig.pyright.setup({
+          capabilities = capabilities,
+        })
+      end
+
+      setup_servers()
+
+      vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})        -- This gives you information on the function or keyword (shift and i)
+      vim.keymap.set({ "n", "v" }, "<C-d>", vim.lsp.buf.definition, {})   -- This takes you to the module or place where a function is usually defined (shift and d)
+      vim.keymap.set({ "n", "v" }, "<leader>a", vim.lsp.buf.code_action, {}) -- To use code actions (space and a) this allows you to see warnings given by the LSP
 
       --  Function to get the root directory for LSP servers
       local function get_root_dir()
@@ -47,17 +64,15 @@ return {
         return vim.fn.fnamemodify(fname, ":p:h")
       end
 
-      lspconfig.lua_ls.setup({})
-      lspconfig.pyright.setup({})
-      lspconfig.tsserver.setup({})
-
       --  Autocommand to re-setup the LSP servers on BufEnter event
       vim.api.nvim_create_autocmd("BufEnter", {
-      pattern = "*",
-      callback = function()
-        end
+        pattern = "*",
+        callback = function()
+          get_root_dir()
+          setup_servers()
+        end,
       })
-      --  Add comment later 
-    end
-  }
+      --  Add comment later
+    end,
+  },
 }

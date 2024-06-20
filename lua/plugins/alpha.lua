@@ -27,6 +27,6 @@ return {
     }
 
     alpha.setup(dashboard.opts)
-    vim.api.nvim_set_keymap('n', '<C-r>', ':Alpha<CR>', { noremap = true, silent = true })        
+    vim.api.nvim_set_keymap('n', '<C-r>', ':Alpha<CR>', { noremap = true, silent = true })
   end,
 }

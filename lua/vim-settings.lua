@@ -21,13 +21,18 @@ vim.api.nvim_set_keymap('n', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true,
 vim.api.nvim_set_keymap('v', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('i', '<C-z>', ':bot10sp<CR>:term<CR>', { noremap = true, silent = true })
 
+-- Indent selected block of text to use this by using shift and then arrow key
+vim.api.nvim_set_keymap('v', '>', '>gv', { noremap = true, silent = true })
+
+-- Outdent selected block of text
+vim.api.nvim_set_keymap('v', '<', '<gv', { noremap = true, silent = true })
 
 -- This is remapping of Keys to use system clipboard in Neovim more easily 
 
 vim.api.nvim_set_keymap('v', '<leader>c', '"+y', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>c', '"+y', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>v', '"+p', { noremap = true, silent = true })
-vim.api.nvim_set_keymap('i', '<leader>v', '<C-r>+', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('i', '<leader>v', '<Esc>"+pa', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('v', '<leader>v', '"+p', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('v', '<leader>x', '"+d', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>x', '"+d', { noremap = true, silent = true })
