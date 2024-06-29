@@ -11,5 +11,6 @@ return {
     vim.keymap.set('n', '<C-e>', ':Neotree filesystem reveal left<CR>', {}) -- <CR> immitates enter so we don't have to press enter after Ctrl and e
     vim.keymap.set('v', '<C-e>', ':Neotree filesystem reveal left<CR>', {})
     vim.keymap.set('t', '<C-e>', ':Neotree filesystem reveal left<CR>', {})
+    vim.keymap.set('i', '<Esc><C-e>', ':Neotree filesystem reveal left<CR>', {})
   end
 }
