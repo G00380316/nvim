@@ -12,7 +12,9 @@ vim.wo.number = true
 vim.opt.swapfile = false
 vim.opt.updatetime = 100
 
-vim.api.nvim_set_keymap('t', '<C-v>', '<C-\\><C-n>', { noremap = true })
+
+vim.api.nvim_set_keymap('t', '<C-v>', '<C-c>', { noremap = true })
+vim.api.nvim_set_keymap('t', '<C-c>', '<C-\\><C-n>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<C-s>', '<C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s) 
 vim.api.nvim_set_keymap('i', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('v', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
