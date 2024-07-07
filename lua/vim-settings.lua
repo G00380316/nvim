@@ -39,6 +39,8 @@ vim.api.nvim_set_keymap('v', '<leader>v', '"+p', { noremap = true, silent = true
 vim.api.nvim_set_keymap('v', '<leader>x', '"+d', { noremap = true, silent = true })
 vim.api.nvim_set_keymap('n', '<leader>x', '"+d', { noremap = true, silent = true })
 
+vim.api.nvim_set_keymap('n', '<leader>d', ':nohlsearch<CR>', { noremap = true, silent = true })
+
 --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
 
 vim.opt.shell = "powershell"
