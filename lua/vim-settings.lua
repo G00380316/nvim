@@ -1,12 +1,15 @@
 vim.cmd("set expandtab")
 vim.cmd("set tabstop=2")
 vim.cmd("set softtabstop=2")
-vim.cmd("set shiftwidth=2")
+vim.cmd("set shiftwidth=3")
 vim.cmd("set cursorline")
 vim.cmd("set background=dark")
 vim.cmd("set relativenumber")
+vim.cmd('syntax on')
+-- Enable file type detection and related plugins
+vim.cmd('filetype plugin indent on')
 
-vim.g.mapleader = " "
+vim.g.mapleader = ","
 vim.wo.number = true
 
 vim.opt.swapfile = false
