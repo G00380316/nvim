@@ -10,8 +10,6 @@ vim.cmd('syntax on')
 vim.cmd('filetype plugin indent on')
 
 vim.opt.autoindent = true            -- Enable auto-indentation
-vim.opt.wrap = true                  -- Enable line wrapping
-
 vim.g.mapleader = ","
 vim.wo.number = true
 
