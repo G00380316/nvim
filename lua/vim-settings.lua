@@ -10,8 +10,7 @@ vim.g.mapleader = " "
 vim.wo.number = true
 
 vim.opt.swapfile = false
-vim.opt.updatetime = 100
-
+vim.opt.updatetime = 1
 
 vim.api.nvim_set_keymap('t', '<C-v>', '<C-c>', { noremap = true })
 vim.api.nvim_set_keymap('t', '<C-c>', '<C-\\><C-n>', { noremap = true })
