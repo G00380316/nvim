@@ -6,6 +6,8 @@ return {
          vim.g.floaterm_width = 0.8 -- Terminal window width ratio (80% of the screen width)
          -- Keymapping to close the current floating terminal
          vim.api.nvim_set_keymap("t", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
+         vim.api.nvim_set_keymap("n", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
+         vim.api.nvim_set_keymap("v", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
          -- Keymapping to close all floating terminals
          vim.api.nvim_set_keymap("n", "<Leader>qa", ":FloatermKill!<CR>", { noremap = true, silent = true })
 
