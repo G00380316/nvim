@@ -24,6 +24,8 @@ vim.api.nvim_set_keymap('v', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = 
 vim.api.nvim_set_keymap('t', '<C-s>', '<C-\\><C-n><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 
 
+vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
+
 -- Indent selected block of text to use this by using shift and then arrow key
 vim.api.nvim_set_keymap('v', '>', '>gv', { noremap = true, silent = true })
 
@@ -42,11 +44,12 @@ vim.api.nvim_set_keymap('n', '<leader>x', '"+d', { noremap = true, silent = true
 
 vim.api.nvim_set_keymap('n', '<leader>d', ':nohlsearch<CR>', { noremap = true, silent = true })
 
---vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
+  --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
+  --vim.opt.shell='"C:\\Program Files\\WSL\\wsl.exe"'
 
-vim.opt.shell = "powershell"
-vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
-vim.opt.shellquote = "\""
-vim.opt.shellpipe = "| Out-File -Encoding UTF8"
-vim.opt.shellredir = "| Out-File -Encoding UTF8"
-vim.opt.shellxquote = ""
+    vim.opt.shell = "powershell"
+    vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
+    vim.opt.shellquote = "\""
+    vim.opt.shellpipe = "| Out-File -Encoding UTF8"
+    vim.opt.shellredir = "| Out-File -Encoding UTF8"
+    vim.opt.shellxquote = ""

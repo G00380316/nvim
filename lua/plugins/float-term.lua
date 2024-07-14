@@ -4,6 +4,7 @@ return {
       config = function()
          vim.g.floaterm_autoclose = true -- Automatically close terminal window when process exits
          vim.g.floaterm_width = 0.8 -- Terminal window width ratio (80% of the screen width)
+         vim.g.floaterm_height = 0.8 -- Terminal window width ratio (80% of the screen width)
          -- Keymapping to close the current floating terminal
          vim.api.nvim_set_keymap("t", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
          vim.api.nvim_set_keymap("n", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
