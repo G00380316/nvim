@@ -47,9 +47,9 @@ vim.api.nvim_set_keymap('n', '<leader>d', ':nohlsearch<CR>', { noremap = true, s
   --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
   --vim.opt.shell='"C:\\Program Files\\WSL\\wsl.exe"'
 
-    vim.opt.shell = "powershell"
-    vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
-    vim.opt.shellquote = "\""
-    vim.opt.shellpipe = "| Out-File -Encoding UTF8"
-    vim.opt.shellredir = "| Out-File -Encoding UTF8"
-    vim.opt.shellxquote = ""
+ vim.opt.shell = "powershell"
+ vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
+ vim.opt.shellquote = "\""
+ vim.opt.shellpipe = "| Out-File -Encoding UTF8"
+ vim.opt.shellredir = "| Out-File -Encoding UTF8"
+ vim.opt.shellxquote = ""
