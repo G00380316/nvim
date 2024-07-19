@@ -16,6 +16,22 @@ vim.wo.number = true
 vim.opt.swapfile = false
 vim.opt.updatetime = 1
 
+local auto_save_group = vim.api.nvim_create_augroup('AutoSave', { clear = true })
+
+-- Auto-save on buffer leave
+vim.api.nvim_create_autocmd('BufLeave', {
+  group = auto_save_group,
+  pattern = '*',
+  command = 'silent! write',
+})
+
+-- Auto-save on CursorHold
+vim.api.nvim_create_autocmd('CursorHold', {
+  group = auto_save_group,
+  pattern = '*',
+  command = 'silent! write',
+})
+
 vim.api.nvim_set_keymap('t', '<C-v>', '<C-c>', { noremap = true })
 vim.api.nvim_set_keymap('t', '<C-c>', '<C-\\><C-n>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<C-s>', '<C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s) 
