@@ -60,6 +60,12 @@ vim.api.nvim_set_keymap('n', '<leader>x', '"+d', { noremap = true, silent = true
 
 vim.api.nvim_set_keymap('n', '<leader>d', ':nohlsearch<CR>', { noremap = true, silent = true })
 
+-- Remap Shift + R to r
+vim.api.nvim_set_keymap('n', 'r', 'R', { noremap = true, silent = true })
+
+-- Command to navigate out of Commandline faster when searching for text 
+vim.api.nvim_set_keymap('c', '<C-n>', '<CR>n', { noremap = true, silent = true })
+
   --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
   --vim.opt.shell='"C:\\Program Files\\WSL\\wsl.exe"'
 
