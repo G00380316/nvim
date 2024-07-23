@@ -17,6 +17,7 @@ vim.opt.swapfile = false
 vim.opt.updatetime = 1
 
 local auto_save_group = vim.api.nvim_create_augroup('AutoSave', { clear = true })
+local auto_dir_group = vim.api.nvim_create_augroup('Dir', { clear = true })
 
 -- Auto-save on buffer leave
 vim.api.nvim_create_autocmd('BufLeave', {
@@ -32,15 +33,26 @@ vim.api.nvim_create_autocmd('CursorHold', {
   command = 'silent! write',
 })
 
+-- Auto-change directory to the file's directory on buffer enter
+vim.api.nvim_create_autocmd('BufEnter', {
+  group = auto_dir_group,
+  pattern = '*',
+  command = 'silent! :cd %:p:h',
+})
+
+-- Auto-change directory to the file's directory on buffer enter
+vim.api.nvim_create_autocmd('BufLeave', {
+  group = auto_dir_group,
+  pattern = '*',
+  command = 'silent! :cd %:p:h',
+})
+
 vim.api.nvim_set_keymap('t', '<C-v>', '<C-c>', { noremap = true })
 vim.api.nvim_set_keymap('t', '<C-c>', '<C-\\><C-n>', { noremap = true })
 vim.api.nvim_set_keymap('n', '<C-s>', '<C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s) 
 vim.api.nvim_set_keymap('i', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('v', '<C-s>', '<Esc><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap('t', '<C-s>', '<C-\\><C-n><C-w>w', { noremap = true, silent = true }) -- Remaps the switch window in nvim to (ctrl and s)
-
-
-vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
 
 -- Indent selected block of text to use this by using shift and then arrow key
 vim.api.nvim_set_keymap('v', '>', '>gv', { noremap = true, silent = true })
