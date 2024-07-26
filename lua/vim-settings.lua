@@ -47,16 +47,19 @@ vim.api.nvim_create_autocmd('ModeChanged', {
    pattern = "*",
    callback = function()
       local current_win = vim.api.nvim_get_current_win()
+      local mode = vim.fn.mode()
 
       for _, win in ipairs(vim.api.nvim_list_wins()) do
          local bufname = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
          -- Check if the buffer name contains 'neo-tree'
          if bufname:match("neo%-tree") then
-            -- Switch to the Neo-tree window
-            vim.cmd('Neotree')
-            -- Restore the original window
-            vim.api.nvim_set_current_win(current_win)
-            return
+            if mode == 'i' or mode == 'n'then
+               -- Switch to the Neo-tree window
+               vim.cmd('Neotree')
+               -- Restore the original window
+               vim.api.nvim_set_current_win(current_win)
+               return
+            end
          end
       end
    end,
