@@ -42,7 +42,7 @@ vim.api.nvim_create_autocmd('ModeChanged', {
 --  command = 'silent! write',
 --})
 
--- Auto-Refresh Neo-tree on buffer leave
+-- Auto-Refresh Neo-tree on CursorHold
 vim.api.nvim_create_autocmd("CursorHold", {
    group = auto_refresh_neotree,
    pattern = "*",
