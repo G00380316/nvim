@@ -27,7 +27,6 @@ local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = tru
 -- command = "silent! write",
 --})
 
-
 -- Auto-save on ModeChange
 vim.api.nvim_create_autocmd('ModeChanged', {
   group = auto_save_group,
@@ -43,7 +42,7 @@ vim.api.nvim_create_autocmd('ModeChanged', {
 --})
 
 -- Auto-Refresh Neo-tree on CursorHold
-vim.api.nvim_create_autocmd("CursorHold", {
+vim.api.nvim_create_autocmd('CursorHold', {
    group = auto_refresh_neotree,
    pattern = "*",
    callback = function()
@@ -54,9 +53,9 @@ vim.api.nvim_create_autocmd("CursorHold", {
          -- Check if the buffer name contains 'neo-tree'
          if bufname:match("neo%-tree") then
             -- Switch to the Neo-tree window
-            vim.api.nvim_feedkeys("<C-e>", "n", false)
+            vim.cmd('Neotree focus')
             -- Simulate pressing 'R' to refresh Neo-tree
-            vim.api.nvim_feedkeys("R", "n", false)
+            vim.api.nvim_feedkeys("<C-s>", "n", false)
             -- Restore the original window
             vim.api.nvim_set_current_win(current_win)
             return
