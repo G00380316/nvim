@@ -17,8 +17,8 @@ vim.opt.swapfile = false
 vim.opt.updatetime = 1
 
 local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
-local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
-local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = true })
+--local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
+--local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = true })
 
 -- Auto-save on buffer leave
 --vim.api.nvim_create_autocmd("BufLeave", {
@@ -29,9 +29,9 @@ local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = tru
 
 -- Auto-save on ModeChange
 vim.api.nvim_create_autocmd('ModeChanged', {
-  group = auto_save_group,
-  pattern = '*',
-  command = 'silent! write',
+   group = auto_save_group,
+   pattern = '*',
+   command = 'silent! write',
 })
 
 -- Auto-save on CursorHold
@@ -42,35 +42,35 @@ vim.api.nvim_create_autocmd('ModeChanged', {
 --})
 
 -- Auto-Refresh Neo-tree on ModeChange
-vim.api.nvim_create_autocmd('ModeChanged', {
-   group = auto_refresh_neotree,
-   pattern = "*",
-   callback = function()
-      local current_win = vim.api.nvim_get_current_win()
-      local mode = vim.fn.mode()
-
-      for _, win in ipairs(vim.api.nvim_list_wins()) do
-         local bufname = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
-         -- Check if the buffer name contains 'neo-tree'
-         if bufname:match("neo%-tree") then
-            if mode == 'i' or mode == 'n'then
-               -- Switch to the Neo-tree window
-               vim.cmd('Neotree')
-               -- Restore the original window
-               vim.api.nvim_set_current_win(current_win)
-               return
-            end
-         end
-      end
-   end,
-})
+--vim.api.nvim_create_autocmd('ModeChanged', {
+--   group = auto_refresh_neotree,
+--   pattern = "*",
+--   callback = function()
+--      local current_win = vim.api.nvim_get_current_win()
+--     local mode = vim.fn.mode()
+--
+--      for _, win in ipairs(vim.api.nvim_list_wins()) do
+--         local bufname = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
+--         -- Check if the buffer name contains 'neo-tree'
+--         if bufname:match("neo%-tree") then
+--           if mode == 'i' or mode == 'n'then
+--              -- Switch to the Neo-tree window
+--               vim.cmd('Neotree')
+--               -- Restore the original window
+--               vim.api.nvim_set_current_win(current_win)
+--               return
+--            end
+--         end
+--      end
+--   end,
+--})
 
 -- Auto-change directory to the file's directory on buffer enter
-vim.api.nvim_create_autocmd("BufEnter", {
-   group = auto_dir_group,
-   pattern = "*",
-   command = "silent! :cd %:p:h",
-})
+--vim.api.nvim_create_autocmd("BufEnter", {
+--   group = auto_dir_group,
+--   pattern = "*",
+--   command = "silent! :cd %:p:h",
+--})
 
 vim.api.nvim_set_keymap("t", "<C-v>", "<C-c>", { noremap = true })
 vim.api.nvim_set_keymap("t", "<C-c>", "<C-\\><C-n>", { noremap = true })
@@ -106,9 +106,10 @@ vim.api.nvim_set_keymap("c", "<C-n>", "<CR>n", { noremap = true, silent = true }
 --vim.o.shell = '"C:\\Program Files\\Git\\bin\\bash.exe"'
 --vim.opt.shell='"C:\\Program Files\\WSL\\wsl.exe"'
 
-vim.opt.shell = "powershell"
-vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
-vim.opt.shellquote = '"'
-vim.opt.shellpipe = "| Out-File -Encoding UTF8"
-vim.opt.shellredir = "| Out-File -Encoding UTF8"
-vim.opt.shellxquote = ""
+-- For Windows
+--vim.opt.shell = "powershell"
+--vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
+--vim.opt.shellquote = '"'
+--vim.opt.shellpipe = "| Out-File -Encoding UTF8"
+--vim.opt.shellredir = "| Out-File -Encoding UTF8"
+--vim.opt.shellxquote = ""

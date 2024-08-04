@@ -8,10 +8,10 @@ return {
   },
   config = function()
     require("neo-tree").setup({
-       use_libuv_file_watcher = true
-   })
-    vim.keymap.set("n", "<C-e>", ":Neotree filesystem reveal left<CR>", {}) -- <CR> immitates enter so we don't have to press enter after Ctrl and e
-    vim.keymap.set("v", "<C-e>", ":Neotree filesystem reveal left<CR>", {})
+      use_libuv_file_watcher = true
+  })
+    vim.keymap.set("n", "<C-e>", ":Neotree filesystem reveal left<CR>", {noremap = true ,silent = true}) -- <CR> immitates enter so we don't have to press enter after Ctrl and e
+    vim.keymap.set("v", "<C-e>", ":Neotree filesystem reveal left<CR>", {noremap = true, silent = true})
     vim.keymap.set("t", "<C-e>", ":Neotree filesystem reveal left<CR>", { noremap = true, silent = true })
     vim.keymap.set("i", "<C-e>", "<Esc>:Neotree filesystem reveal left<CR>", { noremap = true, silent = true })
   end,
