@@ -16,7 +16,7 @@ vim.wo.number = true
 vim.opt.swapfile = false
 vim.opt.updatetime = 1
 
-local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
+--local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
 --local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
 --local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = true })
 
@@ -28,11 +28,11 @@ local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true }
 --})
 
 -- Auto-save on ModeChange
-vim.api.nvim_create_autocmd('ModeChanged', {
-   group = auto_save_group,
-   pattern = '*',
-   command = 'silent! write',
-})
+--vim.api.nvim_create_autocmd('ModeChanged', {
+--   group = auto_save_group,
+--   pattern = '*',
+--   command = 'silent! write',
+--})
 
 -- Auto-save on CursorHold
 --vim.api.nvim_create_autocmd('CursorHold', {
@@ -71,6 +71,9 @@ vim.api.nvim_create_autocmd('ModeChanged', {
 --   pattern = "*",
 --   command = "silent! :cd %:p:h",
 --})
+
+-- Open compiler
+vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
 
 vim.api.nvim_set_keymap("t", "<C-v>", "<C-c>", { noremap = true })
 vim.api.nvim_set_keymap("t", "<C-c>", "<C-\\><C-n>", { noremap = true })

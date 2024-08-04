@@ -18,9 +18,6 @@ return {
             },
         },
         config = function()
-            -- Open compiler
-            vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
-
             -- Redo last selected option
             vim.api.nvim_set_keymap('n', '<S-F6>',
                 "<cmd>CompilerStop<cr>" -- (Optional, to dispose all tasks before redo)
