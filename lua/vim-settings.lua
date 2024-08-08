@@ -17,7 +17,7 @@ vim.opt.swapfile = false
 vim.opt.updatetime = 1
 
 local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
-local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
+--local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
 --local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = true })
 
 -- Auto-save on buffer leave
@@ -71,6 +71,38 @@ vim.api.nvim_create_autocmd('ModeChanged', {
 --   pattern = "*",
 --   command = "silent! :cd %:p:h",
 --})
+
+-- Function to find the nearest directory containing package.json or .git
+local function find_project_root()
+  local path = vim.fn.expand('%:p:h')
+
+  -- First, look for the nearest package.json
+  local package_json_dir = vim.fn.findfile('package.json', path .. ';')
+  if package_json_dir ~= "" then
+    return vim.fn.fnamemodify(package_json_dir, ":p:h")
+  end
+
+  -- If no package.json is found, look for the nearest .git directory
+  local git_dir = vim.fn.finddir('.git', path .. ';')
+  if git_dir ~= "" then
+    -- Return the parent directory of the .git directory
+    return vim.fn.fnamemodify(git_dir, ":p:h:h")
+  end
+
+  -- If neither is found, fall back to the current file's directory
+  return path
+end
+
+-- Auto-change directory to the nearest package.json, .git's parent directory, or current file's directory
+vim.api.nvim_create_autocmd("BufEnter", {
+  pattern = "*",
+  callback = function()
+    local project_root = find_project_root()
+    if project_root then
+      vim.cmd("silent! cd " .. project_root)
+    end
+  end,
+})
 
 -- Open compiler
 vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
