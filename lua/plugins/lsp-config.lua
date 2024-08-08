@@ -24,15 +24,10 @@ return {
             local capabilities = require("cmp_nvim_lsp").default_capabilities()
             local lspconfig = require("lspconfig")
 
-            vim.notify = function(msg, log_level, opts)
-                if msg:match("language server") then return end
-                vim.notify_original(msg, log_level, opts)
-            end
-
             local function setup_servers()
                 local servers = {
                     "tsserver", "jdtls", "html", "lua_ls", "pyright",
-                    "clangd", "vimls", "jsonls", "angularls", 
+                    "clangd", "vimls", "jsonls", "angularls",
                     "arduino_language_server", "tailwindcss", "rust_analyzer"
                 }
                 for _, server in ipairs(servers) do
