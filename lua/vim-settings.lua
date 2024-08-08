@@ -16,8 +16,8 @@ vim.wo.number = true
 vim.opt.swapfile = false
 vim.opt.updatetime = 1
 
---local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
---local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
+local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
+local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
 --local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = true })
 
 -- Auto-save on buffer leave
@@ -28,11 +28,11 @@ vim.opt.updatetime = 1
 --})
 
 -- Auto-save on ModeChange
---vim.api.nvim_create_autocmd('ModeChanged', {
---   group = auto_save_group,
---   pattern = '*',
---   command = 'silent! write',
---})
+vim.api.nvim_create_autocmd('ModeChanged', {
+   group = auto_save_group,
+   pattern = '*',
+   command = 'silent! write',
+})
 
 -- Auto-save on CursorHold
 --vim.api.nvim_create_autocmd('CursorHold', {
