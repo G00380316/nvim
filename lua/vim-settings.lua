@@ -31,18 +31,18 @@ local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true }
 --})
 
 -- Auto-save on ModeChange
-vim.api.nvim_create_autocmd('ModeChanged', {
-   group = auto_save_group,
-   pattern = '*',
-   command = 'silent! write',
-})
+--vim.api.nvim_create_autocmd('ModeChanged', {
+--   group = auto_save_group,
+--   pattern = '*',
+--   command = 'silent! write',
+--})
 
 -- Auto-save on CursorHold
---vim.api.nvim_create_autocmd('CursorHold', {
---  group = auto_save_group,
---  pattern = '*',
---  command = 'silent! write',
---})
+vim.api.nvim_create_autocmd('CursorHold', {
+  group = auto_save_group,
+  pattern = '*',
+  command = 'silent! write',
+})
 
 -- Auto-Refresh Neo-tree on ModeChange
 --vim.api.nvim_create_autocmd('ModeChanged', {

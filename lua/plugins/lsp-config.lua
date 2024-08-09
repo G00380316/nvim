@@ -28,7 +28,7 @@ return {
                 local servers = {
                     "tsserver", "jdtls", "html", "lua_ls", "pyright",
                     "clangd", "vimls", "jsonls", "angularls",
-                    "arduino_language_server", "tailwindcss", "rust_analyzer"
+                    "arduino_language_server", "tailwindcss", "rust_analyzer","cssls"
                 }
                 for _, server in ipairs(servers) do
                     lspconfig[server].setup({
