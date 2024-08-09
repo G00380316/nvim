@@ -9,6 +9,9 @@ vim.cmd("syntax on")
 -- Enable file type detection and related plugins
 vim.cmd("filetype plugin indent on")
 
+-- Adding clipboard func with wl-clipboard
+vim.opt.clipboard = 'unnamedplus'
+
 vim.opt.autoindent = true -- Enable auto-indentation
 vim.g.mapleader = ","
 vim.wo.number = true
