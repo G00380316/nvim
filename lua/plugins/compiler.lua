@@ -19,13 +19,13 @@ return {
         },
         config = function()
             -- Redo last selected option
-            vim.api.nvim_set_keymap('n', '<S-F6>',
+            vim.api.nvim_set_keymap({'n','t','i','v'}, '<C-r>',
                 "<cmd>CompilerStop<cr>" -- (Optional, to dispose all tasks before redo)
             .. "<cmd>CompilerRedo<cr>",
             { noremap = true, silent = true })
 
             -- Toggle compiler results
-            vim.api.nvim_set_keymap('n', '<S-F7>', "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap('n', '<S-F6>', "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
         end,
     }
 }

@@ -6,6 +6,7 @@ vim.cmd("set cursorline")
 vim.cmd("set background=dark")
 vim.cmd("set relativenumber")
 vim.cmd("syntax on")
+vim.cmd("set mouse=")
 -- Enable file type detection and related plugins
 vim.cmd("filetype plugin indent on")
 
