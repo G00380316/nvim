@@ -138,8 +138,7 @@ vim.api.nvim_create_autocmd("BufEnter", {
 -- Open compiler
 vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
 
---vim.api.nvim_set_keymap("t", "<C-v>", "<C-c>", { noremap = true }) -- For canceling float terminal proccess 
---vim.api.nvim_set_keymap("t", "<C-c>", "<C-\\><C-n>", { noremap = true }) -- For canceling float terminal proccess
+vim.api.nvim_set_keymap("t", "<C-v>", "<C-\\><C-n>", { noremap = true }) -- For canceling float terminal proccess
 vim.api.nvim_set_keymap("n", "<C-s>", "<C-w>w", { noremap = true, silent = true })            -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap("i", "<C-s>", "<Esc><C-w>w", { noremap = true, silent = true })       -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap("v", "<C-s>", "<Esc><C-w>w", { noremap = true, silent = true })       -- Remaps the switch window in nvim to (ctrl and s)
