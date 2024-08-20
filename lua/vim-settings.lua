@@ -1,12 +1,33 @@
 vim.cmd("set expandtab")
 vim.cmd("set tabstop=2")
 vim.cmd("set softtabstop=2")
-vim.cmd("set shiftwidth=3")
+vim.cmd("set shiftwidth=2")
 vim.cmd("set cursorline")
 vim.cmd("set background=dark")
 vim.cmd("set relativenumber")
 vim.cmd("syntax on")
 vim.cmd("set mouse=")
+vim.cmd("set autoindent")
+vim.cmd("set smartindent")
+vim.cmd("set ignorecase")
+vim.cmd("set smartcase")
+vim.cmd("set hlsearch")
+vim.cmd("set incsearch")
+vim.cmd("set wildmenu")
+vim.cmd("set wildmode=list:longest")
+vim.cmd("set wrap")
+vim.cmd("set linebreak")
+vim.cmd("set undofile")
+vim.cmd("set backup")
+vim.cmd("set backupdir=~/.vim/backups")
+vim.cmd("set noswapfile")
+vim.cmd("set dir=~/.vim/swap//")
+vim.cmd("colorscheme desert")
+vim.cmd("set splitbelow")
+vim.cmd("set splitright")
+vim.cmd("set matchpairs+=<:>,「:」")
+vim.cmd("set lazyredraw")
+
 -- Enable file type detection and related plugins
 vim.cmd("filetype plugin indent on")
 
@@ -14,8 +35,14 @@ vim.cmd("filetype plugin indent on")
 vim.opt.clipboard = 'unnamedplus'
 
 vim.opt.autoindent = true -- Enable auto-indentation
-vim.g.mapleader = ","
 vim.wo.number = true
+-- Set the leader key to comma
+vim.g.mapleader = ","
+vim.g.maplocalleader = ","
+
+-- Reduce the timeout for mapped sequences
+vim.opt.timeoutlen =  50  -- You can adjust this to a lower value if needed
+vim.opt.ttimeoutlen =  0  -- Reduce this as well for faster response
 
 vim.opt.swapfile = false
 vim.opt.updatetime = 1
@@ -111,8 +138,8 @@ vim.api.nvim_create_autocmd("BufEnter", {
 -- Open compiler
 vim.api.nvim_set_keymap('n', '<F6>', "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
 
-vim.api.nvim_set_keymap("t", "<C-v>", "<C-c>", { noremap = true })
-vim.api.nvim_set_keymap("t", "<C-c>", "<C-\\><C-n>", { noremap = true })
+--vim.api.nvim_set_keymap("t", "<C-v>", "<C-c>", { noremap = true }) -- For canceling float terminal proccess 
+--vim.api.nvim_set_keymap("t", "<C-c>", "<C-\\><C-n>", { noremap = true }) -- For canceling float terminal proccess
 vim.api.nvim_set_keymap("n", "<C-s>", "<C-w>w", { noremap = true, silent = true })            -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap("i", "<C-s>", "<Esc><C-w>w", { noremap = true, silent = true })       -- Remaps the switch window in nvim to (ctrl and s)
 vim.api.nvim_set_keymap("v", "<C-s>", "<Esc><C-w>w", { noremap = true, silent = true })       -- Remaps the switch window in nvim to (ctrl and s)

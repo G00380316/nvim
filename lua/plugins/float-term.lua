@@ -8,7 +8,11 @@ return {
 			vim.api.nvim_set_keymap("t", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
 			vim.api.nvim_set_keymap("n", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
 			vim.api.nvim_set_keymap("v", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
+			vim.api.nvim_set_keymap("i", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
 			vim.api.nvim_set_keymap("t", "<C-w>", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("n", "<C-w>", ":q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("v", "<C-w>", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("i", "<C-w>", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
 
 			-- Close all floating terminals
 			vim.api.nvim_set_keymap("t", "<Leader>qa", "<cmd>:FloatermKill!<CR>", { noremap = true, silent = true })
