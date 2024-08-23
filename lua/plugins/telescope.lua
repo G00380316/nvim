@@ -8,9 +8,6 @@ return {
 			vim.keymap.set({ "n", "t", "v", "i" }, "<C-f>", builtin.find_files, {})
 			vim.keymap.set({ "n", "t", "v", "i" }, "<C-g>", builtin.live_grep, {})
 			-- Key mapping to search files in a specific directory
-			vim.keymap.set({"n","t","v","i"}, "<C-e>", function()
-				builtin.find_files({ cwd = vim.fn.input("Directory: ", "~/", "dir") })
-			end, { noremap = true, silent = true })
 			vim.keymap.set({ "n", "t", "v" }, "<leader>h", builtin.help_tags, {})
 		end,
 	},
