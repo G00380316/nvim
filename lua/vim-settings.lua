@@ -104,7 +104,7 @@ vim.api.nvim_create_autocmd("CursorHold", {
 --})
 
 -- Function to find the nearest directory containing package.json or .git
-local function find_project_root()
+/*local function find_project_root()
 	local path = vim.fn.expand("%:p:h")
 
 	-- First, look for the nearest package.json
@@ -133,7 +133,7 @@ vim.api.nvim_create_autocmd("BufLeave", {
 			vim.cmd("silent! cd " .. project_root)
 		end
 	end,
-})
+})*/
 
 -- Open compiler
 vim.api.nvim_set_keymap("n", "<F6>", "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
