@@ -107,10 +107,10 @@ local function find_project_root()
   local path = vim.fn.expand("%:p:h")
 
   -- First, look for the nearest package.json
---  local package_json_dir = vim.fn.findfile("package.json", path .. ";")
---  if package_json_dir ~= "" then
---    return vim.fn.fnamemodify(package_json_dir, ":p:h")
---  end
+  local package_json_dir = vim.fn.findfile("package.json", path .. ";")
+  if package_json_dir ~= "" then
+    return vim.fn.fnamemodify(package_json_dir, ":p:h")
+  end
 
   -- If no package.json is found, look for the nearest .git directory
   local git_dir = vim.fn.finddir(".git", path .. ";")
@@ -161,10 +161,6 @@ vim.api.nvim_set_keymap("n", "<leader>x", '"+d', { noremap = true, silent = true
 
 vim.api.nvim_set_keymap("n", "<leader>d", ":nohlsearch<CR>", { noremap = true, silent = true })
 
-vim.keymap.set({ "n", "t", "i", "v" }, "<C-e>", function()
-  local dir = vim.fn.input("Directory: ", vim.fn.getcwd(), "dir")
-  vim.cmd("cd " .. dir)
-end, { noremap = true, silent = true })
 
 -- Remap Shift + R to r
 vim.api.nvim_set_keymap("n", "r", "R", { noremap = true, silent = true })
