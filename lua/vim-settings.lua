@@ -22,7 +22,6 @@ vim.cmd("set backup")
 vim.cmd("set backupdir=~/.vim/backups")
 vim.cmd("set noswapfile")
 vim.cmd("set dir=~/.vim/swap//")
-vim.cmd("colorscheme desert")
 vim.cmd("set splitbelow")
 vim.cmd("set splitright")
 vim.cmd("set matchpairs+=<:>,「:」")
@@ -104,36 +103,36 @@ vim.api.nvim_create_autocmd("CursorHold", {
 --})
 
 -- Function to find the nearest directory containing package.json or .git
-/*local function find_project_root()
-	local path = vim.fn.expand("%:p:h")
+--local function find_project_root()
+--	local path = vim.fn.expand("%:p:h")
 
 	-- First, look for the nearest package.json
-	local package_json_dir = vim.fn.findfile("package.json", path .. ";")
-	if package_json_dir ~= "" then
-		return vim.fn.fnamemodify(package_json_dir, ":p:h")
-	end
+--	local package_json_dir = vim.fn.findfile("package.json", path .. ";")
+--	if package_json_dir ~= "" then
+--		return vim.fn.fnamemodify(package_json_dir, ":p:h")
+--	end
 
 	-- If no package.json is found, look for the nearest .git directory
-	local git_dir = vim.fn.finddir(".git", path .. ";")
-	if git_dir ~= "" then
+--	local git_dir = vim.fn.finddir(".git", path .. ";")
+--	if git_dir ~= "" then
 		-- Return the parent directory of the .git directory
-		return vim.fn.fnamemodify(git_dir, ":p:h:h")
-	end
+--		return vim.fn.fnamemodify(git_dir, ":p:h:h")
+--	end
 
 	-- If neither is found, fall back to the current file's directory
-	return path
-end
+--	return path
+--end
 
 -- Auto-change directory to the nearest package.json, .git's parent directory, or current file's directory
-vim.api.nvim_create_autocmd("BufLeave", {
-	pattern = "*",
-	callback = function()
-		local project_root = find_project_root()
-		if project_root then
-			vim.cmd("silent! cd " .. project_root)
-		end
-	end,
-})*/
+--vim.api.nvim_create_autocmd("BufLeave", {
+--	pattern = "*",
+--	callback = function()
+--		local project_root = find_project_root()
+--		if project_root then
+--			vim.cmd("silent! cd " .. project_root)
+--		end
+--	end,
+--})
 
 -- Open compiler
 vim.api.nvim_set_keymap("n", "<F6>", "<cmd>CompilerOpen<cr>", { noremap = true, silent = true })
