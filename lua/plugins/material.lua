@@ -3,6 +3,18 @@ return {
   name = "material",
   priority = 1000,
   config = function()
-  vim.cmd.colorscheme "material"
-  end
+    -- Enable transparency for material theme
+    require("material").setup({
+      contrast = {
+        sidebars = false,     -- Disable contrast for sidebars
+        floating_windows = false, -- Disable contrast for floating windows
+      },
+      disable = {
+        background = true, -- This disables the background color (enables transparency)
+      },
+    })
+
+    -- Set the colorscheme
+    vim.cmd.colorscheme("material")
+  end,
 }
