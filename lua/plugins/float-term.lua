@@ -9,15 +9,15 @@ return {
 			vim.api.nvim_set_keymap("n", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
 			vim.api.nvim_set_keymap("v", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
 			vim.api.nvim_set_keymap("i", "<C-q>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
-			vim.api.nvim_set_keymap("t", "<C-w>", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
-			vim.api.nvim_set_keymap("n", "<C-w>", ":q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
-			vim.api.nvim_set_keymap("v", "<C-w>", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
-			vim.api.nvim_set_keymap("i", "<C-w>", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("t", "<Leader>w", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("n", "<Leader>w", ":q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("v", "<Leader>w", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
+			vim.api.nvim_set_keymap("i", "<Leader>w", "<C-\\><C-n>:q<CR>", { noremap = true, silent = true }) -- Close terminal without killing
 
 			-- Close all floating terminals
-			vim.api.nvim_set_keymap("t", "<Leader>qa", "<cmd>:FloatermKill!<CR>", { noremap = true, silent = true })
-			vim.api.nvim_set_keymap("n", "<Leader>qa", ":FloatermKill!<CR>", { noremap = true, silent = true })
-			vim.api.nvim_set_keymap("v", "<Leader>qa", ":FloatermKill!<CR>", { noremap = true, silent = true })
+			vim.api.nvim_set_keymap("t", "<Leader>q", "<cmd>:FloatermKill!<CR>", { noremap = true, silent = true })
+			vim.api.nvim_set_keymap("n", "<Leader>q", ":FloatermKill!<CR>", { noremap = true, silent = true })
+			vim.api.nvim_set_keymap("v", "<Leader>q", ":FloatermKill!<CR>", { noremap = true, silent = true })
 
 			-- Open lazygit in a floating terminal
 			vim.cmd("command! LazyGitFloaterm FloatermNew lazygit")
