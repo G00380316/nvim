@@ -40,7 +40,7 @@ return {
             setup_servers()
 
             vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})
-            vim.keymap.set({ "n", "v" }, "<C-d>", vim.lsp.buf.definition, {})
+            vim.keymap.set({ "n", "v" }, "<C-e>", vim.lsp.buf.definition, {})
             vim.keymap.set({ "n", "v" }, "<leader>a", vim.lsp.buf.code_action, {})
         end,
     },
