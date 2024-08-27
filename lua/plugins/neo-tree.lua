@@ -1,5 +1,5 @@
 return {
---[[ Remove comments if you want Neo-tree
+	--[[ Remove comments if you want Neo-tree
 	"nvim-neo-tree/neo-tree.nvim",
 	branch = "v3.x",
 	dependencies = {
@@ -18,4 +18,5 @@ return {
 		vim.keymap.set("t", "<C-d>", "<cmd>Neotree filesystem reveal left<cr>", { noremap = true, silent = true })
 		vim.keymap.set("i", "<C-d>", "<esc><cmd>Neotree filesystem reveal left<cr>", { noremap = true, silent = true })
 	end,
-]]}
+]]
+}
