@@ -28,7 +28,7 @@ return {
 			)
 
 			-- Toggle compiler results
-			vim.api.nvim_set_keymap("n", "<C-r>", "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
+			vim.api.nvim_set_keymap("n", "<C-3>", "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
 		end,
 	},
 }
