@@ -16,9 +16,8 @@ require("keymaps")
 require("lazy").setup("plugins")
 
 local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
---local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
---local auto_refresh_neotree = vim.api.nvim_create_augroup("Update", { clear = true })
 local yank_group = vim.api.nvim_create_augroup("HighlightYank", { clear = true })
+local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })
 
 vim.api.nvim_create_autocmd("TextYankPost", {
 	group = yank_group,
@@ -44,12 +43,14 @@ vim.api.nvim_create_autocmd({ "BufWritePre" }, {
 -- command = "silent! write",
 --})
 
--- Auto-save on ModeChange
---vim.api.nvim_create_autocmd('ModeChanged', {
---   group = auto_save_group,
---   pattern = '*',
---   command = 'silent! write',
---})
+-- Auto-Format on BufLeave
+vim.api.nvim_create_autocmd("BufEnter", {
+	group = auto_dir_group,
+	pattern = "*",
+	callback = function()
+		vim.lsp.buf.format()
+	end,
+})
 
 -- Auto-save on CursorHold
 vim.api.nvim_create_autocmd("CursorHold", {
@@ -57,30 +58,6 @@ vim.api.nvim_create_autocmd("CursorHold", {
 	pattern = "*",
 	command = "silent! write",
 })
-
--- Auto-Refresh Neo-tree on ModeChange
---vim.api.nvim_create_autocmd('ModeChanged', {
---   group = auto_refresh_neotree,
---   pattern = "*",
---   callback = function()
---      local current_win = vim.api.nvim_get_current_win()
---     local mode = vim.fn.mode()
---
---      for _, win in ipairs(vim.api.nvim_list_wins()) do
---         local bufname = vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(win))
---         -- Check if the buffer name contains 'neo-tree'
---         if bufname:match("neo%-tree") then
---           if mode == 'i' or mode == 'n'then
---              -- Switch to the Neo-tree window
---               vim.cmd('Neotree')
---               -- Restore the original window
---               vim.api.nvim_set_current_win(current_win)
---               return
---            end
---         end
---      end
---   end,
---})
 
 -- Auto-change directory to the file's directory on buffer enter
 --vim.api.nvim_create_autocmd("BufEnter", {

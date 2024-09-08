@@ -21,14 +21,14 @@ return {
 			-- Redo last selected option
 			vim.api.nvim_set_keymap(
 				{ "n", "t", "i", "v" },
-				"<C-2>",
+				"<C-0>",
 				"<cmd>CompilerStop<cr>" -- (Optional, to dispose all tasks before redo)
 					.. "<cmd>CompilerRedo<cr>",
 				{ noremap = true, silent = true }
 			)
 
 			-- Toggle compiler results
-			vim.api.nvim_set_keymap("n", "<C-3>", "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
+			vim.api.nvim_set_keymap("n", "<C-9>", "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
 		end,
 	},
 }

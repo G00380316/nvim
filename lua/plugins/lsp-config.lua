@@ -12,7 +12,7 @@ return {
 				ensure_installed = {
 					"lua_ls",
 					"pyright",
-					"tsserver",
+					"ts_ls",
 					"jdtls",
 					"html",
 					"clangd",
@@ -34,7 +34,7 @@ return {
 
 			local function setup_servers()
 				local servers = {
-					"tsserver",
+					"ts_ls",
 					"jdtls",
 					"html",
 					"lua_ls",
@@ -59,7 +59,6 @@ return {
 
 			vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})
 			vim.keymap.set({ "n", "v" }, "<C-v>", vim.lsp.buf.definition, {})
-			vim.keymap.set({ "n", "v" }, "<C-a>", vim.lsp.buf.code_action, {})
 		end,
 	},
 }
