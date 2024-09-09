@@ -56,4 +56,4 @@ vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
 vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 
 -- Command to start practicing Leetcode
-vim.keymap.set("n", "<C-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })

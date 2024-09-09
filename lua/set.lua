@@ -78,6 +78,13 @@ vim.cmd("filetype plugin indent on")
 -- Adding clipboard func with wl-clipboard
 vim.opt.clipboard = "unnamedplus"
 
+vim.notify = function(msg, level, opts)
+    -- Filter out messages containing "LSP" in the content
+    if msg:find("LSP") then
+        return
+    end
+end
+
 -- Reduce the timeout for mapped sequences
 
 --vim.opt.timeoutlen = 200
