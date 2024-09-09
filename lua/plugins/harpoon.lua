@@ -1,39 +1,137 @@
 return {
+    -- {{{ Define the Harpoon lazy.vim specificaiton.
+
     "ThePrimeagen/harpoon",
-    config = function()
-        local harpoon_mark = require("harpoon.mark")
-        local harpoon_ui = require("harpoon.ui")
+    enabled = true,
+    event = { "InsertEnter", "CmdLineEnter" },
+    branch = "harpoon2",
+    dependencies = {
+        "nvim-lua/plenary.nvim",
+        "nvim-telescope/telescope.nvim",
+    },
 
-        -- Keybindings to add and navigate files
-        vim.keymap.set("n", "<C-a>", harpoon_mark.add_file, { desc = "Add file to Harpoon" })
-        vim.keymap.set("n", "<C-m>", harpoon_ui.toggle_quick_menu, { desc = "Toggle Harpoon menu" })
+    -- ----------------------------------------------------------------------- }}}
+    -- {{{ Define events to load Harpoon.
 
-        -- Navigate between files using Harpoon's index
-        vim.keymap.set("n", "<C-1>", function()
-            harpoon_ui.nav_file(1)
-        end, { desc = "Go to Harpoon file 1" })
-        vim.keymap.set("n", "<C-2>", function()
-            harpoon_ui.nav_file(2)
-        end, { desc = "Go to Harpoon file 2" })
-        vim.keymap.set("n", "<C-3>", function()
-            harpoon_ui.nav_file(3)
-        end, { desc = "Go to Harpoon file 3" })
-        vim.keymap.set("n", "<C-4>", function()
-            harpoon_ui.nav_file(4)
-        end, { desc = "Go to Harpoon file 4" })
+    keys = function()
+        local harpoon = require("harpoon")
+        local conf = require("telescope.config").values
 
-        -- Replace files in specific Harpoon slots
-        --vim.keymap.set("n", "<leader><C-h>", function()
-        --    harpoon_mark.set_current_at(1)
-        --end, { desc = "Replace Harpoon file 1" })
-        --vim.keymap.set("n", "<leader><C-t>", function()
-        --    harpoon_mark.set_current_at(2)
-        --end, { desc = "Replace Harpoon file 2" })
-        --vim.keymap.set("n", "<leader><C-n>", function()
-        --   harpoon_mark.set_current_at(3)
-        --end, { desc = "Replace Harpoon file 3" })
-        --vim.keymap.set("n", "<leader><C-s>", function()
-        --    harpoon_mark.set_current_at(4)
-        --end, { desc = "Replace Harpoon file 4" })
+        local function toggle_telescope(harpoon_files)
+            local file_paths = {}
+            for _, item in ipairs(harpoon_files.items) do
+                table.insert(file_paths, item.value)
+            end
+            require("telescope.pickers")
+                .new({}, {
+                    prompt_title = "Harpoon",
+                    finder = require("telescope.finders").new_table({
+                        results = file_paths,
+                    }),
+                    previewer = conf.file_previewer({}),
+                    sorter = conf.generic_sorter({}),
+                })
+                :find()
+        end
+
+        return {
+            -- Harpoon marked files 1 through 4
+            {
+                "<C-1>",
+                function()
+                    harpoon:list():select(1)
+                end,
+                desc = "Harpoon buffer 1",
+            },
+            {
+                "<C-2>",
+                function()
+                    harpoon:list():select(2)
+                end,
+                desc = "Harpoon buffer 2",
+            },
+            {
+                "<C-3>",
+                function()
+                    harpoon:list():select(3)
+                end,
+                desc = "Harpoon buffer 3",
+            },
+            {
+                "<C-4>",
+                function()
+                    harpoon:list():select(4)
+                end,
+                desc = "Harpoon buffer 4",
+            },
+
+            -- Harpoon next and previous.
+            {
+                "<A-n>",
+                function()
+                    harpoon:list():next()
+                end,
+                desc = "Harpoon next buffer",
+            },
+            {
+                "<A-p>",
+                function()
+                    harpoon:list():prev()
+                end,
+                desc = "Harpoon prev buffer",
+            },
+
+            -- Harpoon user interface.
+            {
+                "<C-m>",
+                function()
+                    harpoon.ui:toggle_quick_menu(harpoon:list())
+                end,
+                desc = "Harpoon Toggle Menu",
+            },
+            {
+                "<C-a>",
+                function()
+                    harpoon:list():add()
+                end,
+                desc = "Harpoon add file",
+            },
+
+            -- Use Telescope as Harpoon user interface.
+            {
+                "<A-h>",
+                function()
+                    toggle_telescope(harpoon:list())
+                end,
+                desc = "Open Harpoon window",
+            },
+        }
     end,
+
+    -- ----------------------------------------------------------------------- }}}
+    -- {{{ Use Harpoon defaults or my customizations.
+
+    opts = function(_, opts)
+        opts.settings = {
+            save_on_toggle = false,
+            sync_on_ui_close = false,
+            save_on_change = true,
+            enter_on_sendcmd = false,
+            tmux_autoclose_windows = false,
+            excluded_filetypes = { "harpoon", "alpha", "dashboard", "gitcommit" },
+            mark_branch = false,
+            key = function()
+                return vim.loop.cwd()
+            end,
+        }
+    end,
+
+    -- ----------------------------------------------------------------------- }}}
+    -- {{{ Configure Harpoon.
+
+    config = function(_, opts)
+        require("harpoon").setup(opts)
+    end,
+
+    -- ----------------------------------------------------------------------- }}}
 }

@@ -66,7 +66,7 @@ vim.opt.updatetime = 50
 
 -- Color Column ( used as a marker not to go past for best coding practice)
 
--- vim.opt.colorcolumn = "80"
+--vim.opt.colorcolumn = "80"
 
 -- Disables mouse
 

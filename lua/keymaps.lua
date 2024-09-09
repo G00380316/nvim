@@ -41,7 +41,7 @@ vim.keymap.set("n", "Q", "<nop>")
 vim.keymap.set("n", "R", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
 -- Open compiler
-vim.keymap.set("n", "<C-n>", "<cmd>CompilerOpen<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<A-c>", "<cmd>CompilerOpen<CR>", { noremap = true, silent = true })
 
 -- For canceling terminal mode in floating terminal
 vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true })
