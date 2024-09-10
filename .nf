@@ -22,7 +22,7 @@
 [41C[0m[36m[1mOS[0m[0m:[0m Arch Linux x86_64[0m 
 [41C[0m[36m[1mHost[0m[0m:[0m GF63 Thin 11UC REV:1.0[0m 
 [41C[0m[36m[1mKernel[0m[0m:[0m 6.10.3-arch1-2[0m 
-[41C[0m[36m[1mUptime[0m[0m:[0m 4 hours, 35 mins[0m 
+[41C[0m[36m[1mUptime[0m[0m:[0m 2 hours, 16 mins[0m 
 [41C[0m[36m[1mPackages[0m[0m:[0m 816 (pacman), 38 (flatpak)[0m 
 [41C[0m[36m[1mShell[0m[0m:[0m zsh 5.9[0m 
 [41C[0m[36m[1mResolution[0m[0m:[0m 1920x1080[0m 
@@ -33,7 +33,7 @@
 [41C[0m[36m[1mCPU[0m[0m:[0m 11th Gen Intel i5-11400H (12) @ 4.500GHz[0m 
 [41C[0m[36m[1mGPU[0m[0m:[0m Intel TigerLake-H GT1 [UHD Graphics][0m 
 [41C[0m[36m[1mGPU[0m[0m:[0m NVIDIA GeForce RTX 3050 Mobile[0m 
-[41C[0m[36m[1mMemory[0m[0m:[0m 4021MiB / 31799MiB[0m 
+[41C[0m[36m[1mMemory[0m[0m:[0m 3903MiB / 31799MiB[0m 
 
 [41C[30m[40m   [31m[41m   [32m[42m   [33m[43m   [34m[44m   [35m[45m   [36m[46m   [37m[47m   [m
 [41C[38;5;8m[48;5;8m   [38;5;9m[48;5;9m   [38;5;10m[48;5;10m   [38;5;11m[48;5;11m   [38;5;12m[48;5;12m   [38;5;13m[48;5;13m   [38;5;14m[48;5;14m   [38;5;15m[48;5;15m   [m
