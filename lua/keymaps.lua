@@ -32,6 +32,9 @@ vim.keymap.set({ "n", "v" }, "d", [["_d]])
 -- Map `Ctrl-C` to Escape in Insert Mode
 vim.keymap.set("i", "<C-c>", "<Esc>")
 
+-- Map to Manually Format file 
+vim.keymap.set("n", "F", vim.lsp.buf.format, {})
+
 -- Disable `Q` (which used to start Ex mode)
 
 vim.keymap.set("n", "Q", "<nop>")
