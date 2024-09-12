@@ -35,12 +35,12 @@ return {
             "hrsh7th/cmp-path",
             "hrsh7th/cmp-cmdline",
             "hrsh7th/nvim-cmp",
-            "L3MON4D3/LuaSnip",
             "saadparwaiz1/cmp_luasnip",
             "j-hui/fidget.nvim",
             "hrsh7th/cmp-nvim-lua",
             "hrsh7th/cmp-nvim-lsp-signature-help",
             "f3fora/cmp-spell",
+            "ray-x/cmp-treesitter",
         },
         config = function()
             local cmp = require("cmp")
@@ -93,12 +93,13 @@ return {
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
-                    ["<C-y>"] = cmp.mapping.confirm({ select = true }),
-                    ["<C-Space>"] = cmp.mapping.complete(),
+                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
                 }),
                 sources = cmp.config.sources({
                     { name = "nvim_lsp" },
-                    { name = "luasnip" },
+                    { name = "nvim-lsp-signature-help" },
+                    { name = "rg" },
+                    { name = "treesitter" },
                 }, {
                     { name = "buffer" },
                 }),
@@ -106,19 +107,11 @@ return {
 
             -- Diagnostic settings
             vim.diagnostic.config({
-                virtual_text = false, -- Disable inline diagnostic messages
-                signs = true, -- Enable signs in the sign column
-                underline = true, -- Enable underlining
+                virtual_text = true,     -- Disable inline diagnostic messages
+                signs = true,            -- Enable signs in the sign column
+                underline = true,        -- Enable underlining
                 update_in_insert = true, -- Update diagnostics while typing
-                severity_sort = true, -- Sort diagnostics by severity
-                float = {
-                    focusable = false,
-                    style = "minimal",
-                    border = "rounded",
-                    source = "always",
-                    header = "",
-                    prefix = "",
-                },
+                severity_sort = true,    -- Sort diagnostics by severity
             })
         end,
     },
