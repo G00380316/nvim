@@ -35,11 +35,9 @@ return {
             "hrsh7th/cmp-path",
             "hrsh7th/cmp-cmdline",
             "hrsh7th/nvim-cmp",
-            "saadparwaiz1/cmp_luasnip",
             "j-hui/fidget.nvim",
             "hrsh7th/cmp-nvim-lua",
             "hrsh7th/cmp-nvim-lsp-signature-help",
-            "f3fora/cmp-spell",
             "ray-x/cmp-treesitter",
         },
         config = function()
@@ -83,8 +81,12 @@ return {
             vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})
             vim.keymap.set({ "n", "v" }, "<C-v>", vim.lsp.buf.definition, {})
 
-            -- Autocompletion setup using nvim-cmp and LuaSnip for snippets
+            -- Autocompletion setup
             cmp.setup({
+                completion = {
+                    completeopt = "menu,menuone,noinsert",
+                    -- Show the menu with one item without auto-inserting
+                },
                 snippet = {
                     expand = function(args)
                         require("luasnip").lsp_expand(args.body)
@@ -93,15 +95,25 @@ return {
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
-                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
+                    ["<Space>"] = cmp.mapping.confirm({ select = true }),
+                    ["<C-y>"] = cmp.mapping.confirm({ select = false }),
                 }),
                 sources = cmp.config.sources({
-                    { name = "nvim_lsp" },
-                    { name = "nvim-lsp-signature-help" },
+                    { name = "nvim_lsp",                max_item_count = 3 },
+                    { name = "nvim-lsp-signature-help", max_item_count = 1 },
                     { name = "rg" },
-                    { name = "treesitter" },
+                    { name = "treesitter",              max_item_count = 1 },
+                    { name = "path" },
                 }, {
-                    { name = "buffer" },
+                    { name = "buffer", max_item_count = 1 },
+                }),
+            })
+
+            -- For command line completion
+            cmp.setup.cmdline(':', {
+                sources = cmp.config.sources({
+                    { name = "path",    max_item_count = 2 },
+                    { name = "cmdline", max_item_count = 3 },
                 }),
             })
 
