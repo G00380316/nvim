@@ -95,7 +95,6 @@ return {
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
-                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
                     ["<C-y>"] = cmp.mapping.confirm({ select = false }),
                 }),
                 sources = cmp.config.sources({
@@ -110,13 +109,13 @@ return {
             })
 
             -- For command line completion
-            cmp.setup.cmdline(':', {
+--[[            cmp.setup.cmdline(':', {
                 sources = cmp.config.sources({
                     { name = "path",    max_item_count = 2 },
                     { name = "cmdline", max_item_count = 3 },
                 }),
             })
-
+]]
             -- Diagnostic settings
             vim.diagnostic.config({
                 virtual_text = true,     -- Disable inline diagnostic messages
