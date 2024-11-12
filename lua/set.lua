@@ -22,6 +22,11 @@ vim.opt.smartindent = true
 
 --vim.opt.wrap = false
 vim.opt.wrap = true
+-- Stops words from being broken by wrapping
+vim.opt.linebreak = true
+vim.opt.wrapmargin = 0            -- " Disable margin-based line wrapping
+vim.opt.textwidth = 0             -- " Disable hard wrapping at a fixed width
+vim.opt.formatoptions:remove("t") -- " Remove the 't' flag to stop automatic text wrapping
 
 -- Disable Swap and Backup Files
 

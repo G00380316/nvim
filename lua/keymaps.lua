@@ -12,8 +12,9 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 vim.keymap.set("n", "K", "<nop>")
 
 -- Keep Cursor Position When Joining Lines
-
 vim.keymap.set("n", "J", "mzJ`z")
+-- Join current line and the next two
+vim.keymap.set("n", "K", "mz2J`z")
 
 -- Scroll Half-Page and Center
 
@@ -50,6 +51,11 @@ vim.keymap.set("n", "R", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
 -- Open compiler
 vim.keymap.set("n", "<A-c>", "<cmd>CompilerOpen<CR>", { noremap = true, silent = true })
+
+-- Custom key mappings to navigate wrapped lines
+vim.keymap.set("n", "j", "gj", { noremap = true })   -- Use 'gj' to move down visually wrapped lines
+vim.keymap.set("n", "k", "gk", { noremap = true })   -- Use 'gk' to move up visually wrapped lines
+vim.keymap.set("n", "<CR>", "o", { noremap = true }) -- Pressing Enter creates a new line without jumping
 
 -- For canceling terminal mode in floating terminal
 vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true })
