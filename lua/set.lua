@@ -20,7 +20,8 @@ vim.opt.smartindent = true
 
 -- Disable Line Wrapping
 
-vim.opt.wrap = false
+--vim.opt.wrap = false
+vim.opt.wrap = true
 
 -- Disable Swap and Backup Files
 
