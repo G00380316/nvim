@@ -109,7 +109,7 @@ return {
             })
 
             -- For command line completion
---[[            cmp.setup.cmdline(':', {
+            --[[            cmp.setup.cmdline(':', {
                 sources = cmp.config.sources({
                     { name = "path",    max_item_count = 2 },
                     { name = "cmdline", max_item_count = 3 },

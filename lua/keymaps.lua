@@ -36,7 +36,6 @@ vim.keymap.set({ "n", "v" }, "d", [["_d]])
 
 -- Map `Ctrl-C` to Escape in Insert Mode
 vim.keymap.set("i", "<C-c>", "<Esc>")
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<Esc>")
 
 -- Map to Manually Format file
 vim.keymap.set("n", "F", vim.lsp.buf.format, {})
@@ -71,3 +70,11 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 
 -- Command to start practicing Leetcode
 vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
+
+-- Buffer Navigation
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-n>", "<cmd>bn<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-p>", "<cmd>bp<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd<CR>", { noremap = true, silent = true })
+
+-- Term
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
