@@ -20,7 +20,7 @@ return {
         config = function()
             -- Redo last selected option
             vim.api.nvim_set_keymap(
-                { "n", "t", "i", "v" },
+                { "n", "i", "v" },
                 "<A-r>",
                 "<cmd>CompilerStop<cr>" -- (Optional, to dispose all tasks before redo)
                 .. "<cmd>CompilerRedo<cr>",
