@@ -72,9 +72,9 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
 
 -- Buffer Navigation
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-n>", "<cmd>bn<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-p>", "<cmd>bp<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 
 -- Term
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
