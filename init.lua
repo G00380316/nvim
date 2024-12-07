@@ -13,7 +13,21 @@ vim.opt.rtp:prepend(lazypath)
 
 require("set")
 require("keymaps")
-require("lazy").setup("plugins")
+local function load_plugins()
+  local plugins = {}
+  local path = vim.fn.stdpath("config") .. "/lua/plugins"
+
+  for _, file in ipairs(vim.fn.glob(path .. "/**/*.lua", true, true)) do
+    local plugin = dofile(file)
+    if plugin then
+      table.insert(plugins, plugin)
+    end
+  end
+
+  return plugins
+end
+
+require("lazy").setup(load_plugins())
 
 local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
 local yank_group = vim.api.nvim_create_augroup("HighlightYank", { clear = true })
