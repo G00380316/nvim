@@ -140,7 +140,7 @@ return {
                     local function add_group(severity, header, icon)
                         if #grouped[severity] > 0 then
                             table.insert(menu_items,
-                                { header = icon .. "  " .. header, is_header = true, severity = severity, icon = icon })          -- Add severity as header
+                                { header = icon .. "  " .. header, is_header = true, severity = severity, icon = icon }) -- Add severity as header
                             for _, diag in ipairs(grouped[severity]) do
                                 table.insert(menu_items,
                                     string.format("Line %d, Col %d: %s", diag.lnum + 1, diag.col + 1, diag.message))
