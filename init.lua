@@ -14,17 +14,17 @@ vim.opt.rtp:prepend(lazypath)
 require("set")
 require("keymaps")
 local function load_plugins()
-  local plugins = {}
-  local path = vim.fn.stdpath("config") .. "/lua/plugins"
+    local plugins = {}
+    local path = vim.fn.stdpath("config") .. "/lua/plugins"
 
-  for _, file in ipairs(vim.fn.glob(path .. "/**/*.lua", true, true)) do
-    local plugin = dofile(file)
-    if plugin then
-      table.insert(plugins, plugin)
+    for _, file in ipairs(vim.fn.glob(path .. "/**/*.lua", true, true)) do
+        local plugin = dofile(file)
+        if plugin then
+            table.insert(plugins, plugin)
+        end
     end
-  end
 
-  return plugins
+    return plugins
 end
 
 require("lazy").setup(load_plugins())

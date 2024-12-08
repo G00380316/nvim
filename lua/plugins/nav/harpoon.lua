@@ -1,4 +1,4 @@
-return {
+--[[return {
     -- {{{ Define the Harpoon lazy.vim specificaiton.
 
     "ThePrimeagen/harpoon",
@@ -134,4 +134,4 @@ return {
     end,
 
     -- ----------------------------------------------------------------------- }}}
-}
+}]]
