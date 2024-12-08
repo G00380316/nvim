@@ -56,13 +56,13 @@ return {
             end,
             desc = "Open mini.files (Directory of Current File)",
         },
-        --		{
-        --			"<C-n>",
-        --			function()
-        --				require("mini.files").open(vim.uv.cwd(), true)
-        --			end,
-        --			desc = "Open mini.files (cwd)",
-        --		},
+        {
+            "<C-s>",
+            function()
+                require("mini.files").open(vim.uv.cwd(), true)
+            end,
+            desc = "Open mini.files (cwd)",
+        },
     },
     config = function(_, opts)
         require("mini.files").setup(opts)
