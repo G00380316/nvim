@@ -72,7 +72,7 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
 
 -- Command to cd into correct dir Manually
-vim.keymap.set("n", "<C-a>", "<cmd>silent! :cd %:p:h:h<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-a>", "<cmd>silent! :cd %:p:h:h:h<CR>", { noremap = true, silent = true })
 
 -- Command to allow for selection and search of buffer with dressing
 vim.keymap.set({ "n", "v" }, "<C-s>", ":Telescope buffers<CR>", { desc = "Pick a buffer" })

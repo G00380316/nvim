@@ -8,6 +8,27 @@ return {
             vim.keymap.set({ "n", "v", "i" }, "<C-f>", builtin.find_files, {})
             vim.keymap.set({ "n", "v", "i", "t" }, "<C-g>", builtin.live_grep, {})
             vim.keymap.set("n", "H", builtin.help_tags, {})
+
+            -- Telescope setup for buffers picker
+            require("telescope").setup {
+                defaults = {
+                    mappings = {
+                        i = {
+                            ["<C-d>"] = "delete_buffer", -- Delete buffer in insert mode
+                        },
+                        n = {
+                            ["<C-d>"] = "delete_buffer", -- Delete buffer in normal mode
+                        },
+                    },
+                },
+                pickers = {
+                    buffers = {
+                        sort_mru = true,              -- Sort by most recently used
+                        ignore_current_buffer = true, -- Ignore the current buffer
+                        previewer = true,             -- Enable preview for buffers
+                    },
+                },
+            }
         end,
     },
     {

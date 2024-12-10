@@ -6,6 +6,17 @@ return {
         end,
     },
     {
+        "L3MON4D3/LuaSnip",
+        version = "v2.*",                -- You can specify a version or use the latest.
+        build = "make install_jsregexp", -- Optional: for advanced snippet regex features.
+        config = function()
+            require("luasnip").setup({
+                history = true,                            -- Enable history for jumping back in snippets
+                updateevents = "TextChanged,TextChangedI", -- Refresh snippets on these events
+            })
+        end,
+    },
+    {
         "williamboman/mason-lspconfig.nvim",
         config = function()
             require("mason-lspconfig").setup({
@@ -35,6 +46,7 @@ return {
             "hrsh7th/cmp-path",
             "hrsh7th/cmp-cmdline",
             "hrsh7th/nvim-cmp",
+            --   "lukas-reineke/cmp-rg",
             "j-hui/fidget.nvim",
             "hrsh7th/cmp-nvim-lua",
             "hrsh7th/cmp-nvim-lsp-signature-help",
@@ -84,7 +96,7 @@ return {
             -- Autocompletion setup
             cmp.setup({
                 completion = {
-                    completeopt = "menu,menuone,noinsert",
+                    completeopt = "menu,menuone,noinsert,noselect",
                     -- Show the menu with one item without auto-inserting
                 },
                 snippet = {
@@ -95,17 +107,18 @@ return {
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
-                    ["<C-y>"] = cmp.mapping.confirm({ select = false }),
+                    ["<C-y>"] = cmp.mapping.confirm({ select = true }),
                 }),
                 sources = cmp.config.sources({
-                    { name = "nvim_lsp",                max_item_count = 3 },
-                    { name = "nvim-lsp-signature-help", max_item_count = 1 },
-                    { name = "rg" },
-                    { name = "treesitter",              max_item_count = 1 },
-                    { name = "path" },
-                }, {
-                    { name = "buffer", max_item_count = 1 },
-                }),
+                        { name = "nvim_lsp",                max_item_count = 3 },
+                        { name = "nvim-lsp-signature-help", max_item_count = 1 },
+                        --                  { name = "rg",                      max_item_count = 1 },
+                        { name = "treesitter",              max_item_count = 1 },
+                        { name = "path" },
+                    },
+                    {
+                        name = "buffer", max_item_count = 1
+                    }),
             })
 
             -- For command line completion
