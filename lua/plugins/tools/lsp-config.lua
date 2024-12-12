@@ -107,10 +107,11 @@ return {
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
-                    ["<C-y>"] = cmp.mapping.confirm({ select = true }),
+                    ["<CR>"] = cmp.mapping.confirm({ select = true }),
+                    ["<C-y>"] = cmp.mapping.complete(),
                 }),
                 sources = cmp.config.sources({
-                        { name = "nvim_lsp",                max_item_count = 3 },
+                        { name = "nvim_lsp",                max_item_count = 5 },
                         { name = "nvim-lsp-signature-help", max_item_count = 1 },
                         --                  { name = "rg",                      max_item_count = 1 },
                         { name = "treesitter",              max_item_count = 1 },
