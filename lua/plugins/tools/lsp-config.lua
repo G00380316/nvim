@@ -99,19 +99,19 @@ return {
                     completeopt = "menu,menuone,noinsert,noselect",
                     -- Show the menu with one item without auto-inserting
                 },
-                snippet = {
-                    expand = function(args)
-                        require("luasnip").lsp_expand(args.body)
-                    end,
-                },
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
+                    ["<A-m>"] = cmp.mapping.complete(),
                     ["<CR>"] = cmp.mapping.confirm({ select = true }),
-                    ["<C-y>"] = cmp.mapping.complete(),
                 }),
                 sources = cmp.config.sources({
-                        { name = "nvim_lsp",                max_item_count = 5 },
+                        {
+                            name = "nvim_lsp",
+                            entry_filter = function(entry)
+                                return require("cmp").lsp.CompletionItemKind.Snippet ~= entry:get_kind()
+                            end
+                        },
                         { name = "nvim-lsp-signature-help", max_item_count = 1 },
                         --                  { name = "rg",                      max_item_count = 1 },
                         { name = "treesitter",              max_item_count = 1 },
@@ -120,6 +120,11 @@ return {
                     {
                         name = "buffer", max_item_count = 1
                     }),
+                snippet = {
+                    expand = function(args)
+                        require("luasnip").lsp_expand(args.body) -- Expand the snippet if no match
+                    end
+                }
             })
 
             -- For command line completion

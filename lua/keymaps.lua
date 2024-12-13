@@ -72,7 +72,7 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
 
 -- Command to cd into correct dir Manually
-vim.keymap.set({ "n", "v", "t" , "i"}, "<C-a>", "<cmd>silent! :cd %:p:h:h:h<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h:h:h<CR>", { noremap = true, silent = true })
 
 -- Command to allow for selection and search of buffer with dressing
 vim.keymap.set({ "n", "v", "t" }, "<C-s>", ":Telescope buffers<CR>", { desc = "Pick a buffer" })
@@ -81,6 +81,11 @@ vim.keymap.set({ "n", "v", "t" }, "<C-s>", ":Telescope buffers<CR>", { desc = "P
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
+
+-- Lua Configuration for Neovim
+vim.api.nvim_set_keymap('n', '<A-m>',
+    'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
+    { noremap = true, silent = true })
 
 -- Term
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
