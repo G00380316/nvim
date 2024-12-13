@@ -80,6 +80,16 @@ vim.api.nvim_create_autocmd("BufLeave", {
     command = "silent! write",
 })
 
+vim.api.nvim_create_autocmd("TermOpen", {
+    pattern = "term://*",
+    callback = function()
+        -- Check if the shell is zsh
+        if vim.fn.expand('%:p') and vim.fn.expand('%:p'):match("zsh") then
+            vim.cmd("startinsert")
+        end
+    end,
+})
+
 -- Auto-change directory to the file's directory on buffer enter
 --vim.api.nvim_create_autocmd("BufEnter", {
 --   group = auto_dir_group,
