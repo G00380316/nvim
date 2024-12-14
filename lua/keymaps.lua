@@ -10,6 +10,7 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 -- Disable "K" normal mode which seems to spit out memory info and sometimes errors
 
 vim.keymap.set("n", "K", "<nop>")
+vim.keymap.set("n", "A-d", "<nop>")
 
 -- Keep Cursor Position When Joining Lines
 vim.keymap.set("n", "J", "mzJ`z")
