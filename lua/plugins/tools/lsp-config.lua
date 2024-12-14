@@ -136,7 +136,7 @@ return {
             })
 ]]
             -- Diagnostics to quickfix keymap
-            vim.keymap.set({ "n", "v" }, "<C-l>", function()
+            vim.keymap.set({ "n", "v" }, "<A-d>", function()
                 -- Function to show diagnostics grouped by severity
                 local function show_diagnostics_by_severity()
                     local diagnostics = vim.diagnostic.get(0)

@@ -48,6 +48,10 @@ vim.keymap.set("n", "Q", "<nop>")
 
 vim.keymap.set("n", "R", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
+-- Search the next Occurence of the current word (oops apparently this is inbuilt to neovim but I will leave this here just incase)
+
+--vim.keymap.set("n", "N", [[:let @/ = '\<' . expand('<cword>') . '\>' | execute 'normal! n'<CR>]])
+
 -- Open compiler
 vim.keymap.set("n", "<A-c>", "<cmd>CompilerOpen<CR>", { noremap = true, silent = true })
 
