@@ -27,6 +27,6 @@ return {
         }
 
         alpha.setup(dashboard.opts)
-        vim.api.nvim_set_keymap("n", "<C-x>", ":Alpha<CR>", { noremap = true, silent = true })
+        vim.keymap.set({ "n", "t" }, "<C-x>", "<cmd>Alpha<CR>", { noremap = true, silent = true })
     end,
 }
