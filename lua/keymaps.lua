@@ -80,7 +80,7 @@ vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h:h:h<CR>", { noremap = true, silent = true })
 
 -- Command to allow for selection and search of buffer with dressing
-vim.keymap.set({ "n", "v", "t" }, "<C-s>", ":Telescope buffers<CR>", { desc = "Pick a buffer" })
+vim.keymap.set({ "n", "v", "t", "i" }, "<C-s>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
 -- Buffer Navigation
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
