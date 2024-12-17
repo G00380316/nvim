@@ -39,9 +39,9 @@ vim.keymap.set({ "n", "v" }, "d", [["_d]])
 vim.keymap.set("i", "<C-c>", "<Esc>")
 
 -- Map to Manually Format file
-vim.keymap.set("n", "F", vim.lsp.buf.format, { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "F", vim.lsp.buf.format, { noremap = true, silent = true })
 -- Remap F to `Alt-F`
-vim.keymap.set("n", "<A-f>", "F", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "<A-f>", "F", { noremap = true, silent = true })
 
 -- Disable `Q` (which used to start Ex mode)
 
