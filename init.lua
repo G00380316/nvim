@@ -1,3 +1,6 @@
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
     vim.fn.system({
@@ -73,6 +76,29 @@ vim.api.nvim_create_autocmd("CursorHold", {
     command = "silent! write",
 })
 
+--vim.api.nvim_create_autocmd("VimEnter", {
+--    callback = function()
+--        local path = vim.fn.argv(0)
+--        -- Check if the buffer opened is a directory
+--        if vim.fn.isdirectory(path) == 1 then
+--            vim.schedule(function()
+--                -- Open the directory interactively
+--                require("mini.files").open(path, { allow_changes = true })
+--            end)
+--        end
+--    end
+--})
+
+-- auto-open Alpha on vim open
+--vim.api.nvim_create_autocmd("VimEnter", {
+--   callback = function()
+--        local path = vim.fn.argv(0)
+--        if vim.fn.isdirectory(path) == 1 then
+--            vim.cmd("silent! Alpha") -- Executes the command correctly
+--        end
+--    end
+--})
+
 -- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
 vim.api.nvim_create_autocmd("BufLeave", {
     group = auto_save_group,
@@ -139,6 +165,6 @@ vim.api.nvim_create_autocmd("BufEnter", {
     end,
 })]]
 
-vim.g.netrw_browse_split = 0
-vim.g.netrw_banner = 0
-vim.g.netrw_winsize = 25
+--vim.g.netrw_browse_split = 0
+--vim.g.netrw_banner = 0
+--vim.g.netrw_winsize = 25
