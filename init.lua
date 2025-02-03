@@ -98,7 +98,7 @@ vim.api.nvim_create_autocmd("CursorHold", {
 --    end
 --})
 
--- auto-open Alpha on vim open
+-- auto-open CommandT on vim open
 vim.api.nvim_create_autocmd("VimEnter", {
     callback = function()
         local path = vim.fn.argv(0)
