@@ -1,5 +1,14 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+vim.g.CommandTPreferredImplementation = 'lua'
+vim.g.CommandTEncoding = "UTF-8"
+vim.g.CommandTFileScanner = "watchman"
+vim.g.CommandTMaxCachedDirectories = 10
+vim.g.CommandTMaxFiles = 1000000
+vim.g.CommandTScanDotDirectories = 1
+vim.g.CommandTTraverseSCM = "pwd"
+vim.g.CommandTWildIgnore = vim.o.wildignore ..
+    ",**/.git/*,**/.hg/*,**/bower_components/*,**/node_modules/*,**/tmp/*"
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
@@ -90,14 +99,15 @@ vim.api.nvim_create_autocmd("CursorHold", {
 --})
 
 -- auto-open Alpha on vim open
---vim.api.nvim_create_autocmd("VimEnter", {
---   callback = function()
---        local path = vim.fn.argv(0)
---        if vim.fn.isdirectory(path) == 1 then
---            vim.cmd("silent! Alpha") -- Executes the command correctly
---        end
---    end
---})
+vim.api.nvim_create_autocmd("VimEnter", {
+    callback = function()
+        local path = vim.fn.argv(0)
+        if vim.fn.isdirectory(path) == 1 then
+            require('wincent.commandt').setup({ height = vim.o.lines }) -- Make it full screen
+            vim.cmd("silent! CommandT")
+        end
+    end
+})
 
 -- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
 vim.api.nvim_create_autocmd("BufLeave", {

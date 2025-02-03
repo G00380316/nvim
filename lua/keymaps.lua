@@ -83,6 +83,9 @@ vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h:h<CR>", 
 -- Command to allow for selection and search of buffer with dressing
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-s>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
+-- CommandT Keybind to Open the file explorer
+vim.keymap.set({ "n", "v", "t", "i" }, '<A-e>', '<cmd>CommandT<CR>')
+
 -- Buffer Navigation
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
