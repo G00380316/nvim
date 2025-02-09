@@ -159,8 +159,8 @@ vim.api.nvim_create_autocmd("BufEnter", {
 vim.api.nvim_create_autocmd("ColorScheme", {
     pattern = "*",
     callback = function()
-        local scheme = vim.g.colors_name  -- Correct way to get the colorscheme name
-        if not scheme then return end      -- Prevents errors if it's nil
+        local scheme = vim.g.colors_name -- Correct way to get the colorscheme name
+        if not scheme then return end    -- Prevents errors if it's nil
 
         -- Path to save the colorscheme selection
         local config_path = vim.fn.stdpath("config") .. "/colorscheme.txt"
