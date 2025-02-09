@@ -41,6 +41,26 @@ end
 
 require("lazy").setup(load_plugins())
 
+-- Path to the colorscheme file
+local config_path = vim.fn.stdpath("config") .. "/colorscheme.txt"
+
+-- Check if the file exists and load the scheme
+local file = io.open(config_path, "r")
+if file then
+    local scheme = file:read("*l") -- Read the first line
+    file:close()
+
+    -- Apply the scheme if it exists
+    if scheme and scheme ~= "" then
+        vim.cmd("colorscheme " .. scheme)
+        print("Applied saved scheme: " .. scheme)
+    else
+        print("No colorscheme saved.")
+    end
+else
+    print("No colorscheme file found.")
+end
+
 local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
 local yank_group = vim.api.nvim_create_augroup("HighlightYank", { clear = true })
 local auto_dir_group = vim.api.nvim_create_augroup("Dir", { clear = true })

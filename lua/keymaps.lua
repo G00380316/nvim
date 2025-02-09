@@ -81,10 +81,15 @@ vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h:h<CR>", { noremap = true, silent = true })
 
 -- Command to allow for selection and search of buffer with dressing
-vim.keymap.set({ "n", "v", "t", "i" }, "<C-s>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
+vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
 -- CommandT Keybind to Open the file explorer
-vim.keymap.set({ "n", "v", "t", "i" }, '<A-e>', '<cmd>CommandT<CR>')
+vim.keymap.set({ "n", "v", "t", "i" }, 'zt', '<cmd>CommandT<CR>')
+
+-- Snacks Keybind to Opem dashboard
+vim.keymap.set({ "n", "v", "t", "i" }, "zd", function()
+    Snacks.dashboard.open(opts)
+end)
 
 -- Buffer Navigation
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
@@ -92,7 +97,7 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 
 -- Lua Configuration for Neovim
-vim.api.nvim_set_keymap('n', '<A-m>',
+vim.api.nvim_set_keymap('n', '<A-l>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
 
