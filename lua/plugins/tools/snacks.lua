@@ -114,34 +114,8 @@ return {
             { "zsb", function() require("snacks").picker.git_branches({ layout = "select" }) end,       desc = "Pick and Switch Git Branches" },
 
             -- Other Utils
-            vim.keymap.set("n", "zcs", function()
-                local snacks = require("snacks")
-                snacks.picker.colorschemes({
-                    layout = "ivy",
-                    callback = function(scheme)
-                        if scheme then
-                            -- Path to save the colorscheme selection
-                            local config_path = vim.fn.stdpath("config") .. "/colorscheme.txt"
-
-                            -- Write the scheme to the file
-                            local success, err = pcall(vim.fn.writefile, { scheme }, config_path)
-
-                            -- Check for success and print any errors
-                            if not success then
-                                print("Error saving colorscheme: " .. (err or "Unknown Error"))
-                            else
-                                print("Saved colorscheme: " .. scheme)
-                            end
-
-                            -- Apply the colorscheme
-                            vim.cmd("colorscheme " .. scheme)
-                        else
-                            print("No scheme selected.")
-                        end
-                    end,
-                })
-            end, { desc = "Pick and Save Color Scheme" }),
-            { "zh", function() require("snacks").picker.help() end, desc = "Help Pages" },
+            { "zcs", function() require("snacks").picker.colorschemes({ layout = "ivy" }) end, desc = "Pick Color Schemes"},
+            { "zh",  function() require("snacks").picker.help() end,                                    desc = "Help Pages" },
         }
     }
 }

@@ -53,7 +53,7 @@ if file then
     -- Apply the scheme if it exists
     if scheme and scheme ~= "" then
         vim.cmd("colorscheme " .. scheme)
-        print("Applied saved scheme: " .. scheme)
+        -- print("Applied saved scheme: " .. scheme)
     else
         print("No colorscheme saved.")
     end
@@ -154,6 +154,33 @@ vim.api.nvim_create_autocmd("TermOpen", {
 vim.api.nvim_create_autocmd("BufEnter", {
     pattern = "term://*",
     callback = enter_insert_if_zsh,
+})
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+    pattern = "*",
+    callback = function()
+        local scheme = vim.g.colors_name  -- Correct way to get the colorscheme name
+        if not scheme then return end      -- Prevents errors if it's nil
+
+        -- Path to save the colorscheme selection
+        local config_path = vim.fn.stdpath("config") .. "/colorscheme.txt"
+
+        -- Write the scheme to the file
+        local success, err = pcall(function()
+            local file = io.open(config_path, "w")
+            if not file then return false end
+            file:write(scheme)
+            file:close()
+            return true
+        end)
+
+        -- Check for success and print any errors
+        if not success then
+            vim.notify("Error saving colorscheme: " .. (err or "Unknown Error"), vim.log.levels.ERROR)
+        else
+            vim.notify("Saved colorscheme: " .. scheme, vim.log.levels.INFO)
+        end
+    end,
 })
 
 -- Auto-change directory to the file's directory on buffer enter
