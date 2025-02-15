@@ -75,7 +75,7 @@ vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
 vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 
 -- Command to start practicing Leetcode
-vim.keymap.set("n", "<A-l>", "<cmd>Leet<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zl", "<cmd>Leet<CR>", { noremap = true, silent = true })
 
 -- Command to cd into correct dir Manually
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { noremap = true, silent = true })
