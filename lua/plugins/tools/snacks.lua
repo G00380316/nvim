@@ -114,7 +114,7 @@ return {
             { "zsb", function() require("snacks").picker.git_branches({ layout = "select" }) end,       desc = "Pick and Switch Git Branches" },
 
             -- Other Utils
-            { "zcs", function() require("snacks").picker.colorschemes({ layout = "ivy" }) end, desc = "Pick Color Schemes"},
+            { "zcs", function() require("snacks").picker.colorschemes({ layout = "ivy" }) end,          desc = "Pick Color Schemes" },
             { "zh",  function() require("snacks").picker.help() end,                                    desc = "Help Pages" },
         }
     }

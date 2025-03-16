@@ -145,10 +145,10 @@ local function enter_insert_if_zsh()
 end
 
 -- Autocmd for when a terminal is opened
-vim.api.nvim_create_autocmd("TermOpen", {
-    pattern = "term://*",
-    callback = enter_insert_if_zsh,
-})
+-- vim.api.nvim_create_autocmd("TermOpen", {
+--     pattern = "term://*",
+--     callback = enter_insert_if_zsh,
+-- })
 
 -- Autocmd for when entering a terminal buffer
 vim.api.nvim_create_autocmd("BufEnter", {
