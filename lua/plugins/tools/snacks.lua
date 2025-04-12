@@ -99,7 +99,7 @@ return {
         keys = {
             { "zlg", function() require("snacks").lazygit() end,                                        desc = "Lazygit" },
             { "zsl", function() require("snacks").lazygit.log() end,                                    desc = "Lazygit Logs" },
-            { "ze",  function() require("snacks").explorer() end,                                       desc = "Open Snacks Explorer" },
+            -- { "ze",  function() require("snacks").explorer() end,                                       desc = "Open Snacks Explorer" },
             { "rN",  function() require("snacks").rename.rename_file() end,                             desc = "Fast Rename Current File" },
             { "dB",  function() require("snacks").bufdelete() end,                                      desc = "Delete or Close Buffer  (Confirm)" },
 

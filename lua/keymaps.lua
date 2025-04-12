@@ -102,4 +102,4 @@ vim.api.nvim_set_keymap('n', '<A-l>',
     { noremap = true, silent = true })
 
 -- Term
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
+-- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })

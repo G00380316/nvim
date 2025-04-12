@@ -1,6 +1,13 @@
 -- Disable GUI Cursor
 
 vim.opt.guicursor = ""
+vim.o.guicursor = table.concat({
+    "n-v-c:block",   -- normal, visual, command: block cursor
+    "i-ci-ve:ver25", -- insert, command-insert, visual-exec: vertical bar cursor (25% width)
+    "r-cr:hor20",    -- replace, command-replace: horizontal bar (underline)
+    "o:hor50",       -- operator-pending: thicker underline
+    "a:blinkon100",  -- all modes: blinking speed
+}, ",")
 
 -- Line Numbers
 

@@ -98,12 +98,19 @@ vim.api.nvim_create_autocmd("BufEnter", {
     end,
 })
 
--- Auto-Save on CursorHold
-vim.api.nvim_create_autocmd("CursorHold", {
-    group = auto_save_group,
+vim.api.nvim_create_autocmd("InsertLeave", {
     pattern = "*",
-    command = "silent! write",
+    callback = function()
+        vim.cmd("silent! write")
+    end,
 })
+
+-- Auto-Save on CursorHold
+-- vim.api.nvim_create_autocmd("CursorHold", {
+--    group = auto_save_group,
+--    pattern = "*",
+--    command = "silent! write",
+--})
 
 --vim.api.nvim_create_autocmd("VimEnter", {
 --    callback = function()
@@ -119,16 +126,24 @@ vim.api.nvim_create_autocmd("CursorHold", {
 --})
 
 -- auto-open CommandT on vim open
-vim.api.nvim_create_autocmd("VimEnter", {
-    callback = function()
-        local path = vim.fn.argv(0)
-        if vim.fn.isdirectory(path) == 1 then
-            require('wincent.commandt').setup({ height = vim.o.lines }) -- Make it full screen
-            vim.cmd("silent! CommandT")
-        end
-    end
-})
+-- vim.api.nvim_create_autocmd("VimEnter", {
+--     callback = function()
+--         local path = vim.fn.argv(0)
+--         if vim.fn.isdirectory(path) == 1 then
+--             require('wincent.commandt').setup({ height = vim.o.lines }) -- Make it full screen
+--             vim.cmd("silent! CommandT")
+--         end
+--     end
+-- })
 
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "commandt",
+    callback = function()
+        local opts = { noremap = true, silent = true, buffer = true }
+        vim.keymap.set("n", "<C-c>", ":q<CR>", opts)
+        vim.keymap.set("i", "<C-c>", "<C-\\><C-n>:q<CR>", opts)
+    end,
+})
 -- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
 vim.api.nvim_create_autocmd("BufLeave", {
     group = auto_save_group,
