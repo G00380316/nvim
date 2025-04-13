@@ -9,15 +9,15 @@ return {
             vim.api.nvim_set_keymap("n", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
             vim.api.nvim_set_keymap("v", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
             vim.api.nvim_set_keymap("i", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
-vim.api.nvim_create_autocmd("FileType", {
-  pattern = "floaterm",
-  callback = function()
-    local opts = { noremap = true, silent = true, buffer = true }
-    vim.keymap.set("n", "<C-q>", ":q<CR>", opts)
-    vim.keymap.set("v", "<C-q>", "<C-\\><C-n>:q<CR>", opts)
-    vim.keymap.set("i", "<C-q>", "<C-\\><C-n>:q<CR>", opts)
-  end,
-})
+            vim.api.nvim_create_autocmd("FileType", {
+                pattern = "floaterm",
+                callback = function()
+                    local opts = { noremap = true, silent = true, buffer = true }
+                    vim.keymap.set("n", "<C-q>", ":q<CR>", opts)
+                    vim.keymap.set("v", "<C-q>", "<C-\\><C-n>:q<CR>", opts)
+                    vim.keymap.set("i", "<C-q>", "<C-\\><C-n>:q<CR>", opts)
+                end,
+            })
             -- Open lazygit in a floating terminal
             -- vim.cmd("command! LazyGitFloaterm FloatermNew lazygit")
             -- vim.api.nvim_set_keymap("n", "<C-b>", "<cmd>LazyGitFloaterm<CR>", { noremap = true, silent = true })
@@ -36,6 +36,22 @@ vim.api.nvim_create_autocmd("FileType", {
             vim.api.nvim_set_keymap("v", "<C-z>", ":FloatermNew<CR>", { noremap = true, silent = true })
             vim.api.nvim_set_keymap("i", "<C-z>", "<Esc>:FloatermNew<CR>", { noremap = true, silent = true })
             vim.api.nvim_set_keymap("t", "<C-z>", "<cmd>FloatermNew<CR>", { noremap = true, silent = true })
+            vim.keymap.set("n", "<C-t>", function()
+                local dir = vim.fn.expand('%:p:h')
+                vim.cmd('FloatermNew! cd ' .. dir)
+            end, { noremap = true, silent = true })
+            vim.keymap.set("v", "<C-t>", function()
+                local dir = vim.fn.expand('%:p:h')
+                vim.cmd('FloatermNew! cd ' .. dir)
+            end, { noremap = true, silent = true })
+            vim.keymap.set("i", "<C-t>", function()
+                local dir = vim.fn.expand('%:p:h')
+                vim.cmd('FloatermNew! cd ' .. dir)
+            end, { noremap = true, silent = true })
+            vim.keymap.set("t", "<C-t>", function()
+                local dir = vim.fn.expand('%:p:h')
+                vim.cmd('FloatermNew! cd ' .. dir)
+            end, { noremap = true, silent = true })
         end,
     },
 }
