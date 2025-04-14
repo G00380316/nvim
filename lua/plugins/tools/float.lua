@@ -12,6 +12,7 @@ return {
                     vim.keymap.set("n", "<c-k>", ":q<cr>", opts)
                     vim.keymap.set("v", "<c-k>", "<c-\\><c-n>:q<cr>", opts)
                     vim.keymap.set("i", "<c-k>", "<c-\\><c-n>:q<cr>", opts)
+                    vim.keymap.set("t", "<c-k>", "<c-\\><c-n>:q<cr>", opts)
                 end,
             })
             -- Open lazygit in a floating terminal
