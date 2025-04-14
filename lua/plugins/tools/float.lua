@@ -9,13 +9,13 @@ return {
             vim.api.nvim_set_keymap("n", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
             vim.api.nvim_set_keymap("v", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
             vim.api.nvim_set_keymap("i", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
-            vim.api.nvim_create_autocmd("FileType", {
+            vim.api.nvim_create_autocmd("filetype", {
                 pattern = "floaterm",
                 callback = function()
                     local opts = { noremap = true, silent = true, buffer = true }
-                    vim.keymap.set("n", "<C-q>", ":q<CR>", opts)
-                    vim.keymap.set("v", "<C-q>", "<C-\\><C-n>:q<CR>", opts)
-                    vim.keymap.set("i", "<C-q>", "<C-\\><C-n>:q<CR>", opts)
+                    vim.keymap.set("n", "<c-b>", ":q<cr>", opts)
+                    vim.keymap.set("v", "<c-b>", "<c-\\><c-n>:q<cr>", opts)
+                    vim.keymap.set("i", "<c-b>", "<c-\\><c-n>:q<cr>", opts)
                 end,
             })
             -- Open lazygit in a floating terminal
