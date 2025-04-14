@@ -5,17 +5,13 @@ return {
             vim.g.floaterm_autoclose = true -- Automatically close terminal window when process exits
 
             -- Close the current floating terminal
-            vim.api.nvim_set_keymap("t", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
-            vim.api.nvim_set_keymap("n", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
-            vim.api.nvim_set_keymap("v", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
-            vim.api.nvim_set_keymap("i", "<C-k>", [[<C-\><C-n>:FloatermKill<CR>]], { noremap = true, silent = true })
             vim.api.nvim_create_autocmd("filetype", {
                 pattern = "floaterm",
                 callback = function()
                     local opts = { noremap = true, silent = true, buffer = true }
-                    vim.keymap.set("n", "<c-b>", ":q<cr>", opts)
-                    vim.keymap.set("v", "<c-b>", "<c-\\><c-n>:q<cr>", opts)
-                    vim.keymap.set("i", "<c-b>", "<c-\\><c-n>:q<cr>", opts)
+                    vim.keymap.set("n", "<c-k>", ":q<cr>", opts)
+                    vim.keymap.set("v", "<c-k>", "<c-\\><c-n>:q<cr>", opts)
+                    vim.keymap.set("i", "<c-k>", "<c-\\><c-n>:q<cr>", opts)
                 end,
             })
             -- Open lazygit in a floating terminal
