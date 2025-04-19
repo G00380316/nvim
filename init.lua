@@ -76,18 +76,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     end,
 })
 
-vim.api.nvim_create_autocmd({ "BufWritePre" }, {
-    group = auto_save_group,
-    pattern = "*",
-    command = [[%s/\s\+$//e]],
-})
-
--- Auto-save on buffer leave
---vim.api.nvim_create_autocmd("BufLeave", {
---  group = auto_save_group,
---  pattern = "*",
--- command = "silent! write",
---})
 
 -- Auto-Format on BufLeave
 vim.api.nvim_create_autocmd("BufEnter", {
@@ -98,11 +86,40 @@ vim.api.nvim_create_autocmd("BufEnter", {
     end,
 })
 
-vim.api.nvim_create_autocmd("InsertLeave", {
+-- vim.api.nvim_create_autocmd({ "BufWritePre" }, {
+--     group = auto_save_group,
+--     pattern = "*",
+--     callback = function()
+--         vim.cmd("silent! write")
+--     end,
+-- })
+--
+-- vim.api.nvim_create_autocmd("BufEnter", {
+--     group = auto_dir_group,
+--     pattern = "*",
+--     callback = function()
+--         vim.cmd("silent! write")
+--     end,
+-- })
+--
+-- vim.api.nvim_create_autocmd("InsertLeave", {
+--     pattern = "*",
+--     callback = function()
+--         vim.cmd("silent! write")
+--     end,
+-- })
+
+-- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
+vim.api.nvim_create_autocmd("BufLeave", {
+    group = auto_save_group,
     pattern = "*",
-    callback = function()
-        vim.cmd("silent! write")
-    end,
+    command = "silent! write",
+})
+
+vim.api.nvim_create_autocmd("VimLeave", {
+    group = auto_save_group,
+    pattern = "*",
+    command = "silent! write",
 })
 
 -- Auto-Save on CursorHold
@@ -143,12 +160,6 @@ vim.api.nvim_create_autocmd("FileType", {
         vim.keymap.set("n", "<C-c>", ":q<CR>", opts)
         vim.keymap.set("i", "<C-c>", "<C-\\><C-n>:q<CR>", opts)
     end,
-})
--- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
-vim.api.nvim_create_autocmd("BufLeave", {
-    group = auto_save_group,
-    pattern = "*",
-    command = "silent! write",
 })
 
 local function enter_insert_if_zsh()

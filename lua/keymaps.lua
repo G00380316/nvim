@@ -28,7 +28,7 @@ vim.keymap.set("n", "N", "Nzzzv")
 
 -- Paste Over Selection Without Yanking(prevents the copied text from being overwritten)
 
-vim.keymap.set("x", "P", [["_dP]])
+vim.keymap.set("x", "p", [["_dP]])
 
 -- Delete Without Affecting Clipboard
 
