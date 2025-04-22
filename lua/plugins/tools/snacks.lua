@@ -97,16 +97,14 @@ return {
         },
         -- NOTE: Keymaps
         keys = {
-            { "zlg", function() require("snacks").lazygit() end,                                        desc = "Lazygit" },
+            { "zg",  function() require("snacks").lazygit() end,                                        desc = "Lazygit" },
             { "zsl", function() require("snacks").lazygit.log() end,                                    desc = "Lazygit Logs" },
             -- { "ze",  function() require("snacks").explorer() end,                                       desc = "Open Snacks Explorer" },
             { "rN",  function() require("snacks").rename.rename_file() end,                             desc = "Fast Rename Current File" },
             { "dB",  function() require("snacks").bufdelete() end,                                      desc = "Delete or Close Buffer  (Confirm)" },
 
             -- Snacks Picker
-            { "zf",  function() require("snacks").picker.files() end,                                   desc = "Find Files (Snacks Picker)" },
             { "zcf", function() require("snacks").picker.files({ cwd = vim.fn.stdpath("config") }) end, desc = "Find Config File" },
-            { "zg",  function() require("snacks").picker.grep() end,                                    desc = "Grep word" },
             { "zwg", function() require("snacks").picker.grep_word() end,                               desc = "Search Visual selection or Word",  mode = { "n", "x" } },
             { "zkm", function() require("snacks").picker.keymaps({ layout = "ivy" }) end,               desc = "Search Keymaps (Snacks Picker)" },
 

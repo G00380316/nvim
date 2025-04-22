@@ -45,7 +45,7 @@ return {
             -- If set to false, files are moved to the trash directory
             -- To get this dir run :echo stdpath('data')
             -- ~/.local/share/neobean/mini.files/trash
-            permanent_delete = false,
+            permanent_delete = true,
         },
     },
     keys = {

@@ -74,8 +74,27 @@ vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
 -- Remap Shift + R to r
 vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 
+-- Snack Mappings
+vim.keymap.set(
+    { "n", "v", "i", "t" }, -- modes
+    "C-g",                  -- keybinding
+    function() require("snacks").picker.grep() end,
+    { desc = "Grep word" }
+)
+
+vim.keymap.set(
+    { "n", "v", "i" }, -- modes
+    "C-f",             -- keybinding
+    function() require("snacks").picker.files() end, { desc = "Find Files (Snacks Picker)" }
+)
+
 -- Command to start practicing Leetcode
-vim.keymap.set("n", "zl", "<cmd>Leet<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true })
 
 -- Command to cd into correct dir Manually
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { noremap = true, silent = true })
@@ -100,6 +119,10 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true
 vim.api.nvim_set_keymap('n', '<A-l>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
+
+-- Saving and Exting vim mappings 
+vim.keymap.set({ "n", "i", "v" }, "<C-s>","<cmd>w<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<C-w>","<cmd>wqa<CR>", { noremap = true, silent = true })
 
 -- Term
 -- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
