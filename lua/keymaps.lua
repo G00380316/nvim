@@ -77,14 +77,14 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 -- Snack Mappings
 vim.keymap.set(
     { "n", "v", "i", "t" }, -- modes
-    "C-g",                  -- keybinding
+    "<C-g>",                  -- keybinding
     function() require("snacks").picker.grep() end,
     { desc = "Grep word" }
 )
 
 vim.keymap.set(
     { "n", "v", "i" }, -- modes
-    "C-f",             -- keybinding
+    "<C-f>",             -- keybinding
     function() require("snacks").picker.files() end, { desc = "Find Files (Snacks Picker)" }
 )
 
@@ -120,9 +120,9 @@ vim.api.nvim_set_keymap('n', '<A-l>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
 
--- Saving and Exting vim mappings 
-vim.keymap.set({ "n", "i", "v" }, "<C-s>","<cmd>w<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<C-w>","<cmd>wqa<CR>", { noremap = true, silent = true })
+-- Saving and Exting vim mappings
+vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wqa<CR>", { noremap = true, silent = true })
 
 -- Term
 -- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
