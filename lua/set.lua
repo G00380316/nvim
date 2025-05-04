@@ -42,7 +42,7 @@ vim.opt.backup = false
 
 -- Undo History Configuration
 
-vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
+--vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
 vim.opt.undofile = true
 
 -- Search Behavior

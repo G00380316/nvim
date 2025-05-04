@@ -1,14 +1,5 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
-vim.g.CommandTPreferredImplementation = 'lua'
-vim.g.CommandTEncoding = "UTF-8"
-vim.g.CommandTFileScanner = "watchman"
-vim.g.CommandTMaxCachedDirectories = 10
-vim.g.CommandTMaxFiles = 1000000
-vim.g.CommandTScanDotDirectories = 1
-vim.g.CommandTTraverseSCM = "pwd"
-vim.g.CommandTWildIgnore = vim.o.wildignore ..
-    ",**/.git/*,**/.hg/*,**/bower_components/*,**/node_modules/*,**/tmp/*"
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then

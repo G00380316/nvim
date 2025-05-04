@@ -10,12 +10,12 @@ return {
             'nvim-lua/plenary.nvim',
         },
         opts = {
-            workspaces = {
-                {
-                    name = 'Projects',
-                    path = '~/OneDrive/Apps/remotely-save/Projects',
-                },
-            },
+            -- workspaces = {
+            --     {
+            --         name = 'Projects',
+            --         path = '~/OneDrive/Apps/remotely-save/Projects',
+            --     },
+            -- },
             ui = {
                 enable = true,
                 checkboxes = {
