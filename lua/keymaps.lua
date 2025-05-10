@@ -77,14 +77,14 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 -- Snack Mappings
 vim.keymap.set(
     { "n", "v", "i", "t" }, -- modes
-    "<C-g>",                  -- keybinding
+    "<C-g>",                -- keybinding
     function() require("snacks").picker.grep() end,
     { desc = "Grep word" }
 )
 
 vim.keymap.set(
     { "n", "v", "i" }, -- modes
-    "<C-f>",             -- keybinding
+    "<C-f>",           -- keybinding
     function() require("snacks").picker.files() end, { desc = "Find Files (Snacks Picker)" }
 )
 

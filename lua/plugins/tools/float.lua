@@ -23,10 +23,14 @@ return {
             -- vim.api.nvim_set_keymap("t", "<C-b>", "<cmd>LazyGitFloaterm<CR>", { noremap = true, silent = true })
 
             -- Navigate to the previous floating terminal
-            vim.api.nvim_set_keymap("n", "<C-p>", ":FloatermPrev<CR>", { noremap = true, silent = true })
-            vim.api.nvim_set_keymap("v", "<C-p>", ":FloatermPrev<CR>", { noremap = true, silent = true })
-            vim.api.nvim_set_keymap("i", "<C-p>", ":FloatermPrev<CR>", { noremap = true, silent = true })
-            vim.api.nvim_set_keymap("t", "<C-p>", "<cmd>:FloatermPrev<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("n", "ztp", ":FloatermPrev<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("v", "ztp", ":FloatermPrev<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("i", "ztp", ":FloatermPrev<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("t", "ztp", "<cmd>:FloatermPrev<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("n", "ztn", ":FloatermNext<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("v", "ztn", ":FloatermNext<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("i", "ztn", ":FloatermNext<CR>", { noremap = true, silent = true })
+            vim.api.nvim_set_keymap("t", "ztn", "<cmd>:FloatermNext<CR>", { noremap = true, silent = true })
 
             -- Open a new floating terminal
             vim.api.nvim_set_keymap("n", "<C-z>", ":FloatermNew<CR>", { noremap = true, silent = true })
