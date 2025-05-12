@@ -110,11 +110,11 @@ vim.api.nvim_create_autocmd("BufEnter", {
 -- })
 
 -- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
-vim.api.nvim_create_autocmd("BufLeave", {
-    group = auto_save_group,
-    pattern = "*",
-    command = "silent! write",
-})
+-- vim.api.nvim_create_autocmd("BufLeave", {
+--     group = auto_save_group,
+--     pattern = "*",
+--     command = "silent! write",
+-- })
 
 vim.api.nvim_create_autocmd("VimLeave", {
     group = auto_save_group,
