@@ -53,6 +53,16 @@ vim.opt.incsearch = true
 -- `hlsearch = false`: Disables the highlighting of search results after searching.
 -- `incsearch = true`: Shows incremental search results as you type.
 
+-- Enabling Cursor line
+vim.o.cursorline = true
+-- Dim gray background for CursorLine
+vim.cmd [[
+  highlight CursorLine cterm=NONE ctermbg=236 guibg=#2e2e2e
+]]
+
+-- Auto Read File
+vim.o.autoread = true
+
 -- Enable 24-bit RGB Colors
 
 vim.opt.termguicolors = true
