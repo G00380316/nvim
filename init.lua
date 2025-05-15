@@ -77,7 +77,7 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 
--- Auto-Format on BufLeave
+-- Auto-Format on "BufEnter"
 vim.api.nvim_create_autocmd("BufEnter", {
     group = auto_dir_group,
     pattern = "*",
@@ -86,41 +86,12 @@ vim.api.nvim_create_autocmd("BufEnter", {
     end,
 })
 
--- vim.api.nvim_create_autocmd({ "BufWritePre" }, {
---     group = auto_save_group,
---     pattern = "*",
---     callback = function()
---         vim.cmd("silent! write")
---     end,
--- })
---
--- vim.api.nvim_create_autocmd("BufEnter", {
---     group = auto_dir_group,
---     pattern = "*",
---     callback = function()
---         vim.cmd("silent! write")
---     end,
--- })
---
--- vim.api.nvim_create_autocmd("InsertLeave", {
---     pattern = "*",
---     callback = function()
---         vim.cmd("silent! write")
---     end,
--- })
-
 -- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
 -- vim.api.nvim_create_autocmd("BufLeave", {
 --     group = auto_save_group,
 --     pattern = "*",
 --     command = "silent! write",
 -- })
-
-vim.api.nvim_create_autocmd("VimLeave", {
-    group = auto_save_group,
-    pattern = "*",
-    command = "silent! write",
-})
 
 -- Auto-Save on CursorHold
 -- vim.api.nvim_create_autocmd("CursorHold", {
@@ -129,18 +100,32 @@ vim.api.nvim_create_autocmd("VimLeave", {
 --    command = "silent! write",
 --})
 
---vim.api.nvim_create_autocmd("VimEnter", {
---    callback = function()
---        local path = vim.fn.argv(0)
---        -- Check if the buffer opened is a directory
---        if vim.fn.isdirectory(path) == 1 then
---            vim.schedule(function()
---                -- Open the directory interactively
---                require("mini.files").open(path, { allow_changes = true })
---            end)
---        end
---    end
---})
+vim.api.nvim_create_autocmd("VimLeave", {
+    group = auto_save_group,
+    pattern = "*",
+    command = "silent! write",
+})
+
+local function limit_buffers(max)
+  local bufs = vim.tbl_filter(function(buf)
+    return vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_get_option(buf, "buflisted")
+  end, vim.api.nvim_list_bufs())
+
+  if #bufs > max then
+    -- Sort by buffer number (older are usually lower numbers)
+    table.sort(bufs)
+    for i = 1, #bufs - max do
+      vim.api.nvim_buf_delete(bufs[i], { force = true })
+    end
+  end
+end
+
+-- Call this after opening a buffer
+vim.api.nvim_create_autocmd("BufEnter", {
+  callback = function()
+    limit_buffers(4)
+  end,
+})
 
 -- auto-open CommandT on vim open
 -- vim.api.nvim_create_autocmd("VimEnter", {
@@ -169,12 +154,6 @@ local function enter_insert_if_zsh()
         vim.cmd("startinsert")
     end
 end
-
--- Autocmd for when a terminal is opened
--- vim.api.nvim_create_autocmd("TermOpen", {
---     pattern = "term://*",
---     callback = enter_insert_if_zsh,
--- })
 
 -- Autocmd for when entering a terminal buffer
 vim.api.nvim_create_autocmd("BufEnter", {
@@ -208,45 +187,6 @@ vim.api.nvim_create_autocmd("ColorScheme", {
         end
     end,
 })
-
--- Auto-change directory to the file's directory on buffer enter
---vim.api.nvim_create_autocmd("BufEnter", {
---   group = auto_dir_group,
---   pattern = "*",
---   command = "silent! :cd %:p:h",
---})
-
--- Function to find the nearest directory containing package.json or .git
---[[local function find_project_root()
-    local path = vim.fn.expand("%:p:h")
-
-    -- First, look for the nearest package.json
-    local package_json_dir = vim.fn.findfile("package.json", path .. ";")
-    if package_json_dir ~= "" then
-        return vim.fn.fnamemodify(package_json_dir, ":p:h")
-    end
-
-    -- If no package.json is found, look for the nearest .git directory
-    local git_dir = vim.fn.finddir(".git", path .. ";")
-    if git_dir ~= "" then
-        -- Return the parent directory of the .git directory
-        return vim.fn.fnamemodify(git_dir, ":p:h:h")
-    end
-
-    -- If neither is found, fall back to the current file's directory
-    return path
-end
-
--- Auto-change directory to the nearest package.json, .git's parent directory, or current file's directory
-vim.api.nvim_create_autocmd("BufEnter", {
-    pattern = "*",
-    callback = function()
-        local project_root = find_project_root()
-        if project_root then
-            vim.cmd("silent! cd " .. project_root)
-        end
-    end,
-})]]
 
 --vim.g.netrw_browse_split = 0
 --vim.g.netrw_banner = 0
