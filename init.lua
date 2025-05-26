@@ -86,6 +86,26 @@ vim.api.nvim_create_autocmd("BufEnter", {
     end,
 })
 
+vim.api.nvim_create_autocmd("BufLeave", {
+    callback = function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        local modified = vim.api.nvim_buf_get_option(bufnr, "modified")
+        local listed = vim.api.nvim_buf_get_option(bufnr, "buflisted")
+        local buftype = vim.api.nvim_buf_get_option(bufnr, "buftype")
+
+        -- Only remove truly empty, unmodified unnamed buffers
+        if name == "" and not modified and listed and buftype == "" then
+            vim.schedule(function()
+                -- Recheck to avoid closing active buffer too soon
+                if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() ~= bufnr then
+                    vim.api.nvim_buf_delete(bufnr, { force = true })
+                end
+            end)
+        end
+    end,
+})
+
 -- Auto-Save on BufLeave (Important will warn that buffers aren't saved if not)
 -- vim.api.nvim_create_autocmd("BufLeave", {
 --     group = auto_save_group,
@@ -107,24 +127,24 @@ vim.api.nvim_create_autocmd("VimLeave", {
 })
 
 local function limit_buffers(max)
-  local bufs = vim.tbl_filter(function(buf)
-    return vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_get_option(buf, "buflisted")
-  end, vim.api.nvim_list_bufs())
+    local bufs = vim.tbl_filter(function(buf)
+        return vim.api.nvim_buf_is_loaded(buf) and vim.api.nvim_buf_get_option(buf, "buflisted")
+    end, vim.api.nvim_list_bufs())
 
-  if #bufs > max then
-    -- Sort by buffer number (older are usually lower numbers)
-    table.sort(bufs)
-    for i = 1, #bufs - max do
-      vim.api.nvim_buf_delete(bufs[i], { force = true })
+    if #bufs > max then
+        -- Sort by buffer number (older are usually lower numbers)
+        table.sort(bufs)
+        for i = 1, #bufs - max do
+            vim.api.nvim_buf_delete(bufs[i], { force = true })
+        end
     end
-  end
 end
 
 -- Call this after opening a buffer
 vim.api.nvim_create_autocmd("BufEnter", {
-  callback = function()
-    limit_buffers(4)
-  end,
+    callback = function()
+        limit_buffers(10)
+    end,
 })
 
 -- auto-open CommandT on vim open
@@ -187,6 +207,25 @@ vim.api.nvim_create_autocmd("ColorScheme", {
         end
     end,
 })
+
+local notify = require("notify")
+
+-- Override vim.notify to filter out LSP messages
+vim.notify = function(msg, level, opts)
+  -- Suppress LSP "xxx progress" and other noisy messages
+  if type(msg) == "string" and msg:match("exit code") then
+    return
+  end
+  if msg:match("warning: multiple different client offset_encodings") then
+    return
+  end
+  if msg:match(".*LSP.*") or msg:match("client") then
+    return
+  end
+
+  -- Otherwise, show the message using nvim-notify
+  notify(msg, level, opts)
+end
 
 --vim.g.netrw_browse_split = 0
 --vim.g.netrw_banner = 0

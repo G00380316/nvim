@@ -122,7 +122,7 @@ vim.api.nvim_set_keymap('n', '<A-l>',
 
 -- Saving and Exting vim mappings
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wqa<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
 
 -- Term
 -- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
