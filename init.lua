@@ -212,19 +212,22 @@ local notify = require("notify")
 
 -- Override vim.notify to filter out LSP messages
 vim.notify = function(msg, level, opts)
-  -- Suppress LSP "xxx progress" and other noisy messages
-  if type(msg) == "string" and msg:match("exit code") then
-    return
-  end
-  if msg:match("warning: multiple different client offset_encodings") then
-    return
-  end
-  if msg:match(".*LSP.*") or msg:match("client") then
-    return
-  end
+    -- Suppress LSP "xxx progress" and other noisy messages
+    if type(msg) == "string" and msg:match("exit code") then
+        return
+    end
+    if msg:match("warning: multiple different client offset_encodings") then
+        return
+    end
+    if msg:match(".*LSP.*") or msg:match("client") then
+        return
+    end
+    if msg:match("Pending") or msg:match("Judging...") then
+        return
+    end
 
-  -- Otherwise, show the message using nvim-notify
-  notify(msg, level, opts)
+    -- Otherwise, show the message using nvim-notify
+    notify(msg, level, opts)
 end
 
 --vim.g.netrw_browse_split = 0
