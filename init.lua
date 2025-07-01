@@ -9,6 +9,7 @@ vim.g.CommandTScanDotDirectories = 1
 vim.g.CommandTTraverseSCM = "pwd"
 vim.g.CommandTWildIgnore = vim.o.wildignore ..
     ",**/.git/*,**/.hg/*,**/bower_components/*,**/node_modules/*,**/tmp/*"
+vim.opt.termguicolors = true
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 if not (vim.uv or vim.loop).fs_stat(lazypath) then

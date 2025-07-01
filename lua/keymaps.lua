@@ -105,6 +105,8 @@ vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { des
 -- CommandT Keybind to Open the file explorer
 vim.keymap.set({ "n", "v", "t", "i" }, 'zt', '<cmd>CommandT<CR>')
 
+vim.keymap.set({ "n", "v", "t", "i" }, 'zs', '<cmd>SshLauncher<CR>')
+
 -- Snacks Keybind to Opem dashboard
 vim.keymap.set({ "n", "v", "t", "i" }, "zd", function()
     Snacks.dashboard.open(opts)
@@ -123,6 +125,9 @@ vim.api.nvim_set_keymap('n', '<A-l>',
 -- Saving and Exting vim mappings
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
 
+-- Nvim Tree Mapping 
+vim.keymap.set({ "n", "i", "v" }, "<C-e>", "<cmd>NvimTreeFindFile<CR>", { noremap = true, silent = true })
 -- Term
 -- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })

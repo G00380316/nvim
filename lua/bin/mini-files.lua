@@ -49,20 +49,20 @@ return {
         },
     },
     keys = {
+        -- {
+        --     "<C-s>",
+        --     function()
+        --         require("mini.files").open(vim.api.nvim_buf_get_name(0), true)
+        --     end,
+        --     desc = "Open mini.files (Directory of Current File)",
+        -- },
         {
             "<C-e>",
             function()
-                require("mini.files").open(vim.api.nvim_buf_get_name(0), true)
+                require("mini.files").open(vim.uv.cwd(), true)
             end,
-            desc = "Open mini.files (Directory of Current File)",
+            desc = "Open mini.files (cwd)",
         },
-        -- {
-        --    "<C-s>",
-        --    function()
-        --        require("mini.files").open(vim.uv.cwd(), true)
-        --    end,
-        --    desc = "Open mini.files (cwd)",
-        --},
     },
     config = function(_, opts)
         require("mini.files").setup(opts)
