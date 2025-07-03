@@ -103,7 +103,7 @@ vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { 
 vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
 -- CommandT Keybind to Open the file explorer
-vim.keymap.set({ "n", "v", "t", "i" }, 'zt', '<cmd>CommandT<CR>')
+-- vim.keymap.set({ "n", "v", "t", "i" }, 'zt', '<cmd>CommandT<CR>')
 
 vim.keymap.set({ "n", "v", "t", "i" }, 'zs', '<cmd>SshLauncher<CR>')
 
@@ -127,7 +127,7 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silen
 vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
 
--- Nvim Tree Mapping 
+-- Nvim Tree Mapping
 vim.keymap.set({ "n", "i", "v" }, "<C-e>", "<cmd>NvimTreeFindFile<CR>", { noremap = true, silent = true })
 -- Term
 -- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
