@@ -9,7 +9,6 @@
   "cmp-nvim-lua": { "branch": "main", "commit": "f12408bdb54c39c23e67cab726264c10db33ada8" },
   "cmp-path": { "branch": "main", "commit": "c6635aae33a50d6010bf1aa756ac2398a2d54c32" },
   "cmp-treesitter": { "branch": "master", "commit": "958fcfa0d8ce46d215e19cc3992c542f576c4123" },
-  "command-t": { "branch": "main", "commit": "33b8b7cecb7093a6cb23e7fa2b321c6bbfb1177a" },
   "compiler.nvim": { "branch": "main", "commit": "725e4dc7c4e261a11c98de020fe268f0bb69ad4b" },
   "dressing.nvim": { "branch": "master", "commit": "2d7c2db2507fa3c4956142ee607431ddb2828639" },
   "fidget.nvim": { "branch": "main", "commit": "d9ba6b7bfe29b3119a610892af67602641da778e" },

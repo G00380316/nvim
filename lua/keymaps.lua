@@ -105,7 +105,8 @@ vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { des
 -- CommandT Keybind to Open the file explorer
 -- vim.keymap.set({ "n", "v", "t", "i" }, 'zt', '<cmd>CommandT<CR>')
 
-vim.keymap.set({ "n", "v", "t", "i" }, 'zs', '<cmd>SshLauncher<CR>')
+vim.keymap.set({ "n", "v", "t", "i" }, 'zssh', '<cmd>SshLauncher<CR>')
+vim.keymap.set({ "n", "v", "t", "i" }, 'zssa', '<cmd>SshAddKey<CR>')
 
 -- Snacks Keybind to Opem dashboard
 vim.keymap.set({ "n", "v", "t", "i" }, "zd", function()
