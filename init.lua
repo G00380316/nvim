@@ -77,6 +77,19 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     end,
 })
 
+local web_dev_autosave = vim.api.nvim_create_augroup("WebDevAutoSave", { clear = true })
+
+vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
+    group = web_dev_autosave,
+    pattern = { "*.html", "*.css", "*.js" }, -- File types to target
+    callback = function()
+        -- Check if the buffer has a file name and has been modified
+        if vim.fn.filereadable(vim.api.nvim_buf_get_name(0)) == 1 and vim.bo.modified then
+            vim.cmd("update") -- Use "update" to save only if there are changes
+        end
+    end,
+    desc = "Auto save for html, css, and js files",
+})
 
 -- Auto-Format on "BufEnter"
 vim.api.nvim_create_autocmd("BufEnter", {
@@ -231,6 +244,107 @@ vim.notify = function(msg, level, opts)
     notify(msg, level, opts)
 end
 
+-- Create an augroup to ensure commands are not duplicated
+local autoclose_group = vim.api.nvim_create_augroup("AutoCloseFloats", { clear = true })
+
+-- Define a list of filetypes that should NOT be auto-closed
+local exclude_filetypes = {
+    "TelescopePrompt",
+    "NvimTree",
+    "lazy",
+    "mason",
+    "noice",
+    "alpha",
+    "trouble",
+    "snacks",
+}
+
+vim.api.nvim_create_autocmd("WinLeave", {
+    group = autoclose_group,
+    pattern = "*",
+    callback = function(args)
+        local win_id = args.win
+        local bufnr = args.buf
+
+        -- First, ensure win_id is a number before using it.
+        if type(win_id) ~= "number" then
+            return
+        end
+
+        -- Then, check if the window is still valid.
+        if not vim.api.nvim_win_is_valid(win_id) then
+            return
+        end
+
+        -- Check if the buffer in the window is listed for exclusion
+        local ftype = vim.bo[bufnr].filetype
+        if vim.tbl_contains(exclude_filetypes, ftype) then
+            return
+        end
+
+        -- Get window configuration
+        local config = vim.api.nvim_win_get_config(win_id)
+
+        -- Check if the window is a float
+        if config.relative ~= "" then
+            vim.schedule(function()
+                -- check validity again inside the schedule
+                if vim.api.nvim_win_is_valid(win_id) then
+                    vim.api.nvim_win_close(win_id, true)
+                end
+            end)
+        end
+    end,
+})
+
+
+local smart_cd_group = vim.api.nvim_create_augroup("SmartCD", { clear = true })
+
+local function find_project_root(file_path)
+    -- Get the directory of the current file
+    local dir = vim.fn.fnamemodify(file_path, ":h")
+    if dir == "" or not vim.fn.isdirectory(dir) then
+        return nil
+    end
+
+    -- Search upwards for project markers
+    local markers = { ".git", "package.json", ".project" }
+    local root = vim.fs.find(markers, { path = dir, upward = true, type = "directory" })[1]
+        or vim.fs.find(markers, { path = dir, upward = true, type = "file" })[1]
+
+    if root then
+        -- Return the directory containing the marker
+        return vim.fn.fnamemodify(root, ":h")
+    end
+
+    return nil
+end
+
+vim.api.nvim_create_autocmd("BufEnter", {
+    group = smart_cd_group,
+    pattern = "*", -- Run for all files
+    callback = function()
+        local file_path = vim.api.nvim_buf_get_name(0)
+        if file_path == "" then return end
+
+        -- Find the project root using our new function
+        local project_root = find_project_root(file_path)
+
+        -- Determine the target directory
+        local target_dir
+        if project_root then
+            target_dir = project_root                  -- Target the discovered project root 🌳
+        else
+            target_dir = vim.fn.fnamemodify(file_path, ":h") -- Fallback to the file's directory
+        end
+
+        -- Change directory only if needed and the target is valid
+        if target_dir and vim.fn.isdirectory(target_dir) == 1 and vim.fn.getcwd() ~= target_dir then
+            vim.cmd.cd(target_dir)
+        end
+    end,
+    desc = "Smartly change directory to project root or file's directory",
+})
 --vim.g.netrw_browse_split = 0
 --vim.g.netrw_banner = 0
 --vim.g.netrw_winsize = 25

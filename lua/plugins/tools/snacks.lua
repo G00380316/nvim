@@ -101,8 +101,6 @@ return {
             { "zsl", function() require("snacks").lazygit.log() end,                                    desc = "Lazygit Logs" },
             -- { "ze",  function() require("snacks").explorer() end,                                       desc = "Open Snacks Explorer" },
             { "rN",  function() require("snacks").rename.rename_file() end,                             desc = "Fast Rename Current File" },
-            { "dB",  function() require("snacks").bufdelete() end,                                      desc = "Delete or Close Buffer  (Confirm)" },
-
             -- Snacks Picker
             { "zcf", function() require("snacks").picker.files({ cwd = vim.fn.stdpath("config") }) end, desc = "Find Config File" },
             { "zwg", function() require("snacks").picker.grep_word() end,                               desc = "Search Visual selection or Word",  mode = { "n", "x" } },

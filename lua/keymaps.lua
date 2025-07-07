@@ -119,7 +119,7 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 
 -- Lua Configuration for Neovim
-vim.api.nvim_set_keymap('n', '<A-l>',
+vim.api.nvim_set_keymap('n', '<zcl>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
 
