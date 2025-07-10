@@ -50,10 +50,6 @@ vim.keymap.set("n", "Q", "<nop>")
 
 vim.keymap.set("n", "R", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
 
--- Search the next Occurence of the current word (oops apparently this is inbuilt to neovim but I will leave this here just incase)
-
---vim.keymap.set("n", "N", [[:let @/ = '\<' . expand('<cword>') . '\>' | execute 'normal! n'<CR>]])
-
 -- Open compiler
 vim.keymap.set("n", "<A-c>", "<cmd>CompilerOpen<CR>", { noremap = true, silent = true })
 
@@ -130,5 +126,19 @@ vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silen
 
 -- Nvim Tree Mapping
 vim.keymap.set({ "n", "i", "v" }, "<C-e>", "<cmd>NvimTreeFindFile<CR>", { noremap = true, silent = true })
--- Term
--- vim.keymap.set({ "n", "v", "i", "t" }, "<C-t>", "<cmd>term<CR>", { noremap = true, silent = true })
+
+-- 1. A keymap to START the interactive replace
+-- This finds the word under the cursor and readies the first replacement.
+vim.keymap.set('n', 'r', '*Ncgn', {
+    noremap = true,
+    silent = true,
+    desc = "Start interactive replace for word under cursor"
+})
+
+-- 2. A keymap for "Replace and Find Next"
+-- This repeats the last change (.) and jumps to the next match (n).
+vim.keymap.set('n', 'rn', '.n', {
+    noremap = true,
+    silent = true,
+    desc = "Replace current match and find next"
+})
