@@ -205,13 +205,24 @@ return {
                 -- Call the function to show diagnostics initially
                 show_diagnostics_by_severity()
             end, { desc = "Show Grouped Diagnostics with Headers in Dressing" })
-            -- Diagnostic settings
+            -- Better LSP UI
             vim.diagnostic.config({
-                virtual_text = true,     -- Disable inline diagnostic messages
-                signs = true,            -- Enable signs in the sign column
-                underline = true,        -- Enable underlining
-                update_in_insert = true, -- Update diagnostics while typing
-                severity_sort = true,    -- Sort diagnostics by severity
+                virtual_text = { prefix = '●' },
+                signs = true,
+                underline = true,
+                update_in_insert = false,
+                severity_sort = true,
+            })
+
+            vim.diagnostic.config({
+                signs = {
+                    text = {
+                        [vim.diagnostic.severity.ERROR] = "✗",
+                        [vim.diagnostic.severity.WARN] = "⚠",
+                        [vim.diagnostic.severity.INFO] = "ℹ",
+                        [vim.diagnostic.severity.HINT] = "💡",
+                    }
+                }
             })
         end,
     },
