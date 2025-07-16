@@ -114,3 +114,22 @@ vim.notify = function(msg, level, opts)
     -- Otherwise, show the message using nvim-notify
     notify(msg, level, opts)
 end
+
+-- Monkey Patch Load Session to improve error handling
+vim.schedule(function()
+    local ok, utils = pcall(require, "session_manager.utils")
+    if ok then
+        -- Patch the `load_session` function if needed, or override the bwipe logic
+        local old_load_session = utils.load_session
+        utils.load_session = function(...)
+            local status, err = pcall(old_load_session, ...)
+            if not status and err:match("E517: No buffers were wiped out") then
+                -- suppress error
+                return
+            end
+            if not status then
+                error(err)
+            end
+        end
+    end
+end)

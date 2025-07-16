@@ -90,6 +90,7 @@ vim.keymap.set({ "n", "v", "t", "i" }, "zd", function()
     Snacks.dashboard.open(opts)
 end)
 -- SessionManager commands
+vim.keymap.set("n", "<A-s>", "<cmd>SessionManager<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zss", "<cmd>SessionManager save_current_session<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zsm", "<cmd>SessionManager load_session<CR>", { desc = "Load Dir Session" })
 vim.keymap.set("n", "zsd", "<cmd>SessionManager delete_session<CR>", { desc = "Load Dir Session" })
