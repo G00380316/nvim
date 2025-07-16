@@ -25,8 +25,8 @@ vim.opt.expandtab = true
 vim.opt.smartindent = true -- Smart auto-indenting
 vim.opt.autoindent = true  -- Copy indent from current line
 
---vim.opt.wrap = false -- Disable Line Wrapping
-vim.opt.wrap = true
+vim.opt.wrap = false -- Disable Line Wrapping
+-- vim.opt.wrap = true
 -- Stops words from being broken by wrapping
 vim.opt.linebreak = true
 vim.opt.wrapmargin = 0            -- " Disable margin-based line wrapping
@@ -125,3 +125,7 @@ vim.opt.foldlevel = 99                              -- Start with all folds open
 -- Split behavior
 vim.opt.splitbelow = true -- Horizontal splits go below
 vim.opt.splitright = true -- Vertical splits go right
+
+-- Input timeout
+vim.o.timeout = true
+vim.o.timeoutlen = 500

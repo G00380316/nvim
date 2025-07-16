@@ -90,7 +90,6 @@ return {
                 sections = {
                     { section = "header", padding = 4 },
                     { icon = " ", title = "Keymaps", section = "keys", indent = 2, padding = 1 },
-                    { icon = " ", title = "Projects", section = "projects", indent = 2, padding = 1 },
                     { section = "startup" },
                 },
             },
@@ -103,7 +102,7 @@ return {
             { "rN",  function() require("snacks").rename.rename_file() end,                             desc = "Fast Rename Current File" },
             -- Snacks Picker
             { "zcf", function() require("snacks").picker.files({ cwd = vim.fn.stdpath("config") }) end, desc = "Find Config File" },
-            { "zwg", function() require("snacks").picker.grep_word() end,                               desc = "Search Visual selection or Word",  mode = { "n", "x" } },
+            { "zwg", function() require("snacks").picker.grep_word() end,                               desc = "Search Visual selection or Word", mode = { "n", "x" } },
             { "zkm", function() require("snacks").picker.keymaps({ layout = "ivy" }) end,               desc = "Search Keymaps (Snacks Picker)" },
 
             -- Git Stuff
