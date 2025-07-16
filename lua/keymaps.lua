@@ -99,7 +99,7 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 -- Saving and Exting vim mappings
-vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<A-s>", "<cmd>w<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- 1. A keymap to START the interactive replace
