@@ -97,8 +97,6 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
--- Nvim Tree Mapping
-vim.keymap.set({ "n", "i", "v" }, "<C-e>", "<cmd>NvimTreeFindFile<CR>", { noremap = true, silent = true })
 -- 1. A keymap to START the interactive replace
 -- This finds the word under the cursor and readies the first replacement.
 vim.keymap.set('n', 'r', '*Ncgn', {

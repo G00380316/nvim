@@ -1,5 +1,11 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
+-- vim.g.netrw_banner = 0    -- remove the banner
+-- vim.g.netrw_browse_split = 0 -- open files in the same window
+-- vim.g.netrw_altv = 1      -- vertical split opens on the right
+-- vim.g.netrw_liststyle = 3 -- tree-style listing
+-- vim.g.netrw_winsize = 25  -- sidebar width (in %)
+
 vim.opt.termguicolors = true
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
