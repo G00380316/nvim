@@ -52,5 +52,6 @@
   "telescope.nvim": { "branch": "master", "commit": "6312868392331c9c0f22725041f1ec2bef57c751" },
   "vim-floaterm": { "branch": "master", "commit": "fd4bdd66eca56c6cc59f2119e4447496d8cde2ea" },
   "vim-fugitive": { "branch": "master", "commit": "593f831d6f6d779cbabb70a4d1e6b1b1936a88af" },
-  "vim-suda": { "branch": "master", "commit": "9adda7d195222d4e2854efb2a88005a120296c47" }
+  "vim-suda": { "branch": "master", "commit": "9adda7d195222d4e2854efb2a88005a120296c47" },
+  "vim-tmux-navigator": { "branch": "master", "commit": "c45243dc1f32ac6bcf6068e5300f3b2b237e576a" }
 }
