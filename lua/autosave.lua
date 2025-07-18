@@ -12,9 +12,3 @@ vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
     end,
     desc = "Auto save for html, css, and js files",
 })
-
-vim.api.nvim_create_autocmd("VimLeave", {
-    group = auto_save_group,
-    pattern = "*",
-    command = "silent! write",
-})

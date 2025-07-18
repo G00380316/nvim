@@ -33,3 +33,18 @@ vim.keymap.set('n', 'n', function() smart_search_and_jump('n') end, {
 vim.keymap.set('n', 'N', function() smart_search_and_jump('N') end, {
     desc = "Find previous occurrence of current word"
 })
+
+-- 1. A keymap to START the interactive replace
+-- This finds the word under the cursor and readies the first replacement.
+vim.keymap.set('n', 'r', '*Ncgn', {
+    noremap = true,
+    silent = true,
+    desc = "Start interactive replace for word under cursor"
+})
+-- 2. A keymap for "Replace and Find Next"
+-- This repeats the last change (.) and jumps to the next match (n).
+vim.keymap.set('n', 'rn', '.n', {
+    noremap = true,
+    silent = true,
+    desc = "Replace current match and find next"
+})

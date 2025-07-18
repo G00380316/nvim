@@ -1,47 +1,64 @@
 return {
     {
         "nvim-telescope/telescope.nvim",
-        tag = "0.1.6",
-        dependencies = { "nvim-lua/plenary.nvim" },
+        lazy = false,
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "nvim-telescope/telescope-ui-select.nvim",
+        },
         config = function()
             local builtin = require("telescope.builtin")
-            -- vim.keymap.set({ "n", "v", "i" }, "<C-f>", builtin.find_files, {})
-            -- vim.keymap.set({ "n", "v", "i", "t" }, "<C-g>", builtin.live_grep, {})
+
+            -- Keymaps
+            vim.keymap.set({ "n", "v", "i" }, "<C-f>", builtin.find_files, {})
+            vim.keymap.set({ "n", "v", "i", "t" }, "<C-g>", builtin.live_grep, {})
             vim.keymap.set("n", "H", builtin.help_tags, {})
             vim.keymap.set("n", "T", "<cmd>Telescope<CR>", {})
+            vim.keymap.set("n", "zcf", function()
+                require("telescope.builtin").find_files({ cwd = vim.fn.stdpath("config") })
+            end, { desc = "Find Config Files" })
+            vim.keymap.set({ "n", "x" }, "zwg", function()
+                local b = require("telescope.builtin")
+                if vim.fn.mode():find("[vV]") then
+                    b.grep_string({ search = vim.fn.getreg('z'), use_regex = false })
+                else
+                    b.grep_string({ search = vim.fn.expand("<cword>") })
+                end
+            end, { desc = "Search Visual selection or Word" })
+            vim.keymap.set("n", "zkm", builtin.keymaps, { desc = "Search Keymaps" })
+            vim.keymap.set("n", "zsb", builtin.git_branches, { desc = "Git Branches" })
+            vim.keymap.set("n", "zcs", builtin.colorscheme, { desc = "Choose Colorscheme" })
+            -- Command to allow for selection and search of buffer with dressing
+            vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
-            -- Telescope setup for buffers picker
+            -- Single, unified Telescope setup
             require("telescope").setup {
                 defaults = {
                     mappings = {
                         i = {
-                            ["<C-d>"] = "delete_buffer", -- Delete buffer in insert mode
+                            ["<C-d>"] = "delete_buffer",
                         },
                         n = {
-                            ["<C-d>"] = "delete_buffer", -- Delete buffer in normal mode
+                            ["<C-d>"] = "delete_buffer",
                         },
                     },
                 },
                 pickers = {
                     buffers = {
-                        sort_mru = true,              -- Sort by most recently used
-                        ignore_current_buffer = true, -- Ignore the current buffer
-                        previewer = true,             -- Enable preview for buffers
+                        sort_mru = true,
+                        ignore_current_buffer = true,
+                        previewer = true,
                     },
                 },
-            }
-        end,
-    },
-    {
-        "nvim-telescope/telescope-ui-select.nvim",
-        config = function()
-            require("telescope").setup({
+                -- Add extensions to the main setup table
                 extensions = {
                     ["ui-select"] = {
                         require("telescope.themes").get_dropdown({}),
                     },
                 },
-            })
+            }
+
+            -- Load extensions after setup
             require("telescope").load_extension("ui-select")
         end,
     },

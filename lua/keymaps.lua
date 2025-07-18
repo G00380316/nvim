@@ -8,6 +8,8 @@
 --
 -- Disable "K" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("n", "K", "<nop>")
+-- Disable "C-v" normal mode which seems to spit out memory info and sometimes errors
+vim.keymap.set("i", "<C-v>", "<nop>")
 -- Keep Cursor Position When Joining Lines
 vim.keymap.set("n", "J", "mzJ`z")
 -- Scroll Half-Page and Center
@@ -60,35 +62,17 @@ vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true })
 vim.keymap.set("v", ">", ">gv", { noremap = true, silent = true })
 -- Outdent selected block of text
 vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
--- Snack Mappings
-vim.keymap.set(
-    { "n", "v", "i", "t" }, -- modes
-    "<C-g>",                -- keybinding
-    function() require("snacks").picker.grep() end,
-    { desc = "Grep word" }
-)
-vim.keymap.set(
-    { "n", "v", "i" }, -- modes
-    "<C-f>",           -- keybinding
-    function() require("snacks").picker.files() end, { desc = "Find Files (Snacks Picker)" }
-)
 -- Command to start practicing Leetcode
 vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true })
-vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true })
 -- Command to cd into correct dir Manually
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { noremap = true, silent = true })
--- Command to allow for selection and search of buffer with dressing
-vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
+-- Ssh Plugin
 vim.keymap.set({ "n", "v", "t", "i" }, 'zssh', '<cmd>SshLauncher<CR>')
 vim.keymap.set({ "n", "v", "t", "i" }, 'zssa', '<cmd>SshAddKey<CR>')
--- Snacks Keybind to Open dashboard
-vim.keymap.set({ "n", "v", "t", "i" }, "zd", function()
-    Snacks.dashboard.open(opts)
-end)
 -- SessionManager commands
 vim.keymap.set("n", "<A-s>", "<cmd>SessionManager<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zss", "<cmd>SessionManager save_current_session<CR>", { desc = "Save Session" })
@@ -99,25 +83,51 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 -- Saving and Exting vim mappings
+vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-s>", "<cmd>w<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
--- 1. A keymap to START the interactive replace
--- This finds the word under the cursor and readies the first replacement.
-vim.keymap.set('n', 'r', '*Ncgn', {
-    noremap = true,
-    silent = true,
-    desc = "Start interactive replace for word under cursor"
-})
--- 2. A keymap for "Replace and Find Next"
--- This repeats the last change (.) and jumps to the next match (n).
-vim.keymap.set('n', 'rn', '.n', {
-    noremap = true,
-    silent = true,
-    desc = "Replace current match and find next"
-})
-
 -- Lua Configuration for Neovim
-vim.api.nvim_set_keymap('n', '<zcp>',
+vim.api.nvim_set_keymap('n', '<C-Space>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
+
+-- Open lazygit in floating terminal (main UI)
+vim.keymap.set("n", "zg", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local width = math.floor(vim.o.columns * 0.8)
+    local height = math.floor(vim.o.lines * 0.8)
+    local row = math.floor((vim.o.lines - height) / 2)
+    local col = math.floor((vim.o.columns - width) / 2)
+    vim.api.nvim_open_win(buf, true, {
+        relative = "editor",
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = "minimal",
+        border = "rounded",
+    })
+    vim.fn.termopen("lazygit")
+    vim.cmd("startinsert")
+end, { desc = "Open Lazygit in floating terminal" })
+
+-- Open lazygit logs view in floating terminal
+vim.keymap.set("n", "zsl", function()
+    local buf = vim.api.nvim_create_buf(false, true)
+    local width = math.floor(vim.o.columns * 0.8)
+    local height = math.floor(vim.o.lines * 0.8)
+    local row = math.floor((vim.o.lines - height) / 2)
+    local col = math.floor((vim.o.columns - width) / 2)
+    vim.api.nvim_open_win(buf, true, {
+        relative = "editor",
+        width = width,
+        height = height,
+        row = row,
+        col = col,
+        style = "minimal",
+        border = "rounded",
+    })
+    vim.fn.termopen("lazygit log")
+    vim.cmd("startinsert")
+end, { desc = "Open Git Logs in floating terminal" })

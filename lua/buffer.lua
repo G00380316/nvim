@@ -53,6 +53,7 @@ local exclude_filetypes = {
     "alpha",
     "trouble",
     "snacks",
+    "Leet"
 }
 
 vim.api.nvim_create_autocmd("WinLeave", {
