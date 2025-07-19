@@ -15,5 +15,12 @@ return {
         -- configuration goes here
         ---@type lc.lang
         lang = "python3",
+        ---@type boolean
+        image_support = true,
+        ---@type lc.storage
+        storage = {
+            home = "~/Coding/Projects/Leetcode",
+            cache = vim.fn.stdpath("cache") .. "/leetcode",
+        },
     },
 }

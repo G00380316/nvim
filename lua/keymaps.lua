@@ -82,16 +82,25 @@ vim.keymap.set("n", "zsd", "<cmd>SessionManager delete_session<CR>", { desc = "L
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
+-- Split vertically
+vim.keymap.set({ "n", "v", "i", "t" }, '<A-v>', ':vsplit<CR>', { noremap = true, silent = true })
+-- Split horizontally
+vim.keymap.set({ "n", "v", "i", "t" }, '<A-h>', ':split<CR>', { noremap = true, silent = true })
 -- Saving and Exting vim mappings
-vim.keymap.set({ "n", "i", "v" }, "<C-s>", "<cmd>w<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<A-s>", "<cmd>w<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
+    if vim.fn.mode() == "i" then
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
+    end
+    vim.cmd("write")
+end, { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.api.nvim_set_keymap('n', '<C-Space>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
-
+-- Toggling Live Server on and off
+vim.keymap.set({ "n", "v", "i", "t" }, '<A-l>', ':LiveServerToggle<CR>', { noremap = true, silent = true })
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
     local buf = vim.api.nvim_create_buf(false, true)
