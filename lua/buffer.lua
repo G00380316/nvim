@@ -107,15 +107,3 @@ vim.api.nvim_create_autocmd("BufEnter", {
     pattern = "term://*",
     callback = enter_insert_if_zsh,
 })
-
-vim.api.nvim_create_autocmd("FocusGained", {
-  callback = function()
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-      -- Temporarily switch to each window
-      vim.api.nvim_set_current_win(win)
-      -- Move cursor to column 0 and scroll horizontally to left edge
-      vim.cmd("normal! 0zs")
-    end
-  end,
-})
-

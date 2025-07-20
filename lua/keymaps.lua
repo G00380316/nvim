@@ -79,6 +79,7 @@ vim.keymap.set("n", "zss", "<cmd>SessionManager save_current_session<CR>", { des
 vim.keymap.set("n", "zsm", "<cmd>SessionManager load_session<CR>", { desc = "Load Dir Session" })
 vim.keymap.set("n", "zsd", "<cmd>SessionManager delete_session<CR>", { desc = "Load Dir Session" })
 -- Buffer Navigation
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-0>", "<cmd>normal! 0zs<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
@@ -93,7 +94,7 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     end
     vim.cmd("write")
 end, { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<C-w>", "<cmd>wq<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<A-c>", "<cmd>wq<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.api.nvim_set_keymap('n', '<C-Space>',

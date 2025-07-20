@@ -87,6 +87,7 @@ vim.opt.errorbells = false             -- No error bells
 vim.opt.backspace = "indent,eol,start" -- Better backspace behavior
 vim.opt.autochdir = false              -- Don't auto change directory
 vim.opt.iskeyword:append("-")          -- Treat dash as part of word
+vim.opt.iskeyword:append("_")          -- Treat dash as part of word
 vim.opt.path:append("**")              -- include subdirectories in search
 vim.opt.selection = "exclusive"        -- Selection behavior
 vim.opt.clipboard = "unnamedplus"      -- Adding clipboard func with wl-clipboard
@@ -127,3 +128,5 @@ vim.opt.maxmempattern = 20000
 -- Split behavior
 vim.opt.splitbelow = true -- Horizontal splits go below
 vim.opt.splitright = true -- Vertical splits go right
+
+vim.opt.spellfile = vim.fn.stdpath("config") .. "/spell/en.utf-8.add"
