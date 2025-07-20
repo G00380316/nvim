@@ -25,8 +25,8 @@ vim.keymap.set({ "n", "v" }, "d", [["_d]])
 -- Disable `Q` (which used to start Ex mode)
 vim.keymap.set("n", "Q", "<nop>")
 -- Custom key mappings to navigate wrapped lines
-vim.keymap.set("n", "j", "gj", { noremap = true }) -- Use 'gj' to move down visually wrapped lines
-vim.keymap.set("n", "k", "gk", { noremap = true }) -- Use 'gk' to move up visually wrapped lines
+-- vim.keymap.set("n", "j", "gj", { noremap = true }) -- Use 'gj' to move down visually wrapped lines
+-- vim.keymap.set("n", "k", "gk", { noremap = true }) -- Use 'gk' to move up visually wrapped lines
 
 
 -- Tweaks
@@ -94,8 +94,8 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     end
     vim.cmd("write")
 end, { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<A-c>", "<cmd>wq<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<A-w>", "<cmd>q<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<A-s>", "<cmd>wq<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<A-q>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.api.nvim_set_keymap('n', '<C-Space>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',

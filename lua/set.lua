@@ -13,10 +13,6 @@ vim.o.guicursor = table.concat({
     "a:blinkon100",  -- all modes: blinking speed
 }, ",")
 
--- Line Numbers
-vim.opt.nu = true
-vim.opt.relativenumber = true
-
 -- Tab and Indentation Settings
 vim.opt.tabstop = 4
 vim.opt.softtabstop = 4
@@ -25,13 +21,17 @@ vim.opt.expandtab = true
 vim.opt.smartindent = true -- Smart auto-indenting
 vim.opt.autoindent = true  -- Copy indent from current line
 
-vim.opt.wrap = false       -- Disable Line Wrapping
--- vim.opt.wrap = true
+-- vim.opt.wrap = false       -- Disable Line Wrapping
+vim.opt.wrap = true
 -- Stops words from being broken by wrapping
 vim.opt.linebreak = true
 vim.opt.wrapmargin = 0            -- " Disable margin-based line wrapping
 vim.opt.textwidth = 0             -- " Disable hard wrapping at a fixed width
 vim.opt.formatoptions:remove("t") -- " Remove the 't' flag to stop automatic text wrapping
+
+-- Line Numbers
+vim.opt.nu = true
+vim.opt.relativenumber = true
 
 -- Undo History Configuration
 vim.opt.undodir = os.getenv("HOME") .. "/.vim/undodir"
