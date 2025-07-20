@@ -15,9 +15,6 @@ end
 
 -- A function to clear search highlighting and the search pattern
 local function clear_search()
-    -- Turn off search highlighting
-    vim.opt.hlsearch = false
-    -- Optional: Clear the last search pattern to fully exit the "mode"
     vim.fn.setreg('/', '')
     vim.notify("Search cleared", vim.log.levels.INFO, { timeout = 1000 })
 end
@@ -41,6 +38,13 @@ vim.keymap.set('n', 'n', function() smart_search_and_jump('n') end, {
 
 vim.keymap.set('n', 'N', function() smart_search_and_jump('N') end, {
     desc = "Find previous occurrence of current word (case-insensitive)"
+})
+
+vim.api.nvim_create_autocmd("ModeChanged", {
+    pattern = "*:[^sS]*", -- any mode change except when entering search mode
+    callback = function()
+        vim.fn.setreg('/', '')
+    end,
 })
 
 -- 1. A keymap to START the interactive replace
