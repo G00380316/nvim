@@ -133,3 +133,10 @@ vim.schedule(function()
         end
     end
 end)
+
+vim.api.nvim_create_autocmd("VimEnter", {
+    callback = function()
+        vim.fn.setreg('/', '') -- clear the search pattern
+        vim.cmd('nohlsearch')  -- turn off search highlighting
+    end,
+})

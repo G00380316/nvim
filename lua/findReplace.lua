@@ -40,23 +40,27 @@ vim.keymap.set('n', 'N', function() smart_search_and_jump('N') end, {
     desc = "Find previous occurrence of current word (case-insensitive)"
 })
 
-vim.api.nvim_create_autocmd("ModeChanged", {
-    pattern = "*:[^sS]*", -- any mode change except when entering search mode
-    callback = function()
-        vim.fn.setreg('/', '')
-    end,
-})
-
 -- 1. A keymap to START the interactive replace
 -- This finds the word under the cursor and readies the first replacement.
-vim.keymap.set('n', '<A-r>', '*Ncgn', {
+vim.keymap.set('n', 'wr', '*Ncgn', {
     noremap = true,
     silent = true,
     desc = "Start interactive replace for word under cursor"
 })
 -- 2. A keymap for "Replace and Find Next"
 -- This repeats the last change (.) and jumps to the next match (n).
-vim.keymap.set('n', 'rn', '.n', {
+vim.keymap.set({ 'n', 'i' }, '<A-n>', function()
+    -- If in insert mode, leave insert mode first
+    if vim.fn.mode() == 'i' then
+        -- exit insert mode, repeat last change, then next search
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>.n', true, false, true), 'n', false)
+        -- optionally re-enter insert mode if you want, uncomment next line:
+        -- vim.api.nvim_feedkeys('i', 'n', false)
+    else
+        -- in normal mode just do .n
+        vim.api.nvim_feedkeys('.n', 'n', false)
+    end
+end, {
     noremap = true,
     silent = true,
     desc = "Replace current match and find next"
