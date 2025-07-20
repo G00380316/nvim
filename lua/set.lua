@@ -4,14 +4,8 @@ vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
 vim.api.nvim_set_hl(0, "EndOfBuffer", { bg = "none" })
 
 -- Disable GUI Cursor
-vim.opt.guicursor = ""
-vim.o.guicursor = table.concat({
-    "n-v-c:block",   -- normal, visual, command: block cursor
-    "i-ci-ve:ver25", -- insert, command-insert, visual-exec: vertical bar cursor (25% width)
-    "r-cr:hor20",    -- replace, command-replace: horizontal bar (underline)
-    "o:hor50",       -- operator-pending: thicker underline
-    "a:blinkon100",  -- all modes: blinking speed
-}, ",")
+-- vim.opt.guicursor = ""
+vim.opt.guicursor = "n-v-c-sm:block-blinkon1,i-ci-ve:ver25,r-cr-o:hor20,a:Cursor/Cursor"
 
 -- Tab and Indentation Settings
 vim.opt.tabstop = 4
@@ -39,7 +33,7 @@ vim.opt.undofile = true
 -- Search Behavior
 vim.opt.ignorecase = true -- Case insensitive search
 vim.opt.smartcase = true  -- Case sensitive if uppercase in search
-vim.opt.hlsearch = false  -- `hlsearch = false`: Disables the highlighting of search results after searching.
+vim.opt.hlsearch = true   -- `hlsearch = false`: Disables the highlighting of search results after searching.
 vim.opt.incsearch = true  -- `incsearch = true`: Shows incremental search results as you type.
 vim.o.cursorline = true   -- Enabling Cursor line
 -- Scrolloff and Signcolumn
@@ -52,7 +46,6 @@ vim.cmd [[
 ]]
 
 -- Visual settings
-vim.opt.termguicolors = true                      -- Enable 24-bit RGB Colors
 vim.opt.signcolumn = "yes"                        -- Always show sign column
 vim.opt.colorcolumn = "100"                       -- Show column at 100 characters
 vim.opt.showmatch = true                          -- Highlight matching brackets
@@ -86,16 +79,16 @@ vim.opt.hidden = true                  -- Allow hidden buffers
 vim.opt.errorbells = false             -- No error bells
 vim.opt.backspace = "indent,eol,start" -- Better backspace behavior
 vim.opt.autochdir = false              -- Don't auto change directory
-vim.opt.iskeyword:append("-")          -- Treat dash as part of word
-vim.opt.iskeyword:append("_")          -- Treat dash as part of word
-vim.opt.path:append("**")              -- include subdirectories in search
-vim.opt.selection = "exclusive"        -- Selection behavior
-vim.opt.clipboard = "unnamedplus"      -- Adding clipboard func with wl-clipboard
-vim.cmd("set mouse=")                  -- Disables mouse
-vim.opt.modifiable = true              -- Allow buffer modifications
-vim.opt.encoding = "UTF-8"             -- Set encoding
-vim.opt.isfname:append("@-@")          -- Adds `@-@` to the list of valid characters for filenames.
-vim.cmd("filetype plugin indent on")   -- Enable file type detection and related plugins
+-- vim.opt.iskeyword:append("-")          -- Treat dash as part of word
+-- vim.opt.iskeyword:append("_")          -- Treat dash as part of word
+vim.opt.iskeyword:append("")         -- Treats every character as a Word
+vim.opt.path:append("**")            -- include subdirectories in search
+vim.opt.clipboard = "unnamedplus"    -- Adding clipboard func with wl-clipboard
+vim.cmd("set mouse=")                -- Disables mouse
+vim.opt.modifiable = true            -- Allow buffer modifications
+vim.opt.encoding = "UTF-8"           -- Set encoding
+vim.opt.isfname:append("@-@")        -- Adds `@-@` to the list of valid characters for filenames.
+vim.cmd("filetype plugin indent on") -- Enable file type detection and related plugins
 
 -- Tab display settings
 vim.opt.showtabline = 1 -- Always show tabline (0=never, 1=when multiple tabs, 2=always)

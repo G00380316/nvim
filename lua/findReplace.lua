@@ -25,18 +25,27 @@ end
 vim.keymap.set('n', 'cn', clear_search, {
     desc = "Clear search highlight and pattern"
 })
--- Map 'n' and 'N' to the new smart function
+
+function smart_search_and_jump(direction)
+    local current_word = vim.fn.expand('<cword>')
+    if current_word == '' then return end
+
+    local search_pattern = '\\c\\<' .. current_word .. '\\>'
+    vim.fn.setreg('/', search_pattern) -- set search register
+    vim.cmd('normal! ' .. direction)   -- perform normal n or N
+end
+
 vim.keymap.set('n', 'n', function() smart_search_and_jump('n') end, {
-    desc = "Find next occurrence of current word"
+    desc = "Find next occurrence of current word (case-insensitive)"
 })
 
 vim.keymap.set('n', 'N', function() smart_search_and_jump('N') end, {
-    desc = "Find previous occurrence of current word"
+    desc = "Find previous occurrence of current word (case-insensitive)"
 })
 
 -- 1. A keymap to START the interactive replace
 -- This finds the word under the cursor and readies the first replacement.
-vim.keymap.set('n', 'r', '*Ncgn', {
+vim.keymap.set('n', '<A-r>', '*Ncgn', {
     noremap = true,
     silent = true,
     desc = "Start interactive replace for word under cursor"

@@ -91,7 +91,7 @@ return {
 
             -- Setting keybindings for LSP functionality
             vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})
-            vim.keymap.set({ "n", "v" }, "<C-v>", vim.lsp.buf.definition, {})
+            vim.keymap.set({ "n", "v" }, "<A-i>", vim.lsp.buf.definition, {})
 
             -- Autocompletion setup
             cmp.setup({
@@ -102,7 +102,6 @@ return {
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
-                    ["<A-l>"] = cmp.mapping.complete(),
                     ["<CR>"] = cmp.mapping.confirm({ select = true }),
                 }),
                 sources = cmp.config.sources({
