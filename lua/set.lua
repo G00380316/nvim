@@ -59,7 +59,7 @@ vim.opt.winblend = 0                              -- Floating window transparenc
 vim.opt.conceallevel = 0                          -- Don't hide markup
 vim.opt.concealcursor = ""                        -- Don't hide cursor line markup
 vim.opt.lazyredraw = true                         -- Don't redraw during macros
-vim.opt.synmaxcol = 300                           -- Syntax highlighting limit
+-- vim.opt.synmaxcol = 300                           -- Syntax highlighting limit
 
 -- File handling
 vim.opt.backup = false                            -- Don't create backup files
@@ -122,4 +122,15 @@ vim.opt.maxmempattern = 20000
 vim.opt.splitbelow = true -- Horizontal splits go below
 vim.opt.splitright = true -- Vertical splits go right
 
-vim.opt.spellfile = vim.fn.stdpath("config") .. "/spell/en.utf-8.add"
+local spellfile = vim.fn.stdpath("config") .. "/spell/en.utf-8.add"
+
+-- Ensure the directory exists
+vim.fn.mkdir(vim.fn.fnamemodify(spellfile, ":h"), "p")
+
+-- Ensure the file exists (optional but safe)
+if vim.fn.filereadable(spellfile) == 0 then
+  local f = io.open(spellfile, "w")
+  if f then f:close() end
+end
+
+vim.opt.spellfile = spellfile

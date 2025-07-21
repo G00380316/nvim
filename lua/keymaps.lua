@@ -67,11 +67,13 @@ vim.keymap.set({ 'n', 'i', 'v', 't' }, '<C-w>', '<Nop>', { noremap = true, silen
 -- Map Alt+w in normal mode to switch to next window immediately
 vim.keymap.set('n', '<A-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window" })
 -- In insert mode, use Alt+w to exit insert mode and switch window
-vim.keymap.set('i', '<A-w>', '<Esc><C-w>w', { noremap = true, silent = true, desc = "Switch to next window from insert mode" })
+vim.keymap.set('i', '<A-w>', '<Esc><C-w>w',
+    { noremap = true, silent = true, desc = "Switch to next window from insert mode" })
 -- In visual mode, map Alt+w to switch window
 vim.keymap.set('v', '<A-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window in visual mode" })
 -- In terminal mode, map Alt+w to switch window after going to normal mode
-vim.keymap.set('t', '<A-w>', [[<C-\><C-n><C-w>w]], { noremap = true, silent = true, desc = "Switch to next window in terminal mode" })
+vim.keymap.set('t', '<A-w>', [[<C-\><C-n><C-w>w]],
+    { noremap = true, silent = true, desc = "Switch to next window in terminal mode" })
 -- Command to start practicing Leetcode
 vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
@@ -151,3 +153,18 @@ vim.keymap.set("n", "zsl", function()
     vim.fn.termopen("lazygit log")
     vim.cmd("startinsert")
 end, { desc = "Open Git Logs in floating terminal" })
+
+vim.keymap.set("n", "p", function()
+    local reg = vim.fn.getreg('"')
+    local regtype = vim.fn.getregtype('"')
+
+    -- If linewise, trim newline to force character-wise paste
+    if regtype == 'V' then
+        -- remove trailing newline if it exists
+        reg = reg:gsub('\n$', '')
+        vim.fn.setreg('"', reg, 'v') -- 'v' = characterwise
+    end
+
+    -- Do normal paste
+    vim.api.nvim_feedkeys("p", "n", false)
+end, { noremap = true, silent = true, desc = "Paste after cursor (even for linewise)" })

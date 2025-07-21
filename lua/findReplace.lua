@@ -65,3 +65,21 @@ end, {
     silent = true,
     desc = "Replace current match and find next"
 })
+-- 2. A keymap for "Replace and Find Previous"
+-- This repeats the last change (.) and jumps to the previous match (N).
+vim.keymap.set({ 'n', 'i' }, '<A-N>', function()
+    -- If in insert mode, leave insert mode first
+    if vim.fn.mode() == 'i' then
+        -- exit insert mode, repeat last change, then next search
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>.N', true, false, true), 'n', false)
+        -- optionally re-enter insert mode if you want, uncomment next line:
+        -- vim.api.nvim_feedkeys('i', 'n', false)
+    else
+        -- in normal mode just do .n
+        vim.api.nvim_feedkeys('.N', 'n', false)
+    end
+end, {
+    noremap = true,
+    silent = true,
+    desc = "Replace current match and find next"
+})
