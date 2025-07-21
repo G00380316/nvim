@@ -86,7 +86,7 @@ end, {
     desc = "Replace previous match properly"
 })
 
-vim.keymap.set({ "n", "i", "v" }, "/", function()
+vim.keymap.set({ "n" }, "/", function()
     require("telescope.builtin").current_buffer_fuzzy_find({
         layout_strategy = "vertical",
         layout_config = {
