@@ -83,3 +83,16 @@ end, {
     silent = true,
     desc = "Replace current match and find next"
 })
+
+vim.keymap.set({ "n", "i", "v" }, "/", function()
+    require("telescope.builtin").current_buffer_fuzzy_find({
+        layout_strategy = "vertical",
+        layout_config = {
+            width = 0.4,
+            height = 0.3,
+            prompt_position = "top",
+        },
+        border = true,
+        winblend = 10, -- Optional transparency
+    })
+end, { desc = "Find in current buffer (minimal)" })

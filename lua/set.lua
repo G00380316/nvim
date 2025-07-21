@@ -129,8 +129,8 @@ vim.fn.mkdir(vim.fn.fnamemodify(spellfile, ":h"), "p")
 
 -- Ensure the file exists (optional but safe)
 if vim.fn.filereadable(spellfile) == 0 then
-  local f = io.open(spellfile, "w")
-  if f then f:close() end
+    local f = io.open(spellfile, "w")
+    if f then f:close() end
 end
 
 vim.opt.spellfile = spellfile
