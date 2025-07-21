@@ -62,6 +62,16 @@ vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true })
 vim.keymap.set("v", ">", ">gv", { noremap = true, silent = true })
 -- Outdent selected block of text
 vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
+-- Disable all mappings that start with Ctrl+w
+vim.keymap.set({ 'n', 'i', 'v', 't' }, '<C-w>', '<Nop>', { noremap = true, silent = true })
+-- Map Alt+w in normal mode to switch to next window immediately
+vim.keymap.set('n', '<A-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window" })
+-- In insert mode, use Alt+w to exit insert mode and switch window
+vim.keymap.set('i', '<A-w>', '<Esc><C-w>w', { noremap = true, silent = true, desc = "Switch to next window from insert mode" })
+-- In visual mode, map Alt+w to switch window
+vim.keymap.set('v', '<A-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window in visual mode" })
+-- In terminal mode, map Alt+w to switch window after going to normal mode
+vim.keymap.set('t', '<A-w>', [[<C-\><C-n><C-w>w]], { noremap = true, silent = true, desc = "Switch to next window in terminal mode" })
 -- Command to start practicing Leetcode
 vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
