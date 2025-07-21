@@ -96,9 +96,9 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 -- Split vertically
-vim.keymap.set({ "n", "v", "i", "t" }, '<A-v>', ':vsplit<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, '<A-v>', '<cmd>vsplit<CR>', { noremap = true, silent = true })
 -- Split horizontally
-vim.keymap.set({ "n", "v", "i", "t" }, '<A-h>', ':split<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, '<A-h>', '<cmd>split<CR>', { noremap = true, silent = true })
 -- Saving and Exting vim mappings
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     if vim.fn.mode() == "i" then
@@ -113,7 +113,7 @@ vim.api.nvim_set_keymap('n', '<C-Space>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
 -- Toggling Live Server on and off
-vim.keymap.set({ "n", "v", "i", "t" }, '<A-l>', ':LiveServerToggle<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, '<A-l>', '<cmd>LiveServerToggle<CR>', { noremap = true, silent = true })
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
     local buf = vim.api.nvim_create_buf(false, true)
