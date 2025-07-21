@@ -47,41 +47,43 @@ vim.keymap.set('n', 'wr', '*Ncgn', {
     silent = true,
     desc = "Start interactive replace for word under cursor"
 })
--- 2. A keymap for "Replace and Find Next"
--- This repeats the last change (.) and jumps to the next match (n).
 vim.keymap.set({ 'n', 'i' }, '<A-n>', function()
-    -- If in insert mode, leave insert mode first
-    if vim.fn.mode() == 'i' then
-        -- exit insert mode, repeat last change, then next search
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>.n', true, false, true), 'n', false)
-        -- optionally re-enter insert mode if you want, uncomment next line:
+    local function do_repeat()
+        vim.api.nvim_feedkeys('.', 'n', false)
+        -- Uncomment below to return to insert mode after replacing
         -- vim.api.nvim_feedkeys('i', 'n', false)
+    end
+
+    if vim.fn.mode() == 'i' then
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>n', true, false, true), 'n', false)
+        vim.defer_fn(do_repeat, 30)
     else
-        -- in normal mode just do .n
-        vim.api.nvim_feedkeys('.n', 'n', false)
+        vim.api.nvim_feedkeys('n', 'n', false)
+        vim.defer_fn(do_repeat, 30)
     end
 end, {
     noremap = true,
     silent = true,
-    desc = "Replace current match and find next"
+    desc = "Replace current match and find next (with delay fix)"
 })
 -- 2. A keymap for "Replace and Find Previous"
 -- This repeats the last change (.) and jumps to the previous match (N).
 vim.keymap.set({ 'n', 'i' }, '<A-N>', function()
-    -- If in insert mode, leave insert mode first
+    local function do_repeat()
+        vim.api.nvim_feedkeys('.', 'n', false)
+    end
+
     if vim.fn.mode() == 'i' then
-        -- exit insert mode, repeat last change, then next search
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>.N', true, false, true), 'n', false)
-        -- optionally re-enter insert mode if you want, uncomment next line:
-        -- vim.api.nvim_feedkeys('i', 'n', false)
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>N', true, false, true), 'n', false)
+        vim.defer_fn(do_repeat, 30) -- delay 30ms
     else
-        -- in normal mode just do .n
-        vim.api.nvim_feedkeys('.N', 'n', false)
+        vim.api.nvim_feedkeys('N', 'n', false)
+        vim.defer_fn(do_repeat, 30)
     end
 end, {
     noremap = true,
     silent = true,
-    desc = "Replace current match and find next"
+    desc = "Replace previous match properly"
 })
 
 vim.keymap.set({ "n", "i", "v" }, "/", function()
