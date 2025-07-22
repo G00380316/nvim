@@ -1,3 +1,43 @@
+-- Save original notify function
+local original_notify = vim.notify
+
+-- Setup nvim-notify first
+local notify_ok, notify = pcall(require, "notify")
+if notify_ok then
+    vim.notify = function(msg, level, opts)
+        local in_startup = vim.fn.has("vim_starting") == 1
+
+        -- Filter noisy messages
+        if type(msg) == "string" then
+            if msg:match("exit code") or
+                msg:match("warning: multiple different client offset_encodings") or
+                msg:match(".*LSP.*") or
+                msg:match("client") or
+                msg:match("Pending") or
+                msg:match("Judging...") then
+                return
+            end
+        end
+
+        -- Only show errors during startup
+        if level == vim.log.levels.ERROR and not in_startup then
+            return
+        end
+
+        -- Use nvim-notify if available
+        notify(msg, level, opts)
+    end
+else
+    -- Fallback if nvim-notify is not installed
+    vim.notify = function(msg, level, opts)
+        local in_startup = vim.fn.has("vim_starting") == 1
+        if level == vim.log.levels.ERROR and not in_startup then
+            return
+        end
+        original_notify(msg, level, opts)
+    end
+end
+
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 -- vim.g.netrw_banner = 0    -- remove the banner
