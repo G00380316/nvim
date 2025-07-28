@@ -28,12 +28,18 @@ return {
             vim.keymap.set("n", "zkm", builtin.keymaps, { desc = "Search Keymaps" })
             vim.keymap.set("n", "zsb", builtin.git_branches, { desc = "Git Branches" })
             vim.keymap.set("n", "zcs", builtin.colorscheme, { desc = "Choose Colorscheme" })
-            -- Command to allow for selection and search of buffer with dressing
             vim.keymap.set({ "n", "v", "t", "i" }, "zb", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
-            -- Single, unified Telescope setup
+            -- Telescope setup with ignore patterns
             require("telescope").setup {
                 defaults = {
+                    file_ignore_patterns = {
+                        "node_modules",
+                        ".git/",
+                        "dist/",
+                        "build/",
+                        "target/",
+                    },
                     mappings = {
                         i = {
                             ["<C-d>"] = "delete_buffer",
@@ -50,7 +56,6 @@ return {
                         previewer = true,
                     },
                 },
-                -- Add extensions to the main setup table
                 extensions = {
                     ["ui-select"] = {
                         require("telescope.themes").get_dropdown({}),
@@ -58,7 +63,6 @@ return {
                 },
             }
 
-            -- Load extensions after setup
             require("telescope").load_extension("ui-select")
         end,
     },
