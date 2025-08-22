@@ -19,7 +19,7 @@ return {
         image_support = true,
         ---@type lc.storage
         storage = {
-            home = "~/Work/Projects/Leetcode",
+            home = "~/Store/Projects/Leetcode",
             cache = vim.fn.stdpath("cache") .. "/leetcode",
         },
     },
