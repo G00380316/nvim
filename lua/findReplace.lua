@@ -47,7 +47,7 @@ vim.keymap.set('n', 'wr', '*Ncgn', {
     silent = true,
     desc = "Start interactive replace for word under cursor"
 })
-vim.keymap.set({ 'n', 'i' }, '<A-n>', function()
+vim.keymap.set({ 'n', 'i' }, '<M-n>', function()
     local function do_repeat()
         vim.api.nvim_feedkeys('.', 'n', false)
         -- Uncomment below to return to insert mode after replacing
@@ -68,7 +68,7 @@ end, {
 })
 -- 2. A keymap for "Replace and Find Previous"
 -- This repeats the last change (.) and jumps to the previous match (N).
-vim.keymap.set({ 'n', 'i' }, '<A-N>', function()
+vim.keymap.set({ 'n', 'i' }, '<M-N>', function()
     local function do_repeat()
         vim.api.nvim_feedkeys('.', 'n', false)
     end
