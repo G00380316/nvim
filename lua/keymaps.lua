@@ -106,7 +106,13 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     end
     vim.cmd("write")
 end, { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<A-s>", "<cmd>wq<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "i", "v" }, "<A-s>", function()
+    if vim.fn.mode() == "i" then
+        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
+    end
+    vim.cmd("write")
+    vim.cmd("quit")
+end, { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-q>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.api.nvim_set_keymap('n', '<C-Space>',
