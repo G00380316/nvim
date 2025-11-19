@@ -6,6 +6,7 @@
 -- Fixes
 --
 --
+vim.keymap.set({ "n", "i", "v" }, "<C-b>", "<nop>")
 -- Disable "K" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("n", "K", "<nop>")
 -- Disable "C-v" normal mode which seems to spit out memory info and sometimes errors
@@ -38,7 +39,7 @@ vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 -- Join current line and the next two
 vim.keymap.set("n", "K", "mz2J`z")
 -- Remap F to `Alt-F`
-vim.keymap.set({ "n", "v" }, "<M-f>", "F", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "F", "F", { noremap = true, silent = true })
 -- Remap Shift + R to r
 vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 
@@ -47,7 +48,7 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 --
 --
 -- Map to Manually Format file
-vim.keymap.set({ "n", "v" }, "F", vim.lsp.buf.format, { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "zf", vim.lsp.buf.format, { noremap = true, silent = true })
 -- Map `Ctrl-C` to Escape in Insert Mode
 vim.keymap.set("i", "<C-c>", "<Esc>")
 -- Search and Replace Current Word
@@ -63,16 +64,16 @@ vim.keymap.set("v", ">", ">gv", { noremap = true, silent = true })
 -- Outdent selected block of text
 vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
 -- Disable all mappings that start with Ctrl+w
-vim.keymap.set({ 'n', 'i', 'v', 't' }, '<C-w>', '<Nop>', { noremap = true, silent = true })
+-- vim.keymap.set({ 'n', 'i', 'v', 't' }, '<C-w>', '<Nop>', { noremap = true, silent = true })
 -- Map Alt+w in normal mode to switch to next window immediately
-vim.keymap.set('n', '<M-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window" })
+vim.keymap.set('n', '<C-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window" })
 -- In insert mode, use Alt+w to exit insert mode and switch window
-vim.keymap.set('i', '<M-w>', '<Esc><C-w>w',
+vim.keymap.set('i', '<C-w>', '<Esc><C-w>w',
     { noremap = true, silent = true, desc = "Switch to next window from insert mode" })
 -- In visual mode, map Alt+w to switch window
-vim.keymap.set('v', '<M-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window in visual mode" })
+vim.keymap.set('v', '<C-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window in visual mode" })
 -- In terminal mode, map Alt+w to switch window after going to normal mode
-vim.keymap.set('t', '<M-w>', [[<C-\><C-n><C-w>w]],
+vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>w]],
     { noremap = true, silent = true, desc = "Switch to next window in terminal mode" })
 -- Command to start practicing Leetcode
 vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
@@ -96,9 +97,9 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 -- Split vertically
-vim.keymap.set({ "n", "v", "i", "t" }, '<M-v>', '<cmd>vsplit<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, 'zv', '<cmd>vsplit<CR>', { noremap = true, silent = true })
 -- Split horizontally
-vim.keymap.set({ "n", "v", "i", "t" }, '<M-h>', '<cmd>split<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, 'zh', '<cmd>split<CR>', { noremap = true, silent = true })
 -- Saving and Exting vim mappings
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     if vim.fn.mode() == "i" then
@@ -113,7 +114,6 @@ vim.keymap.set({ "n", "i", "v" }, "<M-s>", function()
     vim.cmd("write")
     vim.cmd("quit")
 end, { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<M-q>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.api.nvim_set_keymap('n', '<C-Space>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',

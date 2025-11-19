@@ -86,6 +86,14 @@ end
 
 require("lazy").setup(load_plugins())
 
+local show_commands = require("custom.commands").show_custom_command_menu
+
+-- Setup the keymap, calling the function directly
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-/>", function()
+    -- Call the custom command menu function
+    show_commands()
+end, { desc = "Show Custom Command Menu (vim.ui.select)" })
+
 -- Path to the colorscheme file
 local config_path = vim.fn.stdpath("config") .. "/colorscheme.txt"
 
