@@ -18,7 +18,7 @@ end
 -- Call this after opening a buffer
 vim.api.nvim_create_autocmd("BufEnter", {
     callback = function()
-        limit_buffers(10)
+        limit_buffers(7)
     end,
 })
 
