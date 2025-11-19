@@ -90,8 +90,7 @@ return {
             end
 
             -- Setting keybindings for LSP functionality
-            vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})
-            vim.keymap.set({ "n", "v" }, "<M-i>", vim.lsp.buf.definition, {})
+            vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.definition, {})
 
             -- Autocompletion setup
             cmp.setup({
@@ -135,7 +134,7 @@ return {
             })
 ]]
             -- Diagnostics to quickfix keymap
-            vim.keymap.set({ "n", "v" }, "<M-d>", function()
+            vim.keymap.set({ "n", "v" }, "zd", function()
                 -- Function to show diagnostics grouped by severity
                 local function show_diagnostics_by_severity()
                     local diagnostics = vim.diagnostic.get(0)

@@ -53,8 +53,6 @@ vim.keymap.set({ "n", "v" }, "zf", vim.lsp.buf.format, { noremap = true, silent 
 vim.keymap.set("i", "<C-c>", "<Esc>")
 -- Search and Replace Current Word
 vim.keymap.set("n", "R", [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
--- Open compiler
-vim.keymap.set("n", "<M-c>", "<cmd>CompilerOpen<CR>", { noremap = true, silent = true })
 -- Pressing Enter creates a new line
 vim.keymap.set("n", "<CR>", "o", { noremap = true })
 -- For canceling terminal mode in floating terminal
@@ -87,7 +85,6 @@ vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { 
 vim.keymap.set({ "n", "v", "t", "i" }, 'zssh', '<cmd>SshLauncher<CR>')
 vim.keymap.set({ "n", "v", "t", "i" }, 'zssa', '<cmd>SshAddKey<CR>')
 -- SessionManager commands
-vim.keymap.set("n", "<M-s>", "<cmd>SessionManager<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zss", "<cmd>SessionManager save_current_session<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zsm", "<cmd>SessionManager load_session<CR>", { desc = "Load Dir Session" })
 vim.keymap.set("n", "zsd", "<cmd>SessionManager delete_session<CR>", { desc = "Load Dir Session" })
@@ -107,19 +104,10 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     end
     vim.cmd("write")
 end, { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<M-s>", function()
-    if vim.fn.mode() == "i" then
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
-    end
-    vim.cmd("write")
-    vim.cmd("quit")
-end, { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.api.nvim_set_keymap('n', '<C-Space>',
     'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
     { noremap = true, silent = true })
--- Toggling Live Server on and off
-vim.keymap.set({ "n", "v", "i", "t" }, '<M-l>', '<cmd>LiveServerToggle<CR>', { noremap = true, silent = true })
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
     local buf = vim.api.nvim_create_buf(false, true)
