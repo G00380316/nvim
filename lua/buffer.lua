@@ -43,6 +43,26 @@ vim.api.nvim_create_autocmd("BufLeave", {
     end,
 })
 
+vim.api.nvim_create_autocmd("BufEnter", {
+    callback = function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        local modified = vim.api.nvim_buf_get_option(bufnr, "modified")
+        local listed = vim.api.nvim_buf_get_option(bufnr, "buflisted")
+        local buftype = vim.api.nvim_buf_get_option(bufnr, "buftype")
+
+        -- Only remove truly empty, unmodified unnamed buffers
+        if name == "" and not modified and listed and buftype == "" then
+            vim.schedule(function()
+                -- Recheck to avoid closing active buffer too soon
+                if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() ~= bufnr then
+                    vim.api.nvim_buf_delete(bufnr, { force = true })
+                end
+            end)
+        end
+    end,
+})
+
 -- Define a list of filetypes that should NOT be auto-closed
 local exclude_filetypes = {
     "TelescopePrompt",

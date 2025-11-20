@@ -9,6 +9,7 @@ return {
             autosave_ignore_dirs = { vim.loop.os_homedir() },
             autosave_ignore_filetypes = { "gitcommit", "oil" },
             autosave_ignore_buftypes = { "nofile", "quickfix" },
+            max_path_length = 50,
         })
     end,
 }
