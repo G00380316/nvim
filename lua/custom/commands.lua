@@ -18,18 +18,6 @@ local custom_commands = {
         cmd = "lua vim.cmd('SessionManager')",
     },
     {
-        name = "Open (Compiler)",
-        cmd = "lua vim.cmd('CompilerOpen')",
-    },
-    {
-        name = "Toggle Results (Compiler)",
-        cmd = "lua vim.cmd('CompilerToggleResults')",
-    },
-    {
-        name = "Redo last selected option (Compiler)",
-        cmd = "lua vim.cmd('CompilerStop'); vim.cmd('CompilerRedo')",
-    },
-    {
         name = "LSP Hover Info",
         cmd = "lua vim.lsp.buf.hover()",
     },

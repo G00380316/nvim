@@ -43,6 +43,24 @@ vim.api.nvim_create_autocmd("BufLeave", {
     end,
 })
 
+vim.api.nvim_create_autocmd("BufLeave", {
+    callback = function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        local modified = vim.api.nvim_buf_get_option(bufnr, "modified")
+        local buftype = vim.api.nvim_buf_get_option(bufnr, "buftype")
+
+        -- Only remove buffers that are directories, unmodified, normal type
+        if vim.fn.isdirectory(name) == 1 and not modified and buftype == "" then
+            vim.schedule(function()
+                if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() ~= bufnr then
+                    vim.api.nvim_buf_delete(bufnr, { force = true })
+                end
+            end)
+        end
+    end,
+})
+
 vim.api.nvim_create_autocmd("BufEnter", {
     callback = function()
         local bufnr = vim.api.nvim_get_current_buf()
