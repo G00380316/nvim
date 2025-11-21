@@ -21,6 +21,10 @@ local custom_commands = {
         name = "LSP Hover Info",
         cmd = "lua vim.lsp.buf.hover()",
     },
+    {
+        name = "Kill Float Terminal",
+        cmd = "lua vim.cmd('FloatermKill')",
+    },
 }
 
 --- Function to display the custom command menu using vim.ui.select.

@@ -36,7 +36,7 @@ return {
                         require("oil").open(dir)
 
                         -- Ask whether to create new file/folder
-                        vim.ui.select({ "Open", "Create new file", "Create new folder"}, { prompt = "Action:" },
+                        vim.ui.select({ "Open", "Create new file", "Create new folder" }, { prompt = "Action:" },
                             function(choice)
                                 if choice == "Create new file" then
                                     local fname = vim.fn.input("File name: ")
