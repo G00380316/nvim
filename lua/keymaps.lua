@@ -104,7 +104,7 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     vim.cmd("write")
     vim.fn.setreg('/', '')
 end, { noremap = true, silent = true })
-vim.keymap.set({ "n", "i", "v" }, "<A-s>", function()
+vim.keymap.set({ "n", "i", "v" }, "<C-o>", function()
     if vim.fn.mode() == "i" then
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
     end
