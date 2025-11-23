@@ -23,6 +23,7 @@ return {
         dashboard.section.header.opts.position = "center"
         dashboard.section.footer.opts.position = "center"
         dashboard.section.buttons.val = {
+            dashboard.button("s", "  Session", "<cmd>SessionManager load_session<CR>"),
             dashboard.button("o", "  Open Folder", function()
                 vim.ui.input({
                     prompt = "Open directory: ",
@@ -34,23 +35,6 @@ return {
 
                         -- Open with Oil instead of a plain buffer
                         require("oil").open(dir)
-
-                        -- Ask whether to create new file/folder
-                        vim.ui.select({ "Open", "Create new file", "Create new folder" }, { prompt = "Action:" },
-                            function(choice)
-                                if choice == "Create new file" then
-                                    local fname = vim.fn.input("File name: ")
-                                    if fname and fname ~= "" then
-                                        vim.cmd("edit " .. dir .. "/" .. fname)
-                                    end
-                                elseif choice == "Create new folder" then
-                                    local dname = vim.fn.input("Folder name: ")
-                                    if dname and dname ~= "" then
-                                        vim.fn.mkdir(dir .. "/" .. dname, "p")
-                                        print("Created folder: " .. dname)
-                                    end
-                                end
-                            end)
                     end
                 end)
             end),
@@ -79,7 +63,6 @@ return {
             --             end)
             --     end
             -- end),
-            dashboard.button("s", "  Session", "<cmd>SessionManager load_session<CR>"),
             dashboard.button("r", "  Connect to Remote", "<cmd>SshLauncher<CR>"),
             dashboard.button("l", "  LeetCode", "<cmd>Leet<CR>"),
         }
