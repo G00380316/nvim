@@ -1,228 +1,298 @@
 return {
+    ---------------------------------------------------------------------------
+    -- Mason (LSP/DAP/Linter installer)
+    ---------------------------------------------------------------------------
     {
         "williamboman/mason.nvim",
-        config = function()
-            require("mason").setup()
-        end,
+        cmd = "Mason",
+        build = "MasonUpdate",
+        opts = {
+            ui = {
+                border = "rounded",
+            },
+        },
     },
+
+    ---------------------------------------------------------------------------
+    -- Base LSP (diagnostics, etc.)
+    ---------------------------------------------------------------------------
     {
-        "L3MON4D3/LuaSnip",
-        version = "v2.*",                -- You can specify a version or use the latest.
-        build = "make install_jsregexp", -- Optional: for advanced snippet regex features.
+        "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
         config = function()
-            require("luasnip").setup({
-                history = true,                            -- Enable history for jumping back in snippets
-                updateevents = "TextChanged,TextChangedI", -- Refresh snippets on these events
+            -------------------------------------------------------------------
+            -- Diagnostics
+            -------------------------------------------------------------------
+            vim.diagnostic.config({
+                virtual_text = { prefix = "●", spacing = 4 },
+                underline = true,
+                update_in_insert = false,
+                severity_sort = true,
+                float = { border = "rounded", source = "if_many" },
             })
+
+            -------------------------------------------------------------------
+            -- GLOBAL LSP + LSPSaga STYLE KEYMAPS (old behavior)
+            -------------------------------------------------------------------
+            local silent = { silent = true }
+
+            vim.keymap.set("n", "gd", "<cmd>Lspsaga peek_definition<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Peek Definition" }))
+            vim.keymap.set("n", "gR", "<cmd>Lspsaga rename<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Rename Symbol" }))
+            vim.keymap.set("n", "ga", "<cmd>Lspsaga code_action<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Code Action" }))
+            vim.keymap.set("n", "K", "<cmd>Lspsaga hover_doc<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Hover Documentation" }))
+
+            vim.keymap.set("n", "zf", function()
+                vim.lsp.buf.format({ async = true })
+            end, vim.tbl_extend("keep", silent, { desc = "Format Document" }))
+
+            vim.keymap.set("n", "gtd", vim.lsp.buf.type_definition,
+                vim.tbl_extend("keep", silent, { desc = "Go to Type Definition" }))
+            vim.keymap.set("n", "gr", vim.lsp.buf.references,
+                vim.tbl_extend("keep", silent, { desc = "Find References" }))
+
+            -- Diagnostics
+            vim.keymap.set("n", "[d", vim.diagnostic.goto_prev,
+                vim.tbl_extend("keep", silent, { desc = "Prev Diagnostic" }))
+            vim.keymap.set("n", "]d", vim.diagnostic.goto_next,
+                vim.tbl_extend("keep", silent, { desc = "Next Diagnostic" }))
+            vim.keymap.set("n", "ge", "<cmd>Lspsaga show_line_diagnostics<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Line Diagnostics" }))
         end,
     },
+
+    ---------------------------------------------------------------------------
+    -- Mason-LSPConfig (bridge Mason ↔ lspconfig)
+    ---------------------------------------------------------------------------
     {
         "williamboman/mason-lspconfig.nvim",
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = {
+            "williamboman/mason.nvim",
+            "neovim/nvim-lspconfig",
+            "hrsh7th/cmp-nvim-lsp",
+        },
         config = function()
-            require("mason-lspconfig").setup({
+            local mason_lspconfig = require("mason-lspconfig")
+            local lspconfig = require("lspconfig")
+
+            -------------------------------------------------------------------
+            -- Capabilities (nvim-cmp completion)
+            -------------------------------------------------------------------
+            local capabilities = require("cmp_nvim_lsp").default_capabilities()
+            capabilities.textDocument.foldingRange = {
+                dynamicRegistration = false,
+                lineFoldingOnly = true,
+            }
+
+            -- Apply globally
+            lspconfig.util.default_config = vim.tbl_deep_extend(
+                "force",
+                lspconfig.util.default_config,
+                {
+                    capabilities = capabilities,
+                }
+            )
+
+            -------------------------------------------------------------------
+            -- LSP Server Handlers
+            -------------------------------------------------------------------
+            local handlers = {
+                -- Default handler
+                function(server)
+                    lspconfig[server].setup({})
+                end,
+
+                -- lua_ls (special settings)
+                ["lua_ls"] = function()
+                    lspconfig.lua_ls.setup({
+                        settings = {
+                            Lua = {
+                                diagnostics = { globals = { "vim" } },
+                                workspace = {
+                                    library = vim.api.nvim_get_runtime_file("", true),
+                                    checkThirdParty = false,
+                                },
+                                telemetry = { enable = false },
+                            },
+                        },
+                    })
+                end,
+            }
+
+            mason_lspconfig.setup({
                 ensure_installed = {
                     "lua_ls",
                     "pyright",
                     "ts_ls",
-                    "jdtls",
                     "html",
                     "clangd",
                     "vimls",
                     "tailwindcss",
                     "jsonls",
                     "angularls",
-                    "arduino_language_server",
                     "rust_analyzer",
                     "cssls",
                 },
+                automatic_installation = true,
+                handlers = handlers,
             })
         end,
     },
+
+    ---------------------------------------------------------------------------
+    -- LuaSnip (snippets)
+    ---------------------------------------------------------------------------
     {
-        "neovim/nvim-lspconfig",
+        "L3MON4D3/LuaSnip",
+        version = "v2.*",
+        event = "InsertEnter",
+        build = "make install_jsregexp",
+        config = function()
+            local luasnip = require("luasnip")
+
+            luasnip.setup({
+                history = true,
+                updateevents = "TextChanged,TextChangedI",
+            })
+
+            vim.keymap.set({ "i", "s" }, "<C-l>", function() luasnip.jump(1) end,
+                { silent = true, desc = "Snippet Jump Forward" })
+
+            vim.keymap.set({ "i", "s" }, "<C-h>", function() luasnip.jump(-1) end,
+                { silent = true, desc = "Snippet Jump Backward" })
+        end,
+    },
+
+    ---------------------------------------------------------------------------
+    -- nvim-cmp (completion)
+    ---------------------------------------------------------------------------
+    {
+        "hrsh7th/nvim-cmp",
+        event = "InsertEnter",
         dependencies = {
+            "L3MON4D3/LuaSnip",
+            "saadparwaiz1/cmp_luasnip",
+
             "hrsh7th/cmp-nvim-lsp",
             "hrsh7th/cmp-buffer",
             "hrsh7th/cmp-path",
             "hrsh7th/cmp-cmdline",
-            "hrsh7th/nvim-cmp",
-            --   "lukas-reineke/cmp-rg",
-            "j-hui/fidget.nvim",
-            "hrsh7th/cmp-nvim-lua",
             "hrsh7th/cmp-nvim-lsp-signature-help",
-            "ray-x/cmp-treesitter",
+
+            "onsails/lspkind.nvim",
         },
         config = function()
             local cmp = require("cmp")
-            local cmp_lsp = require("cmp_nvim_lsp")
-            local capabilities = vim.tbl_deep_extend(
-                "force",
-                {},
-                vim.lsp.protocol.make_client_capabilities(),
-                cmp_lsp.default_capabilities()
-            )
+            local luasnip = require("luasnip")
+            local lspkind = require("lspkind")
 
-            -- Setup fidget for LSP progress indicators
-            require("fidget").setup({})
-
-            -- Function to setup LSP servers
-            local lspconfig = require("lspconfig")
-            local servers = {
-                "lua_ls",
-                "pyright",
-                "ts_ls",
-                "jdtls",
-                "html",
-                "clangd",
-                "vimls",
-                "tailwindcss",
-                "jsonls",
-                "angularls",
-                "arduino_language_server",
-                "rust_analyzer",
-                "cssls",
-            }
-
-            for _, server in ipairs(servers) do
-                lspconfig[server].setup({
-                    capabilities = capabilities,
-                })
-            end
-
-            -- Setting keybindings for LSP functionality
-            vim.keymap.set({ "n", "v" }, "<C-i>", vim.lsp.buf.hover, {})
-            vim.keymap.set({ "n", "v" }, "<A-i>", vim.lsp.buf.definition, {})
-
-            -- Autocompletion setup
             cmp.setup({
+                snippet = {
+                    expand = function(args)
+                        luasnip.lsp_expand(args.body)
+                    end,
+                },
                 completion = {
-                    completeopt = "menu,menuone,noinsert,noselect",
-                    -- Show the menu with one item without auto-inserting
+                    completeopt = "menu,menuone,noinsert",
+                },
+                window = {
+                    completion = cmp.config.window.bordered({ border = "rounded" }),
+                    documentation = cmp.config.window.bordered({ border = "rounded" }),
                 },
                 mapping = cmp.mapping.preset.insert({
                     ["<C-p>"] = cmp.mapping.select_prev_item(),
                     ["<C-n>"] = cmp.mapping.select_next_item(),
                     ["<CR>"] = cmp.mapping.confirm({ select = true }),
+
+                    ["<Tab>"] = cmp.mapping(function(fallback)
+                        if cmp.visible() then
+                            cmp.select_next_item()
+                        elseif luasnip.expand_or_jumpable() then
+                            luasnip.expand_or_jump()
+                        else
+                            fallback()
+                        end
+                    end, { "i", "s" }),
+
+                    ["<S-Tab>"] = cmp.mapping(function(fallback)
+                        if cmp.visible() then
+                            cmp.select_prev_item()
+                        elseif luasnip.jumpable(-1) then
+                            luasnip.jump(-1)
+                        else
+                            fallback()
+                        end
+                    end, { "i", "s" }),
                 }),
-                sources = cmp.config.sources({
-                        {
-                            name = "nvim_lsp",
-                            entry_filter = function(entry)
-                                return require("cmp").lsp.CompletionItemKind.Snippet ~= entry:get_kind()
-                            end
+                formatting = {
+                    format = lspkind.cmp_format({
+                        mode = "symbol_text",
+                        maxwidth = 50,
+                        ellipsis_char = "…",
+                        menu = {
+                            nvim_lsp = "[LSP]",
+                            luasnip = "[Snip]",
+                            buffer = "[Buf]",
+                            path = "[Path]",
                         },
-                        { name = "nvim-lsp-signature-help", max_item_count = 1 },
-                        --                  { name = "rg",                      max_item_count = 1 },
-                        { name = "treesitter",              max_item_count = 1 },
-                        { name = "path" },
-                    },
-                    {
-                        name = "buffer", max_item_count = 1
                     }),
-                snippet = {
-                    expand = function(args)
-                        require("luasnip").lsp_expand(args.body) -- Expand the snippet if no match
-                    end
-                }
-            })
-
-            -- For command line completion
-            --[[            cmp.setup.cmdline(':', {
+                },
                 sources = cmp.config.sources({
-                    { name = "path",    max_item_count = 2 },
-                    { name = "cmdline", max_item_count = 3 },
-                }),
-            })
-]]
-            -- Diagnostics to quickfix keymap
-            vim.keymap.set({ "n", "v" }, "<A-d>", function()
-                -- Function to show diagnostics grouped by severity
-                local function show_diagnostics_by_severity()
-                    local diagnostics = vim.diagnostic.get(0)
-                    local grouped = {
-                        [vim.diagnostic.severity.ERROR] = {},
-                        [vim.diagnostic.severity.WARN] = {},
-                        [vim.diagnostic.severity.INFO] = {},
-                        [vim.diagnostic.severity.HINT] = {},
-                    }
-
-                    -- Group diagnostics by severity
-                    for _, diag in ipairs(diagnostics) do
-                        table.insert(grouped[diag.severity], diag)
-                    end
-
-                    -- Create a list for the UI select that includes header separators
-                    local menu_items = {}
-
-                    -- Add headers and diagnostics under each severity
-                    local function add_group(severity, header, icon)
-                        if #grouped[severity] > 0 then
-                            table.insert(menu_items,
-                                { header = icon .. "  " .. header, is_header = true, severity = severity, icon = icon }) -- Add severity as header
-                            for _, diag in ipairs(grouped[severity]) do
-                                table.insert(menu_items,
-                                    string.format("Line %d, Col %d: %s", diag.lnum + 1, diag.col + 1, diag.message))
-                            end
-                        end
-                    end
-
-                    add_group(vim.diagnostic.severity.ERROR, "Errors", " ")
-                    add_group(vim.diagnostic.severity.WARN, "Warnings", " ")
-                    add_group(vim.diagnostic.severity.INFO, "Info", " ")
-                    add_group(vim.diagnostic.severity.HINT, "Hints", " ")
-
-                    -- Use dressing.nvim's `vim.ui.select` to display the diagnostics with severity headers
-                    vim.ui.select(menu_items, {
-                        prompt = "Select Diagnostic",
-                        format_item = function(item)
-                            -- If it's a header, just return it as is (non-clickable)
-                            if item.is_header then
-                                return item.header
-                            else
-                                -- If it's a diagnostic, return the formatted message
-                                return item
-                            end
+                    {
+                        name = "nvim_lsp",
+                        entry_filter = function(entry)
+                            return entry:get_kind() ~= cmp.lsp.CompletionItemKind.Snippet
                         end,
-                    }, function(selected)
-                        if selected then
-                            -- If it's a header, just re-call the function to display the group again
-                            if selected.is_header then
-                                -- Re-call the function to show the group again
-                                show_diagnostics_by_severity()
-                                return
-                            end
-
-                            -- If it's a diagnostic message, go to the line and column
-                            if not selected:match("Errors") and not selected:match("Warnings") and not selected:match("Info") and not selected:match("Hints") then
-                                local line, col = selected:match("Line (%d+), Col (%d+)")
-                                vim.api.nvim_win_set_cursor(0, { tonumber(line), tonumber(col) })
-                            end
-                        end
-                    end)
-                end
-
-                -- Call the function to show diagnostics initially
-                show_diagnostics_by_severity()
-            end, { desc = "Show Grouped Diagnostics with Headers in Dressing" })
-            -- Better LSP UI
-            vim.diagnostic.config({
-                virtual_text = { prefix = '●' },
-                signs = true,
-                underline = true,
-                update_in_insert = false,
-                severity_sort = true,
-            })
-
-            vim.diagnostic.config({
-                signs = {
-                    text = {
-                        [vim.diagnostic.severity.ERROR] = "✗",
-                        [vim.diagnostic.severity.WARN] = "⚠",
-                        [vim.diagnostic.severity.INFO] = "ℹ",
-                        [vim.diagnostic.severity.HINT] = "💡",
-                    }
-                }
+                    },
+                    { name = "nvim_lsp_signature_help", max_item_count = 1 },
+                    { name = "luasnip" },
+                    { name = "path" },
+                }, {
+                    { name = "buffer", max_item_count = 5 },
+                }),
             })
         end,
+    },
+
+    ---------------------------------------------------------------------------
+    -- Fidget (LSP progress / status)
+    ---------------------------------------------------------------------------
+    {
+        "j-hui/fidget.nvim",
+        event = "LspAttach",
+        opts = {},
+    },
+
+    ---------------------------------------------------------------------------
+    -- LSPSaga (LSP UI)
+    ---------------------------------------------------------------------------
+    {
+        "nvimdev/lspsaga.nvim",
+        event = "LspAttach",
+        dependencies = {
+            "nvim-tree/nvim-web-devicons",
+        },
+        opts = {
+            ui = {
+                border = "rounded",
+                title = true,
+            },
+            lightbulb = {
+                enable = true,
+                sign = false,
+                virtual_text = true,
+            },
+            symbol_in_winbar = {
+                enable = false,
+            },
+            finder = {
+                max_height = 0.5,
+                border = "rounded",
+            },
+        },
     },
 }

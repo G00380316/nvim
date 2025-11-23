@@ -16,19 +16,6 @@ return {
                 max_height = 25,
                 default_detail = 1,
             },
-        },
-        config = function()
-            -- Redo last selected option
-            vim.api.nvim_set_keymap(
-                { "n", "i", "v" },
-                "<A-r>",
-                "<cmd>CompilerStop<cr>" -- (Optional, to dispose all tasks before redo)
-                .. "<cmd>CompilerRedo<cr>",
-                { noremap = true, silent = true }
-            )
-
-            -- Toggle compiler results
-            vim.api.nvim_set_keymap("n", "<A-t>", "<cmd>CompilerToggleResults<cr>", { noremap = true, silent = true })
-        end,
-    },
+        }
+    }
 }

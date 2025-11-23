@@ -18,12 +18,50 @@ end
 -- Call this after opening a buffer
 vim.api.nvim_create_autocmd("BufEnter", {
     callback = function()
-        limit_buffers(10)
+        limit_buffers(7)
     end,
 })
 
 -- Removes Empty Buffers
 vim.api.nvim_create_autocmd("BufLeave", {
+    callback = function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        local modified = vim.api.nvim_buf_get_option(bufnr, "modified")
+        local listed = vim.api.nvim_buf_get_option(bufnr, "buflisted")
+        local buftype = vim.api.nvim_buf_get_option(bufnr, "buftype")
+
+        -- Only remove truly empty, unmodified unnamed buffers
+        if name == "" and not modified and listed and buftype == "" then
+            vim.schedule(function()
+                -- Recheck to avoid closing active buffer too soon
+                if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() ~= bufnr then
+                    vim.api.nvim_buf_delete(bufnr, { force = true })
+                end
+            end)
+        end
+    end,
+})
+
+vim.api.nvim_create_autocmd("BufLeave", {
+    callback = function()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        local modified = vim.api.nvim_buf_get_option(bufnr, "modified")
+        local buftype = vim.api.nvim_buf_get_option(bufnr, "buftype")
+
+        -- Only remove buffers that are directories, unmodified, normal type
+        if vim.fn.isdirectory(name) == 1 and not modified and buftype == "" then
+            vim.schedule(function()
+                if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_get_current_buf() ~= bufnr then
+                    vim.api.nvim_buf_delete(bufnr, { force = true })
+                end
+            end)
+        end
+    end,
+})
+
+vim.api.nvim_create_autocmd("BufEnter", {
     callback = function()
         local bufnr = vim.api.nvim_get_current_buf()
         local name = vim.api.nvim_buf_get_name(bufnr)
