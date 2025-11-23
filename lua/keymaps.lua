@@ -9,6 +9,7 @@
 vim.keymap.set({ "n", "i", "v" }, "<C-b>", "<nop>")
 -- Disable "K" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("n", "K", "<nop>")
+vim.keymap.set("n", "gp", "<nop>")
 -- Disable "C-v" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("i", "<C-v>", "<nop>")
 -- Keep Cursor Position When Joining Lines
@@ -20,7 +21,7 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
 -- Paste Over Selection Without Yanking(prevents the copied text from being overwritten)
-vim.keymap.set("x", "p", [["_dP]])
+-- vim.keymap.set("x", "p", [["_dP]])
 -- Delete Without Affecting Clipboard
 vim.keymap.set({ "n", "v" }, "d", [["_d]])
 -- Disable `Q` (which used to start Ex mode)
@@ -47,8 +48,6 @@ vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
 -- Plugin/Extra Functionality
 --
 --
--- Map to Manually Format file
-vim.keymap.set({ "n", "v" }, "zf", vim.lsp.buf.format, { noremap = true, silent = true })
 -- Map `Ctrl-C` to Escape in Insert Mode
 vim.keymap.set("i", "<C-c>", "<Esc>")
 -- Search and Replace Current Word
@@ -82,8 +81,8 @@ vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = tru
 -- Command to cd into correct dir Manually
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { noremap = true, silent = true })
 -- Ssh Plugin
-vim.keymap.set({ "n", "v", "t", "i" }, 'zssh', '<cmd>SshLauncher<CR>')
-vim.keymap.set({ "n", "v", "t", "i" }, 'zssa', '<cmd>SshAddKey<CR>')
+vim.keymap.set({ "n" }, 'zssh', '<cmd>SshLauncher<CR>')
+vim.keymap.set({ "n" }, 'zssa', '<cmd>SshAddKey<CR>')
 -- SessionManager commands
 vim.keymap.set("n", "zss", "<cmd>SessionManager save_current_session<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zsm", "<cmd>SessionManager load_session<CR>", { desc = "Load Dir Session" })
@@ -103,11 +102,14 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
         vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
     end
     vim.cmd("write")
+    vim.fn.setreg('/', '')
 end, { noremap = true, silent = true })
 -- Lua Configuration for Neovim
-vim.api.nvim_set_keymap('n', '<C-Space>',
-    'a<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>',
-    { noremap = true, silent = true })
+vim.keymap.set("n", "<C-Space>", 'ciw<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>', {
+    noremap = true,
+    silent = true,
+    desc = "Change word and trigger completion"
+})
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
     local buf = vim.api.nvim_create_buf(false, true)
