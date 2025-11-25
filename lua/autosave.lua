@@ -22,5 +22,5 @@ vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
             vim.cmd("update") -- Use "update" to save only if there are changes
         end
     end,
-    desc = "Auto save for html, css, and js files",
+    desc = "AutoSave All files",
 })
