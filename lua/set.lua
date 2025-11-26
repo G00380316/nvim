@@ -65,8 +65,6 @@ vim.opt.lazyredraw = true                         -- Don't redraw during macros
 vim.opt.backup = false                            -- Don't create backup files
 vim.opt.writebackup = false                       -- Don't create backup before writing
 vim.opt.swapfile = false                          -- Don't create swap files
-vim.opt.undofile = true                           -- Persistent undo
-vim.opt.undodir = vim.fn.expand("~/.vim/undodir") -- Undo directory
 vim.opt.timeoutlen = 500                          -- Key timeout duration
 vim.opt.ttimeoutlen = 0                           -- Key code timeout
 vim.opt.autoread = true                           -- Auto reload files changed outside vim
@@ -78,16 +76,15 @@ vim.opt.hidden = true                  -- Allow hidden buffers
 vim.opt.errorbells = false             -- No error bells
 vim.opt.backspace = "indent,eol,start" -- Better backspace behavior
 vim.opt.autochdir = false              -- Don't auto change directory
--- vim.opt.iskeyword:append("-")          -- Treat dash as part of word
--- vim.opt.iskeyword:append("_")          -- Treat dash as part of word
-vim.opt.iskeyword:append("")         -- Treats every character as a Word
-vim.opt.path:append("**")            -- include subdirectories in search
-vim.opt.clipboard = "unnamedplus"    -- Adding clipboard func with wl-clipboard
-vim.cmd("set mouse=")                -- Disables mouse
-vim.opt.modifiable = true            -- Allow buffer modifications
-vim.opt.encoding = "UTF-8"           -- Set encoding
-vim.opt.isfname:append("@-@")        -- Adds `@-@` to the list of valid characters for filenames.
-vim.cmd("filetype plugin indent on") -- Enable file type detection and related plugins
+vim.opt.iskeyword:append("-")          -- Treat dash as part of word
+vim.opt.iskeyword:append("_")          -- Treat dash as part of word
+vim.opt.path:append("**")              -- include subdirectories in search
+vim.opt.clipboard = "unnamedplus"      -- Adding clipboard func with wl-clipboard
+vim.cmd("set mouse=")                  -- Disables mouse
+vim.opt.modifiable = true              -- Allow buffer modifications
+vim.opt.encoding = "UTF-8"             -- Set encoding
+vim.opt.isfname:append("@-@")          -- Adds `@-@` to the list of valid characters for filenames.
+vim.cmd("filetype plugin indent on")   -- Enable file type detection and related plugins
 
 -- Tab display settings
 vim.opt.showtabline = 1 -- Always show tabline (0=never, 1=when multiple tabs, 2=always)
