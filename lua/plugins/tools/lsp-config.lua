@@ -36,12 +36,18 @@ return {
             -------------------------------------------------------------------
             local silent = { silent = true }
 
+            -- Peek type definition
+            vim.keymap.set("n", "gp", "<cmd>Lspsaga peek_type_definition<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Peek Definition" }))
             vim.keymap.set("n", "gd", "<cmd>Lspsaga peek_definition<CR>",
                 vim.tbl_extend("keep", silent, { desc = "Peek Definition" }))
-            vim.keymap.set("n", "gR", "<cmd>Lspsaga rename<CR>",
-                vim.tbl_extend("keep", silent, { desc = "Rename Symbol" }))
-            vim.keymap.set("n", "ga", "<cmd>Lspsaga code_action<CR>",
-                vim.tbl_extend("keep", silent, { desc = "Code Action" }))
+            vim.keymap.set("n", "gtt", "<cmd>Lspsaga goto_type_definition<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Go to Type Definition" }))
+            vim.keymap.set("n", "gr", vim.lsp.buf.references,
+                vim.tbl_extend("keep", silent, { desc = "Find References" }))
+            vim.keymap.set("n", "gtd", "<cmd>Lspsaga goto_definition<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Find References" }))
+
             vim.keymap.set("n", "K", "<cmd>Lspsaga hover_doc<CR>",
                 vim.tbl_extend("keep", silent, { desc = "Hover Documentation" }))
 
@@ -49,10 +55,10 @@ return {
                 vim.lsp.buf.format({ async = true })
             end, vim.tbl_extend("keep", silent, { desc = "Format Document" }))
 
-            vim.keymap.set("n", "gtd", vim.lsp.buf.type_definition,
-                vim.tbl_extend("keep", silent, { desc = "Go to Type Definition" }))
-            vim.keymap.set("n", "gr", vim.lsp.buf.references,
-                vim.tbl_extend("keep", silent, { desc = "Find References" }))
+            vim.keymap.set("n", "gR", "<cmd>Lspsaga rename<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Rename Symbol" }))
+            vim.keymap.set("n", "ga", "<cmd>Lspsaga code_action<CR>",
+                vim.tbl_extend("keep", silent, { desc = "Code Action" }))
 
             -- Diagnostics
             vim.keymap.set("n", "[d", vim.diagnostic.goto_prev,

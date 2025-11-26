@@ -15,7 +15,7 @@ return {
             autosave_ignore_dirs = { vim.loop.os_homedir() },    -- Never save a session when you're in your home directory.
             autosave_ignore_filetypes = { "gitcommit", "oil" },  -- Close buffers with these filetypes before saving the session.
             autosave_ignore_buftypes = { "nofile", "quickfix" }, -- Same as above but for buffer "types".
-            load_include_current = false,                         -- Show the current session in the session picker.
+            load_include_current = false,                        -- Show the current session in the session picker.
             autosave_only_in_session = false,                    -- Only autosave if you're actually inside a session.
             max_path_length = 50,                                -- Shorten long paths in the UI.
         })
