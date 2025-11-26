@@ -28,7 +28,7 @@ return {
             vim.keymap.set("n", "zkm", builtin.keymaps, { desc = "Search Keymaps" })
             vim.keymap.set("n", "zsb", builtin.git_branches, { desc = "Git Branches" })
             vim.keymap.set("n", "zcs", builtin.colorscheme, { desc = "Choose Colorscheme" })
-            vim.keymap.set({ "n", "v", "t", "i" }, "<C-z>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
+            vim.keymap.set({ "n", "v", "t", "i" }, "<C-b>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
             -- Telescope setup with ignore patterns
             require("telescope").setup {
