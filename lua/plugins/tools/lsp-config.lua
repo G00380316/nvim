@@ -193,52 +193,30 @@ return {
 	-------------------------------------------------------------------------------
 	{
 		"jay-babu/mason-null-ls.nvim",
-		event = "VeryLazy",
+		event = { "BufReadPre", "BufNewFile" },
 		dependencies = {
 			"williamboman/mason.nvim",
-			"nvimtools/none-ls.nvim", -- formerly null-ls
+			"nvimtools/none-ls.nvim",
 		},
-		config = function()
-			vim.schedule(function()
-				require("mason-null-ls").setup({
-					ensure_installed = {
-						"prettier",
-						"stylua",
-						"black",
-						"clang-format",
-						"shfmt",
-						"eslint_d",
-						"flake8",
-						"shellcheck",
-					},
-					automatic_installation = true,
-				})
-			end)
-		end,
-	},
-	------------------------------------------------------------------------------
-	-- none-ls (= null-ls)
-	------------------------------------------------------------------------------
-	{
-		"nvimtools/none-ls.nvim",
-		event = { "BufReadPre", "BufNewFile" },
 		config = function()
 			local null_ls = require("null-ls")
 
-			null_ls.setup({
-				sources = {
-					-- formatters
-					null_ls.builtins.formatting.stylua,
-					null_ls.builtins.formatting.prettier,
-					null_ls.builtins.formatting.black,
-					null_ls.builtins.formatting.clang_format,
-					null_ls.builtins.formatting.shfmt,
+			null_ls.setup()
 
-					-- linters
-					null_ls.builtins.diagnostics.flake8,
-					null_ls.builtins.diagnostics.eslint_d,
-					null_ls.builtins.diagnostics.shellcheck,
+			-- 2. Setup mason-null-ls (this registers formatters/linters automatically)
+			require("mason-null-ls").setup({
+				ensure_installed = {
+					"stylua",
+					"prettier",
+					"black",
+					"clang-format",
+					"shfmt",
+					"ruff",
+					"shellcheck",
+					"eslint",
 				},
+				automatic_installation = true,
+				handlers = {}, -- ← REQUIRED or nothing will load
 			})
 		end,
 	},
