@@ -11,7 +11,7 @@ return {
 
             -- Keymaps
             vim.keymap.set({ "n", "v", "i" }, "<C-f>", builtin.find_files, {})
-            vim.keymap.set({ "n", "v", "i", "t" }, "<C-g>", builtin.live_grep, {})
+            vim.keymap.set({ "n", "v", "i" }, "<C-g>", builtin.live_grep, {})
             vim.keymap.set("n", "H", builtin.help_tags, {})
             vim.keymap.set("n", "T", "<cmd>Telescope<CR>", {})
             vim.keymap.set("n", "zcf", function()
@@ -28,7 +28,7 @@ return {
             vim.keymap.set("n", "zkm", builtin.keymaps, { desc = "Search Keymaps" })
             vim.keymap.set("n", "zsb", builtin.git_branches, { desc = "Git Branches" })
             vim.keymap.set("n", "zcs", builtin.colorscheme, { desc = "Choose Colorscheme" })
-            vim.keymap.set({ "n", "v", "t", "i" }, "<C-b>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
+            vim.keymap.set({ "n", "v", "i" }, "<C-b>", "<cmd>Telescope buffers<CR>", { desc = "Pick a buffer" })
 
             -- Telescope setup with ignore patterns
             require("telescope").setup {
