@@ -2,13 +2,13 @@
 --vim.g.mapleader = ","
 --vim.g.maplocalleader = ","
 
-
 -- Fixes
 --
 --
 vim.keymap.set({ "n", "i", "v" }, "<C-b>", "<nop>")
 -- Disable "K" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("n", "K", "<nop>")
+vim.keymap.set("n", "z", "<nop>")
 vim.keymap.set("n", "gp", "<nop>")
 -- Disable "C-v" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("i", "<C-v>", "<nop>")
@@ -30,7 +30,6 @@ vim.keymap.set("n", "Q", "<nop>")
 -- vim.keymap.set("n", "j", "gj", { noremap = true }) -- Use 'gj' to move down visually wrapped lines
 -- vim.keymap.set("n", "k", "gk", { noremap = true }) -- Use 'gk' to move up visually wrapped lines
 
-
 -- Tweaks
 --
 --
@@ -43,7 +42,6 @@ vim.keymap.set("n", "K", "mz2J`z")
 vim.keymap.set({ "n", "v" }, "F", "F", { noremap = true, silent = true })
 -- Remap Shift + R to r
 vim.keymap.set("n", "r", "R", { noremap = true, silent = true })
-
 
 -- Plugin/Extra Functionality
 --
@@ -63,15 +61,23 @@ vim.keymap.set("v", "<", "<gv", { noremap = true, silent = true })
 -- Disable all mappings that start with Ctrl+w
 -- vim.keymap.set({ 'n', 'i', 'v', 't' }, '<C-w>', '<Nop>', { noremap = true, silent = true })
 -- Map Alt+w in normal mode to switch to next window immediately
-vim.keymap.set('n', '<C-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window" })
+vim.keymap.set("n", "<C-w>", "<C-w>w", { noremap = true, silent = true, desc = "Switch to next window" })
 -- In insert mode, use Alt+w to exit insert mode and switch window
-vim.keymap.set('i', '<C-w>', '<Esc><C-w>w',
-    { noremap = true, silent = true, desc = "Switch to next window from insert mode" })
+vim.keymap.set(
+	"i",
+	"<C-w>",
+	"<Esc><C-w>w",
+	{ noremap = true, silent = true, desc = "Switch to next window from insert mode" }
+)
 -- In visual mode, map Alt+w to switch window
-vim.keymap.set('v', '<C-w>', '<C-w>w', { noremap = true, silent = true, desc = "Switch to next window in visual mode" })
+vim.keymap.set("v", "<C-w>", "<C-w>w", { noremap = true, silent = true, desc = "Switch to next window in visual mode" })
 -- In terminal mode, map Alt+w to switch window after going to normal mode
-vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>w]],
-    { noremap = true, silent = true, desc = "Switch to next window in terminal mode" })
+vim.keymap.set(
+	"t",
+	"<C-w>",
+	[[<C-\><C-n><C-w>w]],
+	{ noremap = true, silent = true, desc = "Switch to next window in terminal mode" }
+)
 -- Command to start practicing Leetcode
 vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
@@ -81,8 +87,8 @@ vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = tru
 -- Command to cd into correct dir Manually
 vim.keymap.set({ "n", "v", "t", "i" }, "<C-a>", "<cmd>silent! :cd %:p:h<CR>", { noremap = true, silent = true })
 -- Ssh Plugin
-vim.keymap.set({ "n" }, 'zssh', '<cmd>SshLauncher<CR>')
-vim.keymap.set({ "n" }, 'zssa', '<cmd>SshAddKey<CR>')
+vim.keymap.set({ "n" }, "zssh", "<cmd>SshLauncher<CR>")
+vim.keymap.set({ "n" }, "zssa", "<cmd>SshAddKey<CR>")
 -- SessionManager commands
 vim.keymap.set("n", "zss", "<cmd>SessionManager save_current_session<CR>", { desc = "Save Session" })
 vim.keymap.set("n", "zsm", "<cmd>SessionManager load_session<CR>", { desc = "Load Dir Session" })
@@ -93,82 +99,82 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true,
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", "<cmd>bd!<CR>", { noremap = true, silent = true })
 -- Split vertically
-vim.keymap.set({ "n", "v" }, 'zv', '<cmd>vsplit<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "zv", "<cmd>vsplit<CR>", { noremap = true, silent = true })
 -- Split horizontally
-vim.keymap.set({ "n", "v" }, 'zh', '<cmd>split<CR>', { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "zh", "<cmd>split<CR>", { noremap = true, silent = true })
 -- Saving and Exting vim mappings
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
-    if vim.fn.mode() == "i" then
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
-    end
-    vim.cmd("write")
-    vim.fn.setreg('/', '')
+	if vim.fn.mode() == "i" then
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
+	end
+	vim.cmd("write")
+	vim.fn.setreg("/", "")
 end, { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<C-o>", function()
-    if vim.fn.mode() == "i" then
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
-    end
-    vim.cmd("write")
-    vim.cmd("quit")
+	if vim.fn.mode() == "i" then
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
+	end
+	vim.cmd("write")
+	vim.cmd("quit")
 end, { noremap = true, silent = true })
 vim.keymap.set({ "n", "i", "v" }, "<A-q>", "<cmd>q<CR>", { noremap = true, silent = true })
 -- Lua Configuration for Neovim
 vim.keymap.set("n", "<C-Space>", 'ciw<cmd>lua vim.schedule(function() require("cmp").complete() end)<CR>', {
-    noremap = true,
-    silent = true,
-    desc = "Change word and trigger completion"
+	noremap = true,
+	silent = true,
+	desc = "Change word and trigger completion",
 })
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
-    local buf = vim.api.nvim_create_buf(false, true)
-    local width = math.floor(vim.o.columns * 0.8)
-    local height = math.floor(vim.o.lines * 0.8)
-    local row = math.floor((vim.o.lines - height) / 2)
-    local col = math.floor((vim.o.columns - width) / 2)
-    vim.api.nvim_open_win(buf, true, {
-        relative = "editor",
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        style = "minimal",
-        border = "rounded",
-    })
-    vim.fn.termopen("lazygit")
-    vim.cmd("startinsert")
+	local buf = vim.api.nvim_create_buf(false, true)
+	local width = math.floor(vim.o.columns * 0.8)
+	local height = math.floor(vim.o.lines * 0.8)
+	local row = math.floor((vim.o.lines - height) / 2)
+	local col = math.floor((vim.o.columns - width) / 2)
+	vim.api.nvim_open_win(buf, true, {
+		relative = "editor",
+		width = width,
+		height = height,
+		row = row,
+		col = col,
+		style = "minimal",
+		border = "rounded",
+	})
+	vim.fn.termopen("lazygit")
+	vim.cmd("startinsert")
 end, { desc = "Open Lazygit in floating terminal" })
 
 -- Open lazygit logs view in floating terminal
 vim.keymap.set("n", "zsl", function()
-    local buf = vim.api.nvim_create_buf(false, true)
-    local width = math.floor(vim.o.columns * 0.8)
-    local height = math.floor(vim.o.lines * 0.8)
-    local row = math.floor((vim.o.lines - height) / 2)
-    local col = math.floor((vim.o.columns - width) / 2)
-    vim.api.nvim_open_win(buf, true, {
-        relative = "editor",
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        style = "minimal",
-        border = "rounded",
-    })
-    vim.fn.termopen("lazygit log")
-    vim.cmd("startinsert")
+	local buf = vim.api.nvim_create_buf(false, true)
+	local width = math.floor(vim.o.columns * 0.8)
+	local height = math.floor(vim.o.lines * 0.8)
+	local row = math.floor((vim.o.lines - height) / 2)
+	local col = math.floor((vim.o.columns - width) / 2)
+	vim.api.nvim_open_win(buf, true, {
+		relative = "editor",
+		width = width,
+		height = height,
+		row = row,
+		col = col,
+		style = "minimal",
+		border = "rounded",
+	})
+	vim.fn.termopen("lazygit log")
+	vim.cmd("startinsert")
 end, { desc = "Open Git Logs in floating terminal" })
 
 vim.keymap.set("n", "p", function()
-    local reg = vim.fn.getreg('"')
-    local regtype = vim.fn.getregtype('"')
+	local reg = vim.fn.getreg('"')
+	local regtype = vim.fn.getregtype('"')
 
-    -- If linewise, trim newline to force character-wise paste
-    if regtype == 'V' then
-        -- remove trailing newline if it exists
-        reg = reg:gsub('\n$', '')
-        vim.fn.setreg('"', reg, 'v') -- 'v' = characterwise
-    end
+	-- If linewise, trim newline to force character-wise paste
+	if regtype == "V" then
+		-- remove trailing newline if it exists
+		reg = reg:gsub("\n$", "")
+		vim.fn.setreg('"', reg, "v") -- 'v' = characterwise
+	end
 
-    -- Do normal paste
-    vim.api.nvim_feedkeys("p", "n", false)
+	-- Do normal paste
+	vim.api.nvim_feedkeys("p", "n", false)
 end, { noremap = true, silent = true, desc = "Paste after cursor (even for linewise)" })
