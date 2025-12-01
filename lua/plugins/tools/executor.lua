@@ -56,6 +56,37 @@ return {
 
 		-- Keybindings
 		local executor = require("executor")
+
+		local function show_detail_when_ready()
+			local attempts = 0
+
+			local timer = vim.loop.new_timer()
+			timer:start(0, 20, function()
+				attempts = attempts + 1
+				local status = executor.current_status()
+
+				-- Still running → keep waiting
+				if status == "IN_PROGRESS" then
+					return
+				end
+
+				-- Stop checking after 400ms max
+				if attempts > 20 then
+					timer:stop()
+					timer:close()
+					return
+				end
+
+				-- If we're here, the task finished (PASSED or FAILED)
+				vim.schedule(function()
+					pcall(executor.commands.show_detail)
+				end)
+
+				timer:stop()
+				timer:close()
+			end)
+		end
+
 		local function auto_command_for_file()
 			local ft = vim.bo.filetype
 			local file = vim.fn.expand("%")
@@ -90,10 +121,7 @@ return {
 				-- overwrite executor’s stored command
 				executor.commands.run_one_off(cmd)
 
-				-- Auto-show output window
-				vim.defer_fn(function()
-					executor.commands.show_detail()
-				end, 50)
+				show_detail_when_ready()
 			else
 				-- fallback to normal executor behavior
 				executor.commands.run()
