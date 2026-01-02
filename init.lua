@@ -1,3 +1,4 @@
+vim.env.TMPDIR = "/tmp"
 -- Save original notify function
 local original_notify = vim.notify
 
@@ -16,6 +17,7 @@ if notify_ok then
 				or msg:match("client")
 				or msg:match("Pending")
 				or msg:match("Judging...")
+                or msg:match("Pattern not found")
 			then
 				return
 			end
