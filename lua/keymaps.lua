@@ -8,7 +8,8 @@
 vim.keymap.set({ "n", "i", "v" }, "<C-b>", "<nop>")
 -- Disable "K" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("n", "K", "<nop>")
-vim.keymap.set("n", "z", "<nop>")
+-- Disable "P" normal mode
+vim.keymap.set("n", "P", "<nop>")
 vim.keymap.set("n", "gp", "<nop>")
 -- Disable "C-v" normal mode which seems to spit out memory info and sometimes errors
 vim.keymap.set("i", "<C-v>", "<nop>")
@@ -20,8 +21,10 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz")
 -- Center Search Results
 vim.keymap.set("n", "n", "nzzzv")
 vim.keymap.set("n", "N", "Nzzzv")
--- Paste Over Selection Without Yanking(prevents the copied text from being overwritten)
--- vim.keymap.set("x", "p", [["_dP]])
+-- Standard-editor-style visual paste
+vim.keymap.set("x", "p", function()
+	return '"_dP'
+end, { expr = true, silent = true })
 -- Delete Without Affecting Clipboard
 vim.keymap.set({ "n", "v" }, "d", [["_d]])
 -- Disable `Q` (which used to start Ex mode)

@@ -203,3 +203,12 @@ vim.api.nvim_create_autocmd("VimEnter", {
 		vim.cmd("nohlsearch") -- turn off search highlighting
 	end,
 })
+
+-- use this if your using hammerspoon
+vim.api.nvim_create_autocmd("BufDelete", {
+	callback = function()
+		if #vim.fn.getbufinfo({ buflisted = 1 }) == 0 then
+			vim.cmd("enew")
+		end
+	end,
+})
