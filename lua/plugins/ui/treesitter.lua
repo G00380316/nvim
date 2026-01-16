@@ -1,20 +1,33 @@
 return {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    config = function()
-        local config = require("nvim-treesitter.configs")
-        config.setup({
-            auto_install = true,
-            sync_install = false,
-            highlight = {
-                enable = true,
-                -- Setting this to true will run `:h syntax` and tree-sitter at the same time.
-                -- Set this to `true` if you depend on "syntax" being enabled (like for indentation).
-                -- Using this option may slow down your editor, and you may see some duplicate highlights.
-                -- Instead of true it can also be a list of languages
-                additional_vim_regex_highlighting = { "markdown" },
-            },
-            indent = { enable = true },
-        })
-    end,
+	{
+		"nvim-treesitter/nvim-treesitter",
+		build = ":TSUpdate",
+		config = function()
+			require("nvim-treesitter.configs").setup({
+				ensure_installed = {
+					"lua",
+					"python",
+					"javascript",
+					"typescript",
+					"html",
+					"css",
+					"json",
+					"c",
+					"cpp",
+					"rust",
+					"vim",
+					"bash", -- Add Swift only if fixed
+				},
+				highlight = { enable = true },
+				-- Add this to handle Swift parser issues
+				parser_install_dir = vim.fn.stdpath("data") .. "/treesitter",
+			})
+
+			-- Try to install Swift parser with a workaround
+			local install_parsers = require("nvim-treesitter.install")
+			install_parsers.command_extra_args = {
+				swift = { "--no-bindings" }, -- This might be causing the issue
+			}
+		end,
+	},
 }

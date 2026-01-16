@@ -1,46 +1,67 @@
-vim.env.TMPDIR = "/tmp"
--- Save original notify function
-local original_notify = vim.notify
+-- Modified notify suppression that won't conflict
+local function setup_notify_suppression()
+	local notify_ok, notify_module = pcall(require, "notify")
 
--- Setup nvim-notify first
-local notify_ok, notify = pcall(require, "notify")
-if notify_ok then
-	vim.notify = function(msg, level, opts)
-		local in_startup = vim.fn.has("vim_starting") == 1
-
-		-- Filter noisy messages
-		if type(msg) == "string" then
-			if
-				msg:match("exit code")
-				or msg:match("warning: multiple different client offset_encodings")
-				or msg:match(".*LSP.*")
-				or msg:match("client")
-				or msg:match("Pending")
-				or msg:match("Judging...")
-                or msg:match("Pattern not found")
-			then
-				return
+	if notify_ok then
+		local filtered_notify = function(msg, level, opts)
+			-- Filter deprecation messages (though they should already be caught above)
+			if type(msg) == "string" then
+				if msg:find("deprecated") or msg:find("Deprecated") then
+					return
+				end
+				-- Your existing filters
+				if
+					msg:match("exit code")
+					or msg:match("warning: multiple different client offset_encodings")
+					or msg:match(".*LSP.*")
+					or msg:match("client")
+					or msg:match("Pending")
+					or msg:match("Judging...")
+					or msg:match("Pattern not found")
+					or msg:match("stack traceback")
+				then
+					return
+				end
 			end
+			return notify_module(msg, level, opts)
 		end
-
-		-- Only show errors during startup
-		if level == vim.log.levels.ERROR and not in_startup then
-			return
+		vim.notify = filtered_notify
+	else
+		-- Fallback without nvim-notify
+		local original_vim_notify = vim.notify
+		vim.notify = function(msg, level, opts)
+			if type(msg) == "string" then
+				if msg:find("deprecated") or msg:find("Deprecated") then
+					return
+				end
+				if
+					msg:match("exit code")
+					or msg:match("warning: multiple different client offset_encodings")
+					or msg:match(".*LSP.*")
+					or msg:match("client")
+					or msg:match("Pending")
+					or msg:match("Judging...")
+					or msg:match("Pattern not found")
+					or msg:match("stack traceback")
+				then
+					return
+				end
+			end
+			return original_vim_notify(msg, level, opts)
 		end
-
-		-- Use nvim-notify if available
-		notify(msg, level, opts)
-	end
-else
-	-- Fallback if nvim-notify is not installed
-	vim.notify = function(msg, level, opts)
-		local in_startup = vim.fn.has("vim_starting") == 1
-		if level == vim.log.levels.ERROR and not in_startup then
-			return
-		end
-		original_notify(msg, level, opts)
 	end
 end
+
+-- Call this after plugins are loaded
+vim.api.nvim_create_autocmd("User", {
+	pattern = "VeryLazy",
+	callback = setup_notify_suppression,
+	once = true,
+})
+
+vim.env.TMPDIR = "/tmp"
+-- Work around tree-sitter CLI >=0.26 incompatibility
+vim.g.ts_install_no_generate = true
 
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
