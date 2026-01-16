@@ -81,31 +81,25 @@ return {
 			-------------------------------------------------------------------
 			-- Diagnostics
 			-------------------------------------------------------------------
-			local signs = {
+			local diagnostic_icons = {
 				Error = "󰅚 ",
 				Warn = "󰀪 ",
 				Hint = "󰌶 ",
 				Info = " ",
 			}
 
-			-- Define diagnostic signs for gutter
-			for type, icon in pairs(signs) do
-				local hl = "DiagnosticSign" .. type
-				vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
-			end
-
+			-- Configure diagnostics with the new API
 			vim.diagnostic.config({
 				virtual_text = {
 					prefix = "●",
 					spacing = 4,
-					-- Fixed: Use correct severity mapping
 					format = function(diagnostic)
 						local severity = diagnostic.severity
 						local severity_map = {
-							[vim.diagnostic.severity.ERROR] = signs.Error,
-							[vim.diagnostic.severity.WARN] = signs.Warn,
-							[vim.diagnostic.severity.INFO] = signs.Info,
-							[vim.diagnostic.severity.HINT] = signs.Hint,
+							[vim.diagnostic.severity.ERROR] = diagnostic_icons.Error,
+							[vim.diagnostic.severity.WARN] = diagnostic_icons.Warn,
+							[vim.diagnostic.severity.INFO] = diagnostic_icons.Info,
+							[vim.diagnostic.severity.HINT] = diagnostic_icons.Hint,
 						}
 						local icon = severity_map[severity] or "● "
 						return icon .. diagnostic.message
@@ -120,8 +114,15 @@ return {
 					header = "",
 					prefix = "",
 				},
+				signs = {
+					text = {
+						[vim.diagnostic.severity.ERROR] = "󰅚",
+						[vim.diagnostic.severity.WARN] = "󰀪",
+						[vim.diagnostic.severity.INFO] = "",
+						[vim.diagnostic.severity.HINT] = "󰌶",
+					},
+				},
 			})
-
 			-------------------------------------------------------------------
 			-- LSP Keymaps (buffer-local when LSP attaches)
 			-------------------------------------------------------------------
