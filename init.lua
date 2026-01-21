@@ -832,11 +832,100 @@ vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true, desc = "Exit Termi
 --- LSP ---
 
 vim.lsp.enable({
-	"lua_ls",
-	"basedpyright",
-	"ts_ls",
-	"bashls"
-	})
+	"lua_ls", -- Lua language server
+	-- Used mainly for Neovim config & plugins
+	-- Provides completion, diagnostics, Neovim API awareness
+
+	-- "basedpyright", -- Python type checker (Pyright fork)
+	-- Full, strict static typing
+	-- Slower but very accurate (large Python projects)
+
+	"ts_ls", -- TypeScript / JavaScript language server
+	-- Core JS/TS intelligence: types, refs, refactors
+	-- Overlaps with quick-lint-js / oxlint
+	-- Disable formatting if using dprint
+
+	"bashls", -- Bash / shell script language server
+	-- Syntax checking, basic completion for .sh files
+
+	-- "css_variables",-- CSS variables language server
+	-- Specialised support for CSS custom properties (--vars)
+	-- Autocomplete + go-to-definition for variables
+
+	"cssls", -- CSS / SCSS / LESS language server
+	-- Property & value completion, validation
+	-- Weak CSS variable support
+	-- Disable formatting if using dprint
+
+	"cssmodules_ls", -- CSS Modules language server
+	-- Enables class name completion between CSS modules
+	-- Useful for React / frontend projects
+
+	"texlab", -- LaTeX language server
+	-- Completion, diagnostics, references, build integration
+	-- Best general-purpose LaTeX LSP
+
+	"dprint", -- Formatter (NOT a real language server)
+	-- Deterministic, fast formatting for many filetypes
+	-- JS, TS, JSON, Markdown, TOML, YAML, CSS
+	-- Should be the only formatter enabled
+
+	-- "harper_ls", -- Grammar & style checker
+	-- Markdown / prose linting (clarity, grammar, wording)
+	-- Not a code intelligence server
+
+	"jdtls", -- Java language server
+	-- Full IDE-level Java support
+	-- Heavy but required for serious Java work
+
+	"markdown_oxide", -- Markdown language server
+	-- Link navigation, references, wiki-style notes
+	-- Great for docs and knowledge bases
+
+	"oxlint", -- JS / TS linter (ESLint-like)
+	-- Rules-based diagnostics
+	-- Overlaps with ts_ls and quick-lint-js
+
+	"phptools", -- PHP language server
+	-- Completion, diagnostics, symbol navigation
+	-- Lightweight PHP support
+
+	-- "pyrefly",      -- Experimental Python type checker
+	-- Research-focused, not very common in practice
+
+	"quick-lint-js", -- Ultra-fast JavaScript linter
+	-- Syntax errors only, instant feedback
+	-- JS-only, no types, no formatting
+
+	"ruff", -- Python linter (and optional formatter)
+	-- Extremely fast
+	-- Replaces flake8, isort, pycodestyle
+	-- Disable formatting if using dprint
+
+	"sourcekit", -- Swift / Objective-C language server
+	-- Apple's official language intelligence
+	-- Required for Swift development (macOS)
+
+	"superhtml", -- HTML language server
+	-- HTML tag/attribute completion & validation
+	-- Lightweight, framework-agnostic
+
+	"tailwindcss", -- Tailwind CSS language server
+	-- Utility class completion, hover docs, validation
+	-- Works in HTML, JSX, TSX, CSS
+
+	"tinymist", -- Typst language server
+	-- Completion, diagnostics, document tooling
+	-- Best LSP for Typst
+
+	"clangd", -- C / C++ / Objective-C language server
+	-- Fast, accurate diagnostics & completion
+	-- Requires compile_commands.json
+
+	"ty", -- Python type checker (Rust-based, by Astral)
+	-- Very fast, editor-focused
+	-- Less complete than basedpyright, but much faster
+})
 
 
 --- KEYMAPS ---
