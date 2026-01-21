@@ -831,7 +831,12 @@ vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true, desc = "Exit Termi
 
 --- LSP ---
 
-vim.lsp.enable({ "lua_ls", "basedpyright","ts_ls" })
+vim.lsp.enable({
+	"lua_ls",
+	"basedpyright",
+	"ts_ls",
+	"bashls"
+	})
 
 
 --- KEYMAPS ---
