@@ -376,18 +376,7 @@ dashboard.section.header.opts.position = "center"
 dashboard.section.footer.opts.position = "center"
 dashboard.section.buttons.val = {
 	dashboard.button("o", "  Open Folder", function()
-		vim.ui.input({
-			prompt = "Open directory: ",
-			default = "~/",
-			completion = "dir",
-		}, function(input)
-			if input and input ~= "" then
-				local dir = vim.fn.expand(input)
-
-				-- Open with Oil instead of a plain buffer
-				require("oil").open(dir)
-			end
-		end)
+		require("oil").open()
 	end),
 	dashboard.button("r", "  Connect to Remote", "<cmd>SshLauncher<CR>"),
 	dashboard.button(
@@ -829,6 +818,12 @@ end, { noremap = true, silent = true, desc = "Enter: o or ciw" })
 
 vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true, desc = "Exit Terminal mode in Terminal" })
 
+vim.keymap.set({ "c" }, "<CR>", function()
+	if vim.fn.pumvisible() == 1 then return '<c-y>' end
+	return '<cr>'
+end, { expr = true })
+
+
 --- LSP ---
 
 vim.lsp.enable({
@@ -925,8 +920,31 @@ vim.lsp.enable({
 	"ty", -- Python type checker (Rust-based, by Astral)
 	-- Very fast, editor-focused
 	-- Less complete than basedpyright, but much faster
+
+	"sqruff"
 })
 
+vim.api.nvim_create_autocmd("VimEnter", {
+	callback = function()
+		local root = vim.fn.getcwd()
+
+		-- Only run if this looks like an Xcode project
+		if vim.fn.glob(root .. "/*.xcodeproj") ~= "" then
+			if vim.fn.filereadable(root .. "/buildServer.json") == 0 then
+				vim.notify("Generating buildServer.json for Xcode project…")
+
+				vim.fn.jobstart({
+					"xcode-build-server",
+					"config",
+					"-project",
+					vim.fn.glob(root .. "/*.xcodeproj"),
+					"-scheme",
+					vim.fn.fnamemodify(vim.fn.glob(root .. "/*.xcodeproj"), ":t:r"),
+				}, { detach = true })
+			end
+		end
+	end,
+})
 
 --- KEYMAPS ---
 
