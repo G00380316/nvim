@@ -86,14 +86,21 @@ vim.o.scrolloff = 10 -- Keeps 10 lines of context around the cursor when scrolli
 vim.o.wrap = true
 -- Stops words from being broken by wrapping
 vim.o.linebreak = true
-vim.o.wrapmargin = 0              -- " Disable margin-based line wrapping
-vim.o.textwidth = 0               -- " Disable hard wrapping at a fixed width
-vim.opt.formatoptions:remove("t") -- " Remove the 't' flag to stop automatic text wrapping
-
+vim.o.wrapmargin = 0                 -- " Disable margin-based line wrapping
+vim.o.textwidth = 0                  -- " Disable hard wrapping at a fixed width
+vim.opt.formatoptions:remove("t")    -- " Remove the 't' flag to stop automatic text wrapping
+vim.opt.iskeyword:append("-")        -- Treat dash as part of word
+vim.opt.iskeyword:append("_")        -- Treat dash as part of word
+vim.o.updatetime = 50
+vim.o.hidden = true                  -- Allow hidden buffers
+vim.o.errorbells = false             -- No error bells
+vim.o.backspace = "indent,eol,start" -- Better backspace behavior
 
 vim.o.termguicolors = true
 vim.o.undofile = true
 vim.o.clipboard = "unnamedplus" -- Adding clipboard func with wl-clipboard
+vim.o.timeoutlen = 500          -- Key timeout duration
+vim.o.ttimeoutlen = 0           -- Key code timeout
 vim.diagnostic.config({ virtual_text = true })
 vim.g.mapleader = " "
 
@@ -569,8 +576,11 @@ dashboard.section.header.val = {
 dashboard.section.header.opts.position = "center"
 dashboard.section.footer.opts.position = "center"
 dashboard.section.buttons.val = {
-	dashboard.button("o", "  Open Folder", function()
+	dashboard.button("o", "  Open Folders", function()
 		require("oil").open("~/")
+	end),
+	dashboard.button("o", "  Open Project Folders", function()
+		require("oil").open("~/Documents/Github/")
 	end),
 	dashboard.button("r", "  Connect to Remote", "<cmd>SshLauncher<CR>"),
 	dashboard.button(
@@ -1229,6 +1239,7 @@ end, {
 	silent = true,
 	desc = "Replace previous match properly"
 })
+
 vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true })
 
 
