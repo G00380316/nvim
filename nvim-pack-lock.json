@@ -88,6 +88,10 @@
       "rev": "d6b802552cbe7d643a3b6b31f419c248d1f1e220",
       "src": "https://github.com/HiPhish/rainbow-delimiters.nvim"
     },
+    "snacks.nvim": {
+      "rev": "fe7cfe9800a182274d0f868a74b7263b8c0c020b",
+      "src": "https://github.com/folke/snacks.nvim"
+    },
     "ssh-launcher.nvim": {
       "rev": "b577b180a47cf9781e5dad66af67e3a443b10f69",
       "src": "https://github.com/G00380316/ssh-launcher.nvim"

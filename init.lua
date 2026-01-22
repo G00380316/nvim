@@ -3,9 +3,8 @@
 vim.pack.add({
 	-- Navigation
 	{ src = "https://github.com/stevearc/oil.nvim" },
-	{ src = "https://github.com/nvim-telescope/telescope.nvim" },
+	{ src = "https://github.com/folke/snacks.nvim" },
 	{ src = "https://github.com/ibhagwan/fzf-lua" },
-	{ src = "https://github.com/nvim-telescope/telescope-ui-select.nvim" },
 	{ src = "https://github.com/nvim-lua/plenary.nvim" },
 	{ src = "https://github.com/voldikss/vim-floaterm" },
 
@@ -382,72 +381,32 @@ require 'nvim-treesitter'.setup {
 }
 require 'nvim-treesitter'.install { 'javascript' }
 
-local telescope = require("telescope")
-telescope.setup({
-	defaults = {
-		preview = { treesitter = true },
-		color_devicons = true,
-		sorting_strategy = "ascending",
-		borderchars = {
-			"", -- top
-			"", -- right
-			"", -- bottom
-			"", -- left
-			"", -- top-left
-			"", -- top-right
-			"", -- bottom-right
-			"", -- bottom-left
+require("snacks").setup({
+	picker = {
+		ui_select = true, -- Replaces telescope-ui-select
+		layout = {
+			cycle = true,
+			style = "modern", -- You can use "ivy", "telescope", or "modern"
 		},
-		file_ignore_patterns = {
+		win = {
+			input = {
+				keys = {
+					["<C-d>"] = { "bufdelete", mode = { "n", "i" } },
+				},
+			},
+		},
+		matcher = {
+			frecency = true,
+		},
+		exclude = {
 			"node_modules",
-			".git/",
-			"dist/",
-			"build/",
-			"target/",
-		},
-		mappings = {
-			i = {
-				["<C-d>"] = "delete_buffer",
-			},
-			n = {
-				["<C-d>"] = "delete_buffer",
-			},
-		},
-		path_displays = { "smart" },
-		layout_config = {
-			height = 100,
-			width = 400,
-			prompt_position = "top",
-			preview_cutoff = 40,
-		},
-		pickers = {
-			buffers = {
-				sort_mru = true,
-				ignore_current_buffer = true,
-			},
+			".git",
+			"dist",
+			"build",
+			"target",
 		},
 	},
-	keys = {
-		vim.keymap.set({ "n", "v", "i" }, "<C-f>", ":Telescope find_files<CR>", { desc = "File Lookup" }),
-		vim.keymap.set({ "n", "v", "i" }, "<C-g>", ":Telescope live_grep<CR>", { desc = "Grep" }),
-		vim.keymap.set("n", "<leader>h", ":Telescope help_tags<CR>", { desc = "I need Help" }),
-		vim.keymap.set("n", "zcf", function()
-			require("telescope.builtin").find_files({ cwd = vim.fn.stdpath("config") })
-		end, { desc = "Find Config Files" }),
-		vim.keymap.set({ "n", "x" }, "<C-l>", function()
-			local b = require("telescope.builtin")
-			if vim.fn.mode():find("[vV]") then
-				b.grep_string({ search = vim.fn.getreg('z'), use_regex = false })
-			else
-				b.grep_string({ search = vim.fn.expand("<cword>") })
-			end
-		end, { desc = "Search Visual selection or Word" }),
-		vim.keymap.set("n", "zkm", ":Telescope keymaps<CR>", { desc = "Search Keymaps" }),
-		-- vim.keymap.set("n", "zsb", ":Telescope git_branches<CR>", { desc = "Git Branches" })
-		vim.keymap.set({ "n", "v", "i" }, "<C-b>", "<cmd>Telescope buffers<CR>", { desc = "Choose a buffer" }),
-	}
 })
-telescope.load_extension("ui-select")
 
 
 require("oil").setup({
@@ -1067,6 +1026,65 @@ end, {
 	desc = "Go to implementation (fzf-lua)",
 })
 
+vim.keymap.set({ "n", "v", "i" }, "<C-f>", function() Snacks.picker.files() end, { desc = "File Lookup" })
+
+vim.keymap.set({ "n", "v", "i" }, "<C-g>", function() Snacks.picker.grep() end, { desc = "Grep" })
+
+vim.keymap.set("n", "<leader>h", function() Snacks.picker.help() end, { desc = "I need Help" })
+
+vim.keymap.set("n", "zcf", function()
+	Snacks.picker.files({ cwd = vim.fn.stdpath("config") })
+end, { desc = "Find Config Files" })
+
+vim.keymap.set({ "n", "x" }, "<C-l>", function() Snacks.picker.grep_word() end,
+	{ desc = "Search Visual selection or Word" })
+
+vim.keymap.set("n", "zkm", function() Snacks.picker.keymaps() end, { desc = "Search Keymaps" })
+
+vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
+	Snacks.picker.buffers({
+		sort_mru = true,
+		current = true,
+	})
+end, { desc = "Choose a buffer" })
+
+vim.keymap.set({ "n" }, "/", function()
+	Snacks.picker.lines({
+		layout = {
+			preset = "telescope", -- Uses the Telescope-style floating layout
+			-- To make it "take over" the buffer area:
+			width = 0.95,
+			height = 0.95,
+			preview = false, -- Set to true if you want to see the code on the side
+		},
+		format = {
+			line_number = false,
+		},
+		win = {
+			input = {
+				keys = {
+					["<C-c>"] = { "close", mode = { "n", "i" } },
+					["<leader>c"] = { "toggle_ignore_case", mode = { "n", "i" } },
+				}
+			}
+		},
+		prompt = "  ",
+	})
+end, { desc = "Find in current buffer" })
+vim.keymap.set({ "n" }, "/", function()
+	Snacks.picker.lines({
+		layout = {
+			preview = false,
+		},
+		win = {
+			input = {
+				keys = {
+					["<C-c>"] = { "close", mode = { "n", "i" } },
+				},
+			},
+		},
+	})
+end, { desc = "Find in current buffer" })
 vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", { noremap = true, desc = "Exit Terminal mode in Terminal" })
 vim.keymap.set({ "c" }, "<CR>", function()
 	if vim.fn.pumvisible() == 1 then return '<c-y>' end
@@ -1211,25 +1229,6 @@ end, {
 	silent = true,
 	desc = "Replace previous match properly"
 })
-vim.keymap.set({ "n" }, "/", function()
-	require("telescope.builtin").current_buffer_fuzzy_find({
-		layout_strategy = "vertical",
-		layout_config = {
-			width = 0.4,
-			height = 0.3,
-			prompt_position = "top",
-		},
-		winblend = 1,
-		border = true,
-		borderchars = {
-			"─", "│", "─", "│",
-			"┌", "┐", "┘", "└",
-		},
-		prompt_prefix = case_sensitive and " 	" or " 	",
-	})
-end, { desc = "Find in current buffer (minimal)" })
-
-
 vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true })
 
 
