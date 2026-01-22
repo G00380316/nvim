@@ -66,21 +66,22 @@ return {
 			"-scheme",
 			scheme,
 		}, {
+			cwd = root,
 			detach = true,
-			on_exit = function(code)
-				if code == 0 then
-					vim.schedule(function()
+			on_exit = function()
+				vim.schedule(function()
+					local bsp = root .. "/buildServer.json"
+
+					if vim.fn.filereadable(bsp) == 1 then
 						vim.notify("SourceKit BSP ready, restarting LSP", vim.log.levels.INFO)
-						vim.cmd("LspRestart sourcekit")
-					end)
-				else
-					vim.schedule(function()
+						vim.cmd("lsp restart sourcekit")
+					else
 						vim.notify(
-							"SourceKit BSP generation failed",
+							"SourceKit BSP generation failed (buildServer.json not found)",
 							vim.log.levels.ERROR
 						)
-					end)
-				end
+					end
+				end)
 			end,
 		})
 	end,

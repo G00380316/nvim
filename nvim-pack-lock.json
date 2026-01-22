@@ -1,12 +1,28 @@
 {
   "plugins": {
+    "LuaSnip": {
+      "rev": "dae4f5aaa3574bd0c2b9dd20fb9542a02c10471c",
+      "src": "https://github.com/L3MON4D3/LuaSnip"
+    },
     "alpha-nvim": {
       "rev": "3979b01cb05734331c7873049001d3f2bb8477f4",
       "src": "https://github.com/goolord/alpha-nvim"
     },
+    "blink.cmp": {
+      "rev": "820f1ddf634ec267412e403711bf74be26cac677",
+      "src": "https://github.com/saghen/blink.cmp"
+    },
     "dressing.nvim": {
       "rev": "2d7c2db2507fa3c4956142ee607431ddb2828639",
       "src": "https://github.com/stevearc/dressing.nvim"
+    },
+    "friendly-snippets": {
+      "rev": "572f5660cf05f8cd8834e096d7b4c921ba18e175",
+      "src": "https://github.com/rafamadriz/friendly-snippets"
+    },
+    "fzf-lua": {
+      "rev": "20e2d3099ba99f37f9a7c7d9ed2a9d83c3b20618",
+      "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "gitsigns.nvim": {
       "rev": "42d6aed4e94e0f0bbced16bbdcc42f57673bd75e",
@@ -28,6 +44,10 @@
       "rev": "fdd3f91800b3983e27bc9fcfb99cfa7293d7f11a",
       "src": "https://github.com/kawre/leetcode.nvim"
     },
+    "lexima.vim": {
+      "rev": "ab621e4756465c9d354fce88cff2bd1aa7887065",
+      "src": "https://github.com/cohama/lexima.vim"
+    },
     "lspsaga.nvim": {
       "rev": "8efe00d6aed9db6449969f889170f1a7e43101a1",
       "src": "https://github.com/nvimdev/lspsaga.nvim"
@@ -43,6 +63,14 @@
     "nvim-lspconfig": {
       "rev": "92ee7d42320edfbb81f3cad851314ab197fa324a",
       "src": "https://github.com/neovim/nvim-lspconfig"
+    },
+    "nvim-treesitter": {
+      "rev": "ec034813775d7e2974c7551c8c34499a828963f8",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
+    },
+    "nvim-ts-autotag": {
+      "rev": "db15f2e0df2f5db916e511e3fffb682ef2f6354f",
+      "src": "https://github.com/windwp/nvim-ts-autotag"
     },
     "nvim-web-devicons": {
       "rev": "803353450c374192393f5387b6a0176d0972b848",
@@ -70,8 +98,11 @@
     },
     "telescope.nvim": {
       "rev": "a0bbec21143c7bc5f8bb02e0005fa0b982edc026",
-      "src": "https://github.com/nvim-telescope/telescope.nvim",
-      "version": "'0.1.8'"
+      "src": "https://github.com/nvim-telescope/telescope.nvim"
+    },
+    "ts-autotag.nvim": {
+      "rev": "35f79f6253dff5cc43cf943d74c4b2734370a81d",
+      "src": "https://github.com/tronikelis/ts-autotag.nvim"
     },
     "typst-preview.nvim": {
       "rev": "bf5d5eaf23bbfcca9f98a24ed29bd084abf89bf2",
