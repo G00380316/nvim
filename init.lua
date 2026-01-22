@@ -579,7 +579,7 @@ dashboard.section.buttons.val = {
 	dashboard.button("o", "  Open Folders", function()
 		require("oil").open("~/")
 	end),
-	dashboard.button("o", "  Open Project Folders", function()
+	dashboard.button("p", "  Open Github Folders", function()
 		require("oil").open("~/Documents/Github/")
 	end),
 	dashboard.button("r", "  Connect to Remote", "<cmd>SshLauncher<CR>"),
