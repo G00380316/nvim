@@ -4,6 +4,10 @@
       "rev": "dae4f5aaa3574bd0c2b9dd20fb9542a02c10471c",
       "src": "https://github.com/L3MON4D3/LuaSnip"
     },
+    "SchemaStore.nvim": {
+      "rev": "cd9e8c22f6ad2012ac395725080cc5737297d840",
+      "src": "https://github.com/b0o/SchemaStore.nvim"
+    },
     "alpha-nvim": {
       "rev": "3979b01cb05734331c7873049001d3f2bb8477f4",
       "src": "https://github.com/goolord/alpha-nvim"

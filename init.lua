@@ -24,6 +24,7 @@ vim.pack.add({
 
     -- LSP
     { src = "https://github.com/neovim/nvim-lspconfig" },
+    { src = "https://github.com/b0o/SchemaStore.nvim" },
 
 
     -- Completion
@@ -200,10 +201,19 @@ vim.lsp.enable({
     -- Very fast, editor-focused
     -- Less complete than basedpyright, but much faster
 
-    "sqruff" -- SQL language server / linter / formatter
+    "sqruff", -- SQL language server / linter / formatter
     -- SQL diagnostics, linting, and optional formatting
     -- Supports multiple SQL dialects
     -- Disable formatting if dprint or another formatter is used
+
+    "docker_language_server", -- Dockerfile language server
+    -- Provides validation, completion, and hover for Dockerfiles
+    -- Requires 'dockerfile' filetype to trigger
+
+    "yamlls", -- YAML language server
+    -- Unified support for YAML, Docker Compose, K8s, etc.
+    -- Requires schemaStore enabled for Docker Compose intelligence
+    -- Triggered by: .yml, .yaml
 })
 
 --     Enables or disables inlay hints for the {filter}ed scope.
