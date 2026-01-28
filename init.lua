@@ -997,6 +997,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 vim.keymap.set("n", "<C-d>", "<C-d>zz")                                     -- Scroll Half-Page and Center
 vim.keymap.set("n", "<C-u>", "<C-u>zz")                                     -- Scroll Half-Page and Center
+vim.keymap.set("n", "J", "mzJ`z")                                           -- Keep Cursor Position When Joining Lines
+vim.keymap.set("n", "K", "mz2J`z")                                          -- Join current line and the next two
 vim.keymap.set("n", "n", "nzzzv")                                           -- Center Search Results
 vim.keymap.set("n", "N", "Nzzzv")                                           -- Center Search Results
 vim.keymap.set({ "v", "x" }, "J", ":m '>+1<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
@@ -1009,6 +1011,9 @@ vim.keymap.set({ 'n', 'v' }, 'y', '"+y')
 vim.keymap.set({ "n", "v" }, "d", [["_d]])
 -- Standard-editor-style visual paste (using the system clipboard)
 vim.keymap.set("x", "p", [["+P]], { silent = true })
+
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
 
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
@@ -1284,6 +1289,11 @@ end, {
 })
 
 vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true })
 
 
 --- Most be Last ---
