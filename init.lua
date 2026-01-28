@@ -32,6 +32,7 @@ vim.pack.add({
     { src = "https://github.com/cohama/lexima.vim" },
     { src = "https://github.com/tronikelis/ts-autotag.nvim" },
 
+
     -- Snippets
     { src = "https://github.com/L3MON4D3/LuaSnip" },
     { src = "https://github.com/rafamadriz/friendly-snippets" },
@@ -43,7 +44,7 @@ vim.pack.add({
     { src = "https://github.com/kawre/leetcode.nvim" },
     { src = "https://github.com/MunifTanjim/nui.nvim" },
     { src = "https://github.com/G00380316/ssh-launcher.nvim" },
-    { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" }
+    { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" },
 })
 
 
@@ -73,8 +74,9 @@ vim.o.softtabstop = indent -- How many spaces a <Tab> counts for while editing
 vim.o.expandtab = true     -- Convert tabs to spaces (set to false if you want actual tabs)
 vim.o.smartindent = true   -- Makes indenting "smarter" based on synta
 vim.o.matchtime = 2        -- How long to show matching bracket
+vim.o.paste = false
 
-vim.o.autoread = true      -- Auto reload files changed outside vim
+vim.o.autoread = true -- Auto reload files changed outside vim
 
 vim.o.winborder = "rounded"
 
@@ -320,6 +322,22 @@ require("blink.cmp").setup({
     },
 })
 -- Note that commented code above is to nuetralise Native Completion and opt for blink
+
+
+require("xcodebuild").setup({
+    show_build_progress_bar = true,
+    logs = {
+        auto_open_on_success = false,
+        auto_open_on_error = true,
+    },
+})
+
+-- Keymaps specifically for this plugin
+vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<cr>", { desc = "Show Xcodebuild Picker" })
+vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>", { desc = "Build & Run" })
+vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>", { desc = "Run Tests" })
+vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>", { desc = "Select Device" })
+vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>", { desc = "Select Scheme" })
 
 
 --- PLUGIN CONFIGS ---
@@ -987,11 +1005,10 @@ vim.keymap.set({ "v", "x" }, ">", ">gv", { noremap = true, silent = true }) -- O
 vim.keymap.set({ "v", "x" }, "<", "<gv", { noremap = true, silent = true }) -- Outdent selected block of text
 
 vim.keymap.set({ 'n', 'v' }, 'y', '"+y')
-vim.keymap.set({ "n", "v" }, "d", [["_d]]) -- Delete Without Affecting Clipboard
--- Standard-editor-style visual paste
-vim.keymap.set("x", "p", function()
-    return '"_dP'
-end, { expr = true, silent = true })
+-- Delete Without Affecting Clipboard
+vim.keymap.set({ "n", "v" }, "d", [["_d]])
+-- Standard-editor-style visual paste (using the system clipboard)
+vim.keymap.set("x", "p", [["+P]], { silent = true })
 
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
