@@ -1289,7 +1289,9 @@ end, {
 })
 
 vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true })
-vim.keymap.set("n", "zlo", "<cmd>Leet<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "zlo",
+    "<cmd>silent !kitty @ launch --type=os-window nvim +'Leet'<CR>"
+    , { noremap = true, silent = true })
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true })
