@@ -123,6 +123,10 @@
     "vim-suda": {
       "rev": "c492741b4679b3cdd4d9e34138209784e061d916",
       "src": "https://github.com/lambdalisue/vim-suda"
+    },
+    "xcodebuild.nvim": {
+      "rev": "02381ee7d8545ed9d0562efd74bd8fef26bcfb36",
+      "src": "https://github.com/wojciech-kulik/xcodebuild.nvim"
     }
   }
 }

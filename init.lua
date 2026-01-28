@@ -43,6 +43,7 @@ vim.pack.add({
     { src = "https://github.com/kawre/leetcode.nvim" },
     { src = "https://github.com/MunifTanjim/nui.nvim" },
     { src = "https://github.com/G00380316/ssh-launcher.nvim" },
+    { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" }
 })
 
 
