@@ -330,6 +330,11 @@ require("xcodebuild").setup({
         auto_open_on_success = false,
         auto_open_on_error = true,
     },
+    integrations = {
+        xcodebuild_offline = {
+            enabled = true,
+        },
+    },
 })
 
 -- Keymaps specifically for this plugin
@@ -338,7 +343,8 @@ vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>", { desc = "Build
 vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>", { desc = "Run Tests" })
 vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>", { desc = "Select Device" })
 vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>", { desc = "Select Scheme" })
-
+-- Keymap to trigger the injection (Hot Reload)
+vim.keymap.set("n", "<leader>xi", "<cmd>XcodebuildInjectCode<cr>", { desc = "Xcode: Inject Code (Hot Reload)" })
 
 --- PLUGIN CONFIGS ---
 
@@ -991,6 +997,15 @@ vim.api.nvim_create_autocmd("TextYankPost", {
         })
     end,
 })
+
+
+-- vim.api.nvim_create_autocmd("BufWritePost", {
+--     pattern = { "*.swift", "*.m", "*.h" },
+--     callback = function()
+--         -- Only trigger if xcodebuild is actually active for this project
+--         vim.cmd("XcodebuildBuildRun")
+--     end,
+-- })
 
 
 --- SPECIAL MAPPINGS ---
