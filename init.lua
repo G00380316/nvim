@@ -324,27 +324,44 @@ require("blink.cmp").setup({
 -- Note that commented code above is to nuetralise Native Completion and opt for blink
 
 
-require("xcodebuild").setup({
-    show_build_progress_bar = true,
-    logs = {
-        auto_open_on_success = false,
-        auto_open_on_error = true,
-    },
-    integrations = {
-        xcodebuild_offline = {
-            enabled = true,
-        },
-    },
+vim.api.nvim_create_autocmd("LspAttach", {
+    group = vim.api.nvim_create_augroup("XcodebuildLSP", { clear = true }),
+    callback = function(args)
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+
+        -- Only attach these to SourceKit (Swift/Obj-C) buffers
+        if client and client.name == "sourcekit" then
+            local bufnr = args.buf
+
+            if not _G.xcodebuild_initialized then
+                require("xcodebuild").setup({
+                    show_build_progress_bar = true,
+                    logs = {
+                        auto_open_on_success = false,
+                        auto_open_on_error = true,
+                    },
+                })
+                _G.xcodebuild_initialized = true
+            end
+
+            local opts = { buffer = bufnr, silent = true }
+
+            vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<cr>", opts)
+            vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>", opts)
+            vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>", opts)
+            vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>", opts)
+            vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>", opts)
+
+            vim.api.nvim_create_autocmd("BufWritePre", {
+                buffer = bufnr,
+                callback = function()
+                    vim.cmd("XcodebuildBuildRun")
+                end,
+            })
+        end
+    end,
 })
 
--- Keymaps specifically for this plugin
-vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<cr>", { desc = "Show Xcodebuild Picker" })
-vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>", { desc = "Build & Run" })
-vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>", { desc = "Run Tests" })
-vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>", { desc = "Select Device" })
-vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>", { desc = "Select Scheme" })
--- Keymap to trigger the injection (Hot Reload)
-vim.keymap.set("n", "<leader>xi", "<cmd>XcodebuildInjectCode<cr>", { desc = "Xcode: Inject Code (Hot Reload)" })
 
 --- PLUGIN CONFIGS ---
 
@@ -999,21 +1016,11 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 })
 
 
--- vim.api.nvim_create_autocmd("BufWritePost", {
---     pattern = { "*.swift", "*.m", "*.h" },
---     callback = function()
---         -- Only trigger if xcodebuild is actually active for this project
---         vim.cmd("XcodebuildBuildRun")
---     end,
--- })
-
-
 --- SPECIAL MAPPINGS ---
 
 vim.keymap.set("n", "<C-d>", "<C-d>zz")                                     -- Scroll Half-Page and Center
 vim.keymap.set("n", "<C-u>", "<C-u>zz")                                     -- Scroll Half-Page and Center
 vim.keymap.set("n", "J", "mzJ`z")                                           -- Keep Cursor Position When Joining Lines
-vim.keymap.set("n", "K", "mz2J`z")                                          -- Join current line and the next two
 vim.keymap.set("n", "n", "nzzzv")                                           -- Center Search Results
 vim.keymap.set("n", "N", "Nzzzv")                                           -- Center Search Results
 vim.keymap.set({ "v", "x" }, "J", ":m '>+1<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
@@ -1181,12 +1188,23 @@ end, { expr = true })
 --- KEYMAPS ---
 
 vim.keymap.set('n', '<leader>o', ':update<CR> :source<CR>', { desc = "Update Source" })
-vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, { desc = "Format Code" })
+-- vim.keymap.set('n', '<leader>f', vim.lsp.buf.format, { desc = "Format Code" })
 vim.keymap.set('n', '<leader>p', function()
         require("oil").open("~/Documents/Github")
     end,
     { desc = "Opening Project Directories" }
 )
+vim.keymap.set('n', '<leader>f', function()
+        Snacks.picker.files({ cwd = vim.fn.expand("~/Documents/Github") })
+    end,
+    { desc = "Search Project Directories" }
+)
+vim.keymap.set('n', '<leader>g', function()
+        Snacks.picker.grep({ cwd = vim.fn.expand("~/Documents/Github") })
+    end,
+    { desc = "Grep Project Directories" }
+)
+
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
     local bufnr = 0
 
