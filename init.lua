@@ -1019,6 +1019,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 --- SPECIAL MAPPINGS ---
 
+vim.keymap.set("n", "q", "<nop>", { noremap = true, silent = true })
+
 vim.keymap.set("n", "<C-d>", "<C-d>zz")                                     -- Scroll Half-Page and Center
 vim.keymap.set("n", "<C-u>", "<C-u>zz")                                     -- Scroll Half-Page and Center
 vim.keymap.set("n", "J", "mzJ`z")                                           -- Keep Cursor Position When Joining Lines
