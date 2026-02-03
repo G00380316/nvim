@@ -20,6 +20,7 @@ vim.pack.add({
     { src = "https://github.com/stevearc/dressing.nvim" },
     { src = "https://github.com/nvim-lualine/lualine.nvim" },
     { src = "https://github.com/nvim-treesitter/nvim-treesitter" },
+    { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim" },
 
 
     -- LSP
@@ -1184,6 +1185,44 @@ vim.keymap.set({ "i" }, "<CR>", function()
     return vim.api.nvim_replace_termcodes("<CR>", true, false, true)
 end, { expr = true })
 
+
+require("render-markdown").setup({
+    opts = {
+        heading = {
+            width = 'block',
+            min_width = 50,
+            border = true,
+            backgrounds = {
+                'RenderMarkdownH1Bg',
+                'RenderMarkdownH2Bg',
+                'RenderMarkdownH3Bg',
+                'RenderMarkdownH4Bg',
+                'RenderMarkdownH5Bg',
+                'RenderMarkdownH6Bg',
+            },
+            foregrounds = {
+                'RenderMarkdownH1',
+                'RenderMarkdownH2',
+                'RenderMarkdownH3',
+                'RenderMarkdownH4',
+                'RenderMarkdownH5',
+                'RenderMarkdownH6',
+            },
+        },
+        render_modes = { 'n', 'v', 'i', 'c' },
+        checkbox = {
+            unchecked = { icon = '󰄱 ' },
+            checked = { icon = ' ' },
+            custom = { todo = { raw = '[>]', rendered = '󰥔 ' } },
+        },
+        code = {
+            position = 'right',
+            width = 'block',
+            left_pad = 2,
+            right_pad = 4,
+        },
+    },
+})
 
 --- KEYMAPS ---
 
