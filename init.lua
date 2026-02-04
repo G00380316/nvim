@@ -647,7 +647,10 @@ dashboard.section.buttons.val = {
         "  LeetCode",
         "<cmd>silent !kitty @ launch --type=os-window nvim +'Leet'<CR>"
     ),
-    dashboard.button("t", "  Terminal", "<cmd>term<CR>"),
+    dashboard.button("t", "  Terminal", function()
+        vim.cmd("term")
+        vim.api.nvim_feedkeys('i', 'n', false)
+    end),
 }
 local fortune = require("alpha.fortune")
 dashboard.section.footer.val = fortune()
