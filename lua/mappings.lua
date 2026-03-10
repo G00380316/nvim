@@ -49,6 +49,26 @@ local function has_lsp(bufnr)
     return #vim.lsp.get_clients({ bufnr = bufnr }) > 0
 end
 
+local function open_in_file_manager()
+    local file = vim.api.nvim_buf_get_name(0)
+
+    if file == "" then
+        print("No file associated with this buffer")
+        return
+    end
+
+    local dir = vim.fn.fnamemodify(file, ":h")
+
+    if vim.fn.has("mac") == 1 then
+        vim.fn.jobstart({ "open", dir }, { detach = true })
+    elseif vim.fn.has("win32") == 1 then
+        vim.fn.jobstart({ "explorer", dir }, { detach = true })
+    else
+        vim.fn.jobstart({ "xdg-open", dir }, { detach = true })
+    end
+end
+
+
 --- SPECIAL MAPPINGS ---
 
 vim.keymap.set("n", "q", "<nop>", { noremap = true, silent = true })
@@ -402,3 +422,5 @@ vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true 
 vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true })
+vim.keymap.set("n", "go", open_in_file_manager,
+    { noremap = true, silent = true, desc = "Open Current folder in Explorer/Finder" })
