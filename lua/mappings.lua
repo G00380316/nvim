@@ -268,6 +268,11 @@ vim.keymap.set('n', '<leader>d', function()
     end,
     { desc = "Opening Directories" }
 )
+vim.keymap.set('n', 'zf', function()
+        Snacks.picker.files({ cwd = vim.fn.expand("~/") })
+    end,
+    { desc = "Search User Directories" }
+)
 vim.keymap.set('n', '<leader>f', function()
         Snacks.picker.files({ cwd = vim.fn.expand("~/Documents/Github") })
     end,
