@@ -174,36 +174,12 @@ vim.keymap.set({ "n", "x" }, "<C-l>", function() Snacks.picker.grep_word() end,
 
 vim.keymap.set("n", "zkm", function() Snacks.picker.keymaps() end, { desc = "Search Keymaps" })
 
-vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-b>", function()
     Snacks.picker.buffers({
         sort_mru = true,
         current = true,
     })
 end, { desc = "Choose a buffer" })
-
-vim.keymap.set({ "n" }, "/", function()
-    Snacks.picker.lines({
-        layout = {
-            preset = "telescope", -- Uses the Telescope-style floating layout
-            -- To make it "take over" the buffer area:
-            width = 0.95,
-            height = 0.95,
-            preview = false, -- Set to true if you want to see the code on the side
-        },
-        format = {
-            line_number = false,
-        },
-        win = {
-            input = {
-                keys = {
-                    ["<C-c>"] = { "close", mode = { "n", "i" } },
-                    ["<leader>c"] = { "toggle_ignore_case", mode = { "n", "i" } },
-                }
-            }
-        },
-        prompt = "  ",
-    })
-end, { desc = "Find in current buffer" })
 vim.keymap.set({ "n" }, "/", function()
     Snacks.picker.lines({
         layout = {
@@ -286,6 +262,11 @@ vim.keymap.set('n', '<leader>p', function()
         require("oil").open("~/Documents/Github")
     end,
     { desc = "Opening Project Directories" }
+)
+vim.keymap.set('n', '<leader>d', function()
+        require("oil").open("~/")
+    end,
+    { desc = "Opening Directories" }
 )
 vim.keymap.set('n', '<leader>f', function()
         Snacks.picker.files({ cwd = vim.fn.expand("~/Documents/Github") })
@@ -375,7 +356,7 @@ vim.keymap.set('n', '<leader>r', '*Ncgn', {
     silent = true,
     desc = "Start interactive replace for word under cursor"
 })
-vim.keymap.set({ 'n', 'i' }, '<C-n>', function()
+vim.keymap.set({ 'n', 'i' }, '<C-.>', function()
     local function do_repeat()
         vim.api.nvim_feedkeys('.', 'n', false)
         -- Uncomment below to return to insert mode after replacing
@@ -396,7 +377,7 @@ end, {
 })
 -- 2. A keymap for "Replace and Find Previous"
 -- This repeats the last change (.) and jumps to the previous match (N).
-vim.keymap.set({ 'n', 'i' }, '<C-p>', function()
+vim.keymap.set({ 'n', 'i' }, '<C-,>', function()
     local function do_repeat()
         vim.api.nvim_feedkeys('.', 'n', false)
     end
@@ -424,3 +405,25 @@ vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true
 vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "go", open_in_file_manager,
     { noremap = true, silent = true, desc = "Open Current folder in Explorer/Finder" })
+
+vim.keymap.set("n", "<leader>wr", "<cmd>AutoSession restore<CR>", {
+    desc = "Restore session",
+})
+
+vim.keymap.set("n", "<leader>ws", "<cmd>AutoSession save<CR>", {
+    desc = "Save session",
+})
+
+vim.keymap.set("n", "<leader>wd", "<cmd>AutoSession delete<CR>", {
+    desc = "Delete session",
+})
+vim.keymap.set("n", "<leader>sw", function()
+    require("grug-far").open({
+        prefills = { search = vim.fn.expand("<cword>") },
+    })
+end, { desc = "Search current word" })
+
+-- Visual selection search
+vim.keymap.set("v", "<leader>sw", function()
+    require("grug-far").with_visual_selection()
+end, { desc = "Search selection" })

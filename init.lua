@@ -7,6 +7,8 @@ vim.pack.add({
     { src = "https://github.com/ibhagwan/fzf-lua" },
     { src = "https://github.com/nvim-lua/plenary.nvim" },
     { src = "https://github.com/voldikss/vim-floaterm" },
+    { src = "https://github.com/MagicDuck/grug-far.nvim" },
+    { src = "https://github.com/rmagatti/auto-session" },
 
 
     -- UI

@@ -1,4 +1,3 @@
-
 --- LSP ---
 
 vim.lsp.enable({
@@ -205,7 +204,7 @@ require("blink.cmp").setup({
         ["<CR>"] = { "accept", "fallback" },
 
         -- Abort
-        ["<Space>"] = { "hide", "fallback" },
+        -- ["<Space>"] = { "hide", "fallback" },
     },
 })
 -- Note that commented code above is to nuetralise Native Completion and opt for blink
