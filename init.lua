@@ -282,3 +282,7 @@ lualine.setup({
         },
     },
 })
+
+--- TO DO ---
+--- C-[ and C-] should be the same as C-o and C-i
+--- <leader>r may be conflicting in search and replace
