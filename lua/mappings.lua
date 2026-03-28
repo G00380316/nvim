@@ -89,8 +89,8 @@ vim.keymap.set({ "n", "v" }, "d", [["_d]])
 -- Standard-editor-style visual paste (using the system clipboard)
 vim.keymap.set("x", "p", [["+P]], { silent = true })
 
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<cmd>bn<CR>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<cmd>bp<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<C-i>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<C-o>", { noremap = true, silent = true })
 
 -- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()

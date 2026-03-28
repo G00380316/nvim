@@ -9,7 +9,7 @@ vim.pack.add({
     { src = "https://github.com/voldikss/vim-floaterm" },
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
     { src = "https://github.com/rmagatti/auto-session" },
-    {src = "https://github.com/refractalize/oil-git-status.nvim"},
+    { src = "https://github.com/refractalize/oil-git-status.nvim" },
 
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
@@ -113,7 +113,7 @@ vim.o.timeoutlen = 500          -- Key timeout duration
 vim.o.ttimeoutlen = 0           -- Key code timeout
 vim.diagnostic.config({ virtual_text = true })
 vim.g.mapleader = " "
-
+vim.g.maplocalleader = ' '
 
 require("lsp")
 require("plugins")
@@ -282,7 +282,3 @@ lualine.setup({
         },
     },
 })
-
---- TO DO ---
---- C-[ and C-] should be the same as C-o and C-i
---- <leader>r may be conflicting in search and replace
