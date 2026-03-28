@@ -411,17 +411,6 @@ vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = tru
 vim.keymap.set("n", "go", open_in_file_manager,
     { noremap = true, silent = true, desc = "Open Current folder in Explorer/Finder" })
 
-vim.keymap.set("n", "<leader>wr", "<cmd>AutoSession restore<CR>", {
-    desc = "Restore session",
-})
-
-vim.keymap.set("n", "<leader>ws", "<cmd>AutoSession save<CR>", {
-    desc = "Save session",
-})
-
-vim.keymap.set("n", "<leader>wd", "<cmd>AutoSession delete<CR>", {
-    desc = "Delete session",
-})
 vim.keymap.set("n", "<leader>sw", function()
     require("grug-far").open({
         prefills = { search = vim.fn.expand("<cword>") },
@@ -433,6 +422,6 @@ vim.keymap.set("v", "<leader>sw", function()
     require("grug-far").with_visual_selection()
 end, { desc = "Search selection" })
 
-vim.keymap.set("n", "<leader>S", function()
+vim.keymap.set("n", "<C-o>", function()
     require("grug-far").open({ transient = true })
 end, { desc = "Search Window" })

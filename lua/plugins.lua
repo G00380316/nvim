@@ -378,16 +378,4 @@ alpha.setup(dashboard.opts)
 
 
 require("ssh_launcher").setup()
-require("auto-session").setup({
-    lazy = false,
-    opts = {
-        suppressed_dirs = { "~/", "~/Downloads", "/" },
-
-        auto_restore_enabled = true,
-        auto_save_enabled = true,
-        auto_session_enable_last_session = true,
-
-        auto_session_use_git_branch = true,
-    },
-})
 require("grug-far").setup()

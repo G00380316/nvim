@@ -8,7 +8,6 @@ vim.pack.add({
     { src = "https://github.com/nvim-lua/plenary.nvim" },
     { src = "https://github.com/voldikss/vim-floaterm" },
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
-    { src = "https://github.com/rmagatti/auto-session" },
     { src = "https://github.com/refractalize/oil-git-status.nvim" },
 
     -- UI
@@ -114,6 +113,7 @@ vim.o.ttimeoutlen = 0           -- Key code timeout
 vim.diagnostic.config({ virtual_text = true })
 vim.g.mapleader = " "
 vim.g.maplocalleader = ' '
+vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
 
 require("lsp")
 require("plugins")
@@ -223,19 +223,28 @@ local branch = {
 
 local lsp_status = {
     'lsp_status',
-    icon = '', -- f013
+    icon = '',
     symbols = {
-        -- Standard unicode symbols to cycle through for LSP progress:
         spinner = { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' },
-        -- Standard unicode symbol for when LSP is done:
         done = '✓',
-        -- Delimiter inserted between LSP names:
         separator = ' ',
     },
-    -- List of LSP names to ignore (e.g., `null-ls`):
     ignore_lsp = {},
-    -- Display the LSP name
     show_name = true,
+
+    color = function()
+        local clients = vim.lsp.get_clients({ bufnr = 0 })
+
+        if #clients == 0 then
+            return { fg = "#6c7086" } -- no LSP
+        end
+
+        if vim.lsp.status() ~= "" then
+            return { fg = "#f9e2af" } -- working
+        end
+
+        return { fg = "#a6e3a1" } -- ready
+    end,
 }
 
 lualine.setup({
@@ -278,7 +287,20 @@ lualine.setup({
                 update_in_insert = true,
             },
             { "filetype" },
-            lsp_status
+            lsp_status,
+            {
+                function()
+                    local cwd = vim.fn.getcwd()
+                    local home = vim.fn.expand("~")
+
+                    if cwd:find(home, 1, true) == 1 then
+                        cwd = "~" .. cwd:sub(#home + 1)
+                    end
+
+                    return "󰉋 " .. vim.fn.fnamemodify(cwd, ":t")
+                end,
+                color = { fg = "#89b4fa" },
+            },
         },
     },
 })
