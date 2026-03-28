@@ -9,7 +9,7 @@ vim.pack.add({
     { src = "https://github.com/voldikss/vim-floaterm" },
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
     { src = "https://github.com/rmagatti/auto-session" },
-
+    {src = "https://github.com/refractalize/oil-git-status.nvim"},
 
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },

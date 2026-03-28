@@ -356,7 +356,7 @@ vim.keymap.set("n", "<leader>s", function()
 end, { desc = "Toggle case sensitivity for sticky search" })
 -- 1. A keymap to START the interactive replace
 -- This finds the word under the cursor and readies the first replacement.
-vim.keymap.set('n', '<leader>r', '*Ncgn', {
+vim.keymap.set('n', '<leader>i', '*Ncgn', {
     noremap = true,
     silent = true,
     desc = "Start interactive replace for word under cursor"
@@ -432,3 +432,7 @@ end, { desc = "Search current word" })
 vim.keymap.set("v", "<leader>sw", function()
     require("grug-far").with_visual_selection()
 end, { desc = "Search selection" })
+
+vim.keymap.set("n", "<leader>S", function()
+    require("grug-far").open({ transient = true })
+end, { desc = "Search Window" })

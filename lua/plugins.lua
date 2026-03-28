@@ -140,13 +140,48 @@ require("oil").setup({
         ["<C-c>"] = { "actions.close", mode = "n" },
         ["<C-l>"] = "actions.refresh",
         ["<BS>"] = { "actions.parent", mode = "n" },
-        ["_"] = { "actions.open_cwd", mode = "n" },
-        ["`"] = { "actions.cd", mode = "n" },
-        ["~"] = { "actions.cd", opts = { scope = "tab" }, mode = "n" },
+        ["gr"] = { "actions.open_cwd", mode = "n" },
+        ["gc"] = { "actions.cd", mode = "n" },
+        ["gd"] = {
+            function()
+                local oil = require("oil")
+                local entry = oil.get_cursor_entry()
+                local dir = oil.get_current_dir()
+
+                if not entry or not dir then
+                    print("No entry found")
+                    return
+                end
+
+                local path = dir .. entry.name
+                print("Reveal:", path)
+                vim.system({ "open", "-R", path }):wait()
+            end,
+            mode = "n",
+        },
+
+        ["go"] = {
+            function()
+                local oil = require("oil")
+                local entry = oil.get_cursor_entry()
+                local dir = oil.get_current_dir()
+
+                if not entry or not dir then
+                    print("No entry found")
+                    return
+                end
+
+                local path = dir .. entry.name
+                print("Open:", path)
+                vim.system({ "open", path }):wait()
+            end,
+            mode = "n",
+        },
+        -- ["gp"] = { "actions.cd", opts = { scope = "tab" }, mode = "n" },
         ["gs"] = { "actions.change_sort", mode = "n" },
         ["gx"] = "actions.open_external",
         ["g."] = { "actions.toggle_hidden", mode = "n" },
-        ["g\\"] = { "actions.toggle_trash", mode = "n" },
+        ["gt"] = { "actions.toggle_trash", mode = "n" },
     },
     keys = {
         vim.keymap.set({ "n", "i", "v" }, "<C-e>", function()
@@ -154,8 +189,52 @@ require("oil").setup({
             require("oil").toggle_float()
         end, { desc = "Toggle Oil Float" }),
     },
+    win_options = {
+        signcolumn = "yes:2",
+    }
 })
 
+require('oil-git-status').setup({
+    show_ignored = true, -- show files that match gitignore with !!
+    symbols = {          -- customize the symbols that appear in the git status columns
+        index = {
+            ["!"] = "!",
+            ["?"] = "?",
+            ["A"] = "A",
+            ["C"] = "C",
+            ["D"] = "D",
+            ["M"] = "M",
+            ["R"] = "R",
+            ["T"] = "T",
+            ["U"] = "U",
+            [" "] = " ",
+        },
+        working_tree = {
+            ["!"] = "!",
+            ["?"] = "?",
+            ["A"] = "A",
+            ["C"] = "C",
+            ["D"] = "D",
+            ["M"] = "M",
+            ["R"] = "R",
+            ["T"] = "T",
+            ["U"] = "U",
+            [" "] = " ",
+        },
+    },
+})
+
+-- Status Code 	In Index 	In Working Tree
+--  	OilGitStatusIndexUnmodified 	OilGitStatusWorkingTreeUnmodified
+-- ! 	OilGitStatusIndexIgnored 	OilGitStatusWorkingTreeIgnored
+-- ? 	OilGitStatusIndexUntracked 	OilGitStatusWorkingTreeUntracked
+-- A 	OilGitStatusIndexAdded 	OilGitStatusWorkingTreeAdded
+-- C 	OilGitStatusIndexCopied 	OilGitStatusWorkingTreeCopied
+-- D 	OilGitStatusIndexDeleted 	OilGitStatusWorkingTreeDeleted
+-- M 	OilGitStatusIndexModified 	OilGitStatusWorkingTreeModified
+-- R 	OilGitStatusIndexRenamed 	OilGitStatusWorkingTreeRenamed
+-- T 	OilGitStatusIndexTypeChanged 	OilGitStatusWorkingTreeTypeChanged
+-- U 	OilGitStatusIndexUnmerged 	OilGitStatusWorkingTreeUnmerged
 
 require("image").setup({
     backend = "kitty",
