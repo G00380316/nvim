@@ -119,11 +119,15 @@ vim.g.maplocalleader = ' '
 vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
 vim.g.prosession_on_startup = 1
 vim.g.prosession_per_branch = 1
-vim.g.prosession_ignore_dirs = {
-    vim.fn.expand("~"),
-    "/",
-    "/Users/enoch/"
-}
+-- vim.g.prosession_ignore_dirs = {
+--     vim.fn.expand("~"),
+--     "/",
+--     "/Users/enoch/"
+-- }
+vim.g.Prosession_ignore_expr = function()
+    local cwd = vim.fn.getcwd()
+    return cwd ~= vim.fn.expand("~")
+end
 require("lsp")
 require("plugins")
 require("autocmd")
