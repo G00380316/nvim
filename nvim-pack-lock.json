@@ -124,6 +124,10 @@
       "rev": "1af6ffb9b5229a856e8090fa2f690e0931a5aace",
       "src": "https://github.com/jbyuki/one-small-step-for-vimkind"
     },
+    "persisted.nvim": {
+      "rev": "14cc1db0052ea26f2d2d2f1b861845dae58b7ead",
+      "src": "https://github.com/olimorris/persisted.nvim"
+    },
     "plenary.nvim": {
       "rev": "b9fd5226c2f76c951fc8ed5923d85e4de065e509",
       "src": "https://github.com/nvim-lua/plenary.nvim"
@@ -163,6 +167,18 @@
     "vim-floaterm": {
       "rev": "a11b930f55324e9b05e2ef16511fe713f1b456a7",
       "src": "https://github.com/voldikss/vim-floaterm"
+    },
+    "vim-fugitive": {
+      "rev": "3b753cf8c6a4dcde6edee8827d464ba9b8c4a6f0",
+      "src": "https://github.com/tpope/vim-fugitive"
+    },
+    "vim-obsession": {
+      "rev": "ed9dfc7c2cc917ace8b24f4f9f80a91e05614b63",
+      "src": "https://github.com/tpope/vim-obsession"
+    },
+    "vim-prosession": {
+      "rev": "f88c0fa1691e0f88f0ddd50f5028a4b523509b3d",
+      "src": "https://github.com/dhruvasagar/vim-prosession"
     },
     "vim-suda": {
       "rev": "c492741b4679b3cdd4d9e34138209784e061d916",

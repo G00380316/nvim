@@ -170,7 +170,7 @@ vim.keymap.set("n", "zcf", function()
 end, { desc = "Find Config Files" })
 
 vim.keymap.set({ "n", "x" }, "<C-l>", function() Snacks.picker.grep_word() end,
-    { desc = "Search Visual selection or Word" })
+    { desc = "Grep Visual selection or Word" })
 
 vim.keymap.set("n", "zkm", function() Snacks.picker.keymaps() end, { desc = "Search Keymaps" })
 
@@ -261,22 +261,22 @@ vim.keymap.set('n', '<leader>o', ':update<CR> :source<CR>', { desc = "Update Sou
 vim.keymap.set('n', '<leader>p', function()
         require("oil").open("~/Documents/Github")
     end,
-    { desc = "Opening Project Directories" }
+    { desc = "Open Project Directories" }
 )
 vim.keymap.set('n', '<leader>d', function()
         require("oil").open("~/")
     end,
-    { desc = "Opening Directories" }
+    { desc = "Open Directories" }
 )
 vim.keymap.set('n', 'zf', function()
         Snacks.picker.files({ cwd = vim.fn.expand("~/") })
     end,
-    { desc = "Search User Directories" }
+    { desc = "Find User Directories" }
 )
 vim.keymap.set('n', '<leader>f', function()
         Snacks.picker.files({ cwd = vim.fn.expand("~/Documents/Github") })
     end,
-    { desc = "Search Project Directories" }
+    { desc = "Find Project Directories" }
 )
 vim.keymap.set('n', '<leader>g', function()
         Snacks.picker.grep({ cwd = vim.fn.expand("~/Documents/Github") })
@@ -337,14 +337,14 @@ vim.keymap.set(
 )
 
 vim.keymap.set('n', '<leader>c', clear_search, {
-    desc = "Clear search highlight and pattern"
+    desc = "Clear Search highlight and pattern"
 })
 vim.keymap.set("n", "n", function()
     smart_search_and_jump("n")
-end, { desc = "Sticky search: next occurrence" })
+end, { desc = "Sticky Search: next occurrence" })
 vim.keymap.set("n", "N", function()
     smart_search_and_jump("N")
-end, { desc = "Sticky search: previous occurrence" })
+end, { desc = "Sticky Search: previous occurrence" })
 vim.keymap.set("n", "<leader>s", function()
     case_sensitive = not case_sensitive
 
@@ -352,7 +352,7 @@ vim.keymap.set("n", "<leader>s", function()
         vim.fn.setreg("/", build_search_pattern(sticky_word))
     end
 
-    vim.notify("Sticky search case-sensitive: " .. tostring(case_sensitive), vim.log.levels.INFO, { timeout = 1000 })
+    vim.notify("Sticky Search case-sensitive: " .. tostring(case_sensitive), vim.log.levels.INFO, { timeout = 1000 })
 end, { desc = "Toggle case sensitivity for sticky search" })
 -- 1. A keymap to START the interactive replace
 -- This finds the word under the cursor and readies the first replacement.

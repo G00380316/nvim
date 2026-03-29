@@ -5,15 +5,16 @@ vim.pack.add({
     { src = "https://github.com/stevearc/oil.nvim" },
     { src = "https://github.com/folke/snacks.nvim" },
     { src = "https://github.com/ibhagwan/fzf-lua" },
-    { src = "https://github.com/nvim-lua/plenary.nvim" },
     { src = "https://github.com/voldikss/vim-floaterm" },
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
-    { src = "https://github.com/refractalize/oil-git-status.nvim" },
+    { src = "https://github.com/dhruvasagar/vim-prosession" },
+    { src = "https://github.com/tpope/vim-obsession" },
 
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
     { src = "https://github.com/rebelot/kanagawa.nvim" },
     { src = "https://github.com/lewis6991/gitsigns.nvim" },
+    { src = "https://github.com/tpope/vim-fugitive" },
     { src = "https://github.com/lukas-reineke/indent-blankline.nvim" },
     { src = "https://github.com/HiPhish/rainbow-delimiters.nvim" },
     { src = "https://github.com/3rd/image.nvim" },
@@ -22,6 +23,7 @@ vim.pack.add({
     { src = "https://github.com/nvim-lualine/lualine.nvim" },
     { src = "https://github.com/nvim-treesitter/nvim-treesitter" },
     { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim" },
+    { src = "https://github.com/refractalize/oil-git-status.nvim" },
 
 
     -- LSP
@@ -41,6 +43,7 @@ vim.pack.add({
 
 
     -- Tools
+    { src = "https://github.com/nvim-lua/plenary.nvim" },
     { src = "https://github.com/chomosuke/typst-preview.nvim" },
     { src = "https://github.com/lambdalisue/vim-suda" },
     { src = "https://github.com/kawre/leetcode.nvim" },
@@ -114,7 +117,13 @@ vim.diagnostic.config({ virtual_text = true })
 vim.g.mapleader = " "
 vim.g.maplocalleader = ' '
 vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
-
+vim.g.prosession_on_startup = 1
+vim.g.prosession_per_branch = 1
+vim.g.prosession_ignore_dirs = {
+    vim.fn.expand("~"),
+    "/",
+    "/Users/enoch/"
+}
 require("lsp")
 require("plugins")
 require("autocmd")

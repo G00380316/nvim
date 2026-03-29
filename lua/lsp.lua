@@ -127,29 +127,34 @@ vim.keymap.set("n", "<C-Space>", function()
     local line = vim.fn.getline(".")
     local char = line:sub(col, col)
 
-    -- If on whitespace or end of line, move to next word first
+    local keys
     if char == "" or char:match("%s") then
-        vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("wciw", true, false, true),
-            "n",
-            true
-        )
+        keys = "wciw"
     else
-        vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("ciw", true, false, true),
-            "n",
-            true
-        )
+        keys = "ciw"
     end
 
-    -- Trigger completion after entering insert mode
-    -- vim.schedule(function()
-    -- 	vim.lsp.completion.get()
-    -- end)
+    vim.api.nvim_input(keys)
+
+    vim.schedule(function()
+        require("blink.cmp").show()
+    end)
 end, {
     noremap = true,
     silent = true,
-    desc = "Change word (or next word) and trigger completion",
+    desc = "Change word or next word and show blink",
+})
+
+vim.keymap.set("x", "<C-Space>", function()
+    vim.api.nvim_input('"_c')
+
+    vim.schedule(function()
+        require("blink.cmp").show()
+    end)
+end, {
+    noremap = true,
+    silent = true,
+    desc = "Change selection and show blink completion",
 })
 
 vim.lsp.config("lua_ls", {

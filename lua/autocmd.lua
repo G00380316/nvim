@@ -192,6 +192,16 @@ vim.api.nvim_create_autocmd("WinLeave", {
     end,
 })
 
+local prosession_group =
+    vim.api.nvim_create_augroup("ProSession", { clear = true })
+
+vim.api.nvim_create_autocmd("BufLeave", {
+    group = prosession_group,
+    callback = function()
+        vim.cmd("ProsessionClean")
+    end,
+})
+
 local function sioyek_if_pdf()
     local file = vim.fn.expand("<afile>")
     if file:match("%.pdf$") then
