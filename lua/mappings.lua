@@ -172,7 +172,7 @@ end, { desc = "Find Config Files" })
 vim.keymap.set({ "n", "x" }, "<C-l>", function() Snacks.picker.grep_word() end,
     { desc = "Grep Visual selection or Word" })
 
-vim.keymap.set("n", "zkm", function() Snacks.picker.keymaps() end, { desc = "Search Keymaps" })
+vim.keymap.set("n", "<C-h>", function() Snacks.picker.keymaps() end, { desc = "Search Keymaps" })
 
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-b>", function()
     Snacks.picker.buffers({

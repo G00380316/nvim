@@ -202,20 +202,20 @@ vim.api.nvim_create_autocmd("BufLeave", {
     end,
 })
 
-local function sioyek_if_pdf()
+local function open_if_unsupported()
     local file = vim.fn.expand("<afile>")
-    if file:match("%.pdf$") then
-        -- Start Sioyek as a detached process
-        vim.fn.jobstart({ "sioyek", file }, { detach = false })
+    -- if file:match("%.pdf$") then
+    -- Use open command as a detached process
+    vim.fn.jobstart({ "open", file }, { detach = false })
 
-        -- Optional: Close the buffer in Neovim so you don't stay on a binary mess
-        vim.api.nvim_buf_delete(0, { force = true })
-    end
+    -- Optional: Close the buffer in Neovim so you don't stay on a binary mess
+    vim.api.nvim_buf_delete(0, { force = true })
+    -- end
 end
 
 vim.api.nvim_create_autocmd("BufEnter", {
-    pattern = "*.pdf", -- Specific pattern is more efficient than "*"
-    callback = sioyek_if_pdf,
+    pattern = { "*.pdf", "*.doc", "*.docx" }, -- Specific pattern is more efficient than "*"
+    callback = open_if_unsupported,
 })
 
 local function enter_insert_if_zsh()
