@@ -82,7 +82,6 @@ vim.keymap.set({ "v", "x" }, "J", ":m '>+1<CR>gv=gv")                       -- M
 vim.keymap.set({ "v", "x" }, "K", ":m '<-2<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
 vim.keymap.set({ "v", "x" }, ">", ">gv", { noremap = true, silent = true }) -- Outdent selected block of text
 vim.keymap.set({ "v", "x" }, "<", "<gv", { noremap = true, silent = true }) -- Outdent selected block of text
-
 -- vim.keymap.set({ "n", "v" }, "y", '"+y', { noremap = true, silent = true })
 -- vim.keymap.set("n", "Y", '"+Y', { noremap = true, silent = true })
 -- delete (no register pollution)
@@ -105,25 +104,16 @@ vim.keymap.set("v", "c", '"_c', { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<C-i>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<C-o>", { noremap = true, silent = true })
 
--- Open lazygit in floating terminal (main UI)
 vim.keymap.set("n", "zg", function()
-    local buf = vim.api.nvim_create_buf(false, true)
-    local width = math.floor(vim.o.columns * 0.8)
-    local height = math.floor(vim.o.lines * 0.8)
-    local row = math.floor((vim.o.lines - height) / 2)
-    local col = math.floor((vim.o.columns - width) / 2)
-    vim.api.nvim_open_win(buf, true, {
-        relative = "editor",
-        width = width,
-        height = height,
-        row = row,
-        col = col,
-        style = "minimal",
-        border = "rounded",
-    })
-    vim.fn.jobstart({ "lazygit" }, { term = true })
-    vim.cmd("startinsert")
-end, { desc = "Open Lazygit in floating terminal" })
+    local cwd = vim.fn.getcwd()
+
+    vim.fn.jobstart({
+        "kitty", "@", "launch",
+        "--cwd", cwd,
+        "--type", "tab",
+        "lazygit",
+    }, { detach = true })
+end, { desc = "Open Lazygit in Kitty tab" })
 
 vim.keymap.set("n", "<CR>", function()
     local col = vim.fn.col(".")
@@ -298,22 +288,76 @@ vim.keymap.set('n', '<leader>g', function()
 )
 
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
-    local bufnr = 0
+    local bufnr = vim.api.nvim_get_current_buf()
+    local mode = vim.api.nvim_get_mode().mode
 
-    if vim.fn.mode() == "i" then
-        vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
+    -- Leave insert/visual cleanly before doing anything else
+    if mode:sub(1, 1) == "i" then
+        vim.cmd("stopinsert")
+    elseif mode:sub(1, 1) == "v" or mode == "V" or mode == "\22" then
+        vim.api.nvim_feedkeys(
+            vim.api.nvim_replace_termcodes("<Esc>", true, false, true),
+            "nx",
+            false
+        )
     end
-    if vim.bo.filetype ~= "oil" and has_lsp(bufnr) then
-        vim.lsp.buf.format({ async = false })
+
+    local function clear_search()
+        vim.fn.setreg("/", "")
     end
-    vim.cmd("write")
-    vim.fn.setreg("/", "")
+
+    local function save_file()
+        if vim.bo[bufnr].filetype ~= "oil" and has_lsp(bufnr) then
+            pcall(vim.lsp.buf.format, { async = false })
+        end
+
+        local ok, err = pcall(vim.cmd, "write")
+        if not ok then
+            vim.notify(err, vim.log.levels.ERROR)
+            return
+        end
+
+        clear_search()
+    end
+
+    local name = vim.api.nvim_buf_get_name(bufnr)
+
+    -- [No Name] buffer: prompt for a path in cwd
+    if name == "" then
+        local cwd = vim.fn.getcwd()
+        local default_path = cwd .. "/"
+
+        local ok, filepath = pcall(vim.fn.input, "Save as: ", default_path, "file")
+        if not ok or not filepath or filepath == "" then
+            return
+        end
+
+        filepath = vim.fn.fnamemodify(filepath, ":p")
+
+        local dir = vim.fn.fnamemodify(filepath, ":h")
+        if vim.fn.isdirectory(dir) == 0 then
+            vim.fn.mkdir(dir, "p")
+        end
+
+        local save_ok, save_err = pcall(vim.cmd, "saveas " .. vim.fn.fnameescape(filepath))
+        if not save_ok then
+            vim.notify(save_err, vim.log.levels.ERROR)
+            return
+        end
+
+        clear_search()
+        return
+    end
+
+    save_file()
 end, { noremap = true, silent = true, desc = "Save" })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", function()
+    local mode = vim.fn.mode()
+
     -- Leave insert / terminal mode cleanly
-    if vim.fn.mode() == "i" then
+    if mode == "i" then
         vim.cmd("stopinsert")
-    elseif vim.fn.mode() == "t" then
+    elseif mode == "t" then
         vim.api.nvim_feedkeys(
             vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true),
             "n",
@@ -321,17 +365,30 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", function()
         )
     end
 
+    -- 1. Try Leet exit first
+    if pcall(vim.cmd, "Leet exit") then
+        return
+    end
+
     local buf = vim.api.nvim_get_current_buf()
+    local name = vim.api.nvim_buf_get_name(buf)
+    local modified = vim.bo[buf].modified
+
+    -- 2. If empty [No Name] buffer → quit Neovim
+    if name == "" and not modified then
+        vim.cmd("qa")
+        return
+    end
+
+    -- 3. Fallback: smart close
     local wins = vim.fn.win_findbuf(buf)
 
     if #wins > 1 then
-        -- Buffer is visible in multiple windows → close only this window
         vim.cmd("close")
     else
-        -- Only one window shows this buffer → delete buffer
         vim.cmd("bd!")
     end
-end, { noremap = true, silent = true, desc = "Smart close window / buffer" })
+end, { noremap = true, silent = true, desc = "Smart close / quit" })
 vim.keymap.set({ "n", "v" }, "zv", "<cmd>vsplit<CR>", { noremap = true, silent = true, desc = "Split Vertically" })
 vim.keymap.set({ "n", "v" }, "zh", "<cmd>split<CR>", { noremap = true, silent = true, desc = "Split Horizontally" })
 vim.keymap.set("n", "<C-w>", "<C-w>w", { noremap = true, silent = true, desc = "Switch to next window" })
@@ -415,11 +472,20 @@ end, {
 
 vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true, desc = "Open Alpha" })
 vim.keymap.set("n", "zlo", function()
+    local cwd = vim.fn.getcwd()
+
     vim.fn.jobstart({
-        "open", "-n", "-a", "kitty", "--args",
-        "nvim", "+Leet",
+        "kitty", "@", "launch",
+        "--cwd", cwd,
+        "--type", "tab",
+        "nvim",
+        "+Leet",
     }, { detach = true })
-end, { noremap = true, silent = true, desc = "Open Leet in new kitty instance" })
+end, {
+    noremap = true,
+    silent = true,
+    desc = "Open Leet in kitty tab",
+})
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true, desc = "Test Leet Solution" })
 vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true, desc = "Submit Leet Solution" })
 vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true, desc = "List Leet Problems" })
