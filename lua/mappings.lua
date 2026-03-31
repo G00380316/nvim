@@ -73,11 +73,22 @@ end
 
 vim.keymap.set("n", "q", "<nop>", { noremap = true, silent = true })
 
-vim.keymap.set("n", "<C-d>", "<C-d>zz")                                     -- Scroll Half-Page and Center
-vim.keymap.set("n", "<C-u>", "<C-u>zz")                                     -- Scroll Half-Page and Center
-vim.keymap.set("n", "J", "mzJ`z")                                           -- Keep Cursor Position When Joining Lines
-vim.keymap.set("n", "n", "nzzzv")                                           -- Center Search Results
-vim.keymap.set("n", "N", "Nzzzv")                                           -- Center Search Results
+vim.keymap.set("n", "<C-d>", "<C-d>zz") -- Scroll Half-Page and Center
+vim.keymap.set("n", "<C-u>", "<C-u>zz") -- Scroll Half-Page and Center
+vim.keymap.set("n", "J", "mzJ`z")       -- Keep Cursor Position When Joining Lines
+vim.keymap.set("n", "n", function()
+    if vim.fn.getreg("/") == "" then
+        vim.cmd("normal! *")
+    end
+    vim.cmd("normal! nzzzv")
+end, { silent = true })
+
+vim.keymap.set("n", "N", function()
+    if vim.fn.getreg("/") == "" then
+        vim.cmd("normal! *")
+    end
+    vim.cmd("normal! Nzzzv")
+end, { silent = true })
 vim.keymap.set({ "v", "x" }, "J", ":m '>+1<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
 vim.keymap.set({ "v", "x" }, "K", ":m '<-2<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
 vim.keymap.set({ "v", "x" }, ">", ">gv", { noremap = true, silent = true }) -- Outdent selected block of text
