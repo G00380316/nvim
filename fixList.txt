@@ -1,0 +1,3 @@
+1. Can't navigate properly in lazy git line by line changes eg. <esc> and <tab>
+
+2.

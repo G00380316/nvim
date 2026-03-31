@@ -129,9 +129,9 @@ vim.keymap.set("n", "<C-Space>", function()
 
     local keys
     if char == "" or char:match("%s") then
-        keys = "wciw"
+        keys = 'w"_ciw'
     else
-        keys = "ciw"
+        keys = '"_ciw'
     end
 
     vim.api.nvim_input(keys)
@@ -235,13 +235,18 @@ vim.api.nvim_create_autocmd("LspAttach", {
                 _G.xcodebuild_initialized = true
             end
 
-            local opts = { buffer = bufnr, silent = true }
 
-            vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<cr>", opts)
-            vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>", opts)
-            vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>", opts)
-            vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>", opts)
-            vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>", opts)
+            vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<cr>",
+                { buffer = bufnr, silent = true, desc = "Xcode Picker" })
+            vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>",
+                { buffer = bufnr, silent = true, desc = "Xcode Run" })
+            vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>",
+                { buffer = bufnr, silent = true, desc = "Xcode Run test" })
+            vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>",
+                { buffer = bufnr, silent = true, desc = "Xcode select Device" })
+            vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>",
+                { buffer = bufnr, silent = true, desc = "Xcode select Scheme" })
+
 
             vim.api.nvim_create_autocmd("BufWritePre", {
                 buffer = bufnr,

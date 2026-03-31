@@ -83,11 +83,24 @@ vim.keymap.set({ "v", "x" }, "K", ":m '<-2<CR>gv=gv")                       -- M
 vim.keymap.set({ "v", "x" }, ">", ">gv", { noremap = true, silent = true }) -- Outdent selected block of text
 vim.keymap.set({ "v", "x" }, "<", "<gv", { noremap = true, silent = true }) -- Outdent selected block of text
 
-vim.keymap.set({ 'n', 'v' }, 'y', '"+y')
--- Delete Without Affecting Clipboard
-vim.keymap.set({ "n", "v" }, "d", [["_d]])
--- Standard-editor-style visual paste (using the system clipboard)
-vim.keymap.set("x", "p", [["+P]], { silent = true })
+-- vim.keymap.set({ "n", "v" }, "y", '"+y', { noremap = true, silent = true })
+-- vim.keymap.set("n", "Y", '"+Y', { noremap = true, silent = true })
+-- delete (no register pollution)
+vim.keymap.set({ "n", "v" }, "d", '"_d', { noremap = true, silent = true })
+vim.keymap.set("n", "D", '"_D', { noremap = true, silent = true })
+-- change (no register pollution)
+vim.keymap.set({ "n", "v" }, "c", '"_c', { noremap = true, silent = true })
+vim.keymap.set("n", "C", '"_C', { noremap = true, silent = true })
+-- substitute (no register pollution)
+vim.keymap.set({ "n", "v" }, "s", '"_s', { noremap = true, silent = true })
+vim.keymap.set("n", "S", '"_S', { noremap = true, silent = true })
+-- single character delete
+vim.keymap.set("n", "x", '"_x', { noremap = true, silent = true })
+vim.keymap.set("n", "X", '"_X', { noremap = true, silent = true })
+-- visual paste without overwriting clipboard
+vim.keymap.set("v", "p", '"_dP', { noremap = true, silent = true })
+-- visual change (no register pollution, preserves clipboard-only workflow)
+vim.keymap.set("v", "c", '"_c', { noremap = true, silent = true })
 
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<C-i>", { noremap = true, silent = true })
 vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<C-o>", { noremap = true, silent = true })
@@ -125,7 +138,7 @@ vim.keymap.set("n", "<CR>", function()
         )
     else
         vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("ciw", true, false, true),
+            vim.api.nvim_replace_termcodes('"_ciw', true, false, true),
             "n",
             true
         )
@@ -400,14 +413,17 @@ end, {
     desc = "Replace previous match properly"
 })
 
-vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true })
-vim.keymap.set("n", "zlo",
-    "<cmd>silent !kitty @ launch --type=os-window nvim +'Leet'<CR>"
-    , { noremap = true, silent = true })
-vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true })
-vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true })
-vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true })
-vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", { noremap = true, silent = true, desc = "Open Alpha" })
+vim.keymap.set("n", "zlo", function()
+    vim.fn.jobstart({
+        "open", "-n", "-a", "kitty", "--args",
+        "nvim", "+Leet",
+    }, { detach = true })
+end, { noremap = true, silent = true, desc = "Open Leet in new kitty instance" })
+vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", { noremap = true, silent = true, desc = "Test Leet Solution" })
+vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", { noremap = true, silent = true, desc = "Submit Leet Solution" })
+vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", { noremap = true, silent = true, desc = "List Leet Problems" })
+vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = true, desc = "Reset Leet Solution" })
 vim.keymap.set("n", "go", open_in_file_manager,
     { noremap = true, silent = true, desc = "Open Current folder in Explorer/Finder" })
 
