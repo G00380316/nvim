@@ -358,7 +358,7 @@ dashboard.section.buttons.val = {
     dashboard.button(
         "l",
         "  LeetCode",
-        "<cmd>silent !kitty @ launch --type=os-window nvim +'Leet'<CR>"
+        "<cmd>silent !kitty @ launch --type=tab --cwd=$(pwd) nvim +'lua vim.schedule(function() vim.cmd(\"Leet\") end)'<CR>"
     ),
     dashboard.button("t", "  Terminal", function()
         vim.cmd("term")
