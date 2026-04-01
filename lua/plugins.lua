@@ -344,11 +344,9 @@ require("gitsigns").setup({
 
 require("leetcode").setup({
     -- configuration goes here
-    ---@type lc.lang
     lang = "python3",
     ---@type boolean
     image_support = true,
-    ---@type lc.storage
     storage = {
         home = "~/Documents/Github/Leetcode",
         cache = vim.fn.stdpath("cache") .. "/leetcode",

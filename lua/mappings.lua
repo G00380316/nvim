@@ -1,3 +1,5 @@
+local Snacks = require("snacks")
+
 -- A function to search for the word under the cursor and then jump
 -- Sticky smart search state
 local sticky_active = false
@@ -319,9 +321,6 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
         )
     end
 
-    local function clear_search()
-        vim.fn.setreg("/", "")
-    end
 
     local function save_file()
         if vim.bo[bufnr].filetype ~= "oil" and has_lsp(bufnr) then
