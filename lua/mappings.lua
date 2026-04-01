@@ -519,14 +519,14 @@ vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", { noremap = true, silent = tru
 vim.keymap.set("n", "go", open_in_file_manager,
     { noremap = true, silent = true, desc = "Open Current folder in Explorer/Finder" })
 
-vim.keymap.set("n", "<leader>sw", function()
+vim.keymap.set("n", "zsw", function()
     require("grug-far").open({
         prefills = { search = vim.fn.expand("<cword>") },
     })
 end, { desc = "Search current word" })
 
 -- Visual selection search
-vim.keymap.set("v", "<leader>sw", function()
+vim.keymap.set("v", "zsw", function()
     require("grug-far").with_visual_selection()
 end, { desc = "Search selection" })
 
