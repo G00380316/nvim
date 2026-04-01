@@ -57,8 +57,10 @@ vim.pack.add({
 
 vim.cmd([[set mouse=]])
 vim.cmd([[set noswapfile]])
-
+vim.opt.fileformats = { "unix", "dos" }
+vim.opt.fileformat = "unix"
 vim.cmd([[hi @lsp.type.number gui=italic]])
+
 vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
 vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
 vim.api.nvim_set_hl(0, "EndOfBuffer", { bg = "none" })
