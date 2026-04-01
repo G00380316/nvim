@@ -112,8 +112,14 @@ vim.keymap.set("v", "p", '"_dP', { noremap = true, silent = true })
 -- visual change (no register pollution, preserves clipboard-only workflow)
 vim.keymap.set("v", "c", '"_c', { noremap = true, silent = true })
 
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<C-i>", { noremap = true, silent = true })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<C-o>", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-o>", "<nop>", { silent = true })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<C-i>",
+    { noremap = true, silent = true, desc = "Jump to the next position" })
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<C-o>",
+    { noremap = true, silent = true, desc = "Jump to the prev position" })
+vim.keymap.set({ "n", "v", "i", "t" }, "<Tab>", "<cmd>bn<CR>", { noremap = true, silent = true, desc = "Next Buffer" })
+vim.keymap.set({ "n", "v", "i", "t" }, "<S-Tab>", "<cmd>bp<CR>",
+    { noremap = true, silent = true, desc = "Previous Buffer" })
 
 vim.keymap.set("n", "zg", function()
     local cwd = vim.fn.getcwd()
@@ -362,7 +368,8 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", function()
 
     save_file()
 end, { noremap = true, silent = true, desc = "Save" })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", function()
+
+local quit = function()
     local mode = vim.fn.mode()
 
     -- Leave insert / terminal mode cleanly
@@ -399,7 +406,15 @@ vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", function()
     else
         vim.cmd("bd!")
     end
+end
+
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", function()
+    quit()
 end, { noremap = true, silent = true, desc = "Smart close / quit" })
+vim.keymap.set({ "n" }, "q", function()
+    quit()
+end, { noremap = true, silent = true, desc = "Smart close / quit" })
+
 vim.keymap.set({ "n", "v" }, "zv", "<cmd>vsplit<CR>", { noremap = true, silent = true, desc = "Split Vertically" })
 vim.keymap.set({ "n", "v" }, "zh", "<cmd>split<CR>", { noremap = true, silent = true, desc = "Split Horizontally" })
 vim.keymap.set("n", "<C-w>", "<C-w>w", { noremap = true, silent = true, desc = "Switch to next window" })
@@ -515,6 +530,6 @@ vim.keymap.set("v", "<leader>sw", function()
     require("grug-far").with_visual_selection()
 end, { desc = "Search selection" })
 
-vim.keymap.set("n", "<C-o>", function()
+vim.keymap.set("n", "zs", function()
     require("grug-far").open({ transient = true })
 end, { desc = "Search Window" })

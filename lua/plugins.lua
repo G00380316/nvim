@@ -26,34 +26,58 @@ require("kanagawa").setup({
     },
     overrides = function(colors) -- add/modify highlights
         local theme = colors.theme
+        local makeDiagnosticColor = function(color)
+            local c = require("kanagawa.lib.color")
+            return { fg = color, bg = c(color):blend(theme.ui.bg, 0.95):to_hex() }
+        end
         return {
-            NormalFloat = { bg = "none" },
-            FloatBorder = { bg = "none" },
-            FloatTitle = { bg = "none" },
-            Pmenu = { fg = theme.ui.shade0, bg = "NONE", blend = vim.o.pumblend }, -- add `blend = vim.o.pumblend` to enable transparency
-            PmenuSel = { fg = "NONE", bg = theme.ui.bg_p2 },
-            PmenuSbar = { bg = theme.ui.bg_m1 },
-            PmenuThumb = { bg = theme.ui.bg_p2 },
-
+            NormalFloat                 = { bg = "none" },
+            FloatBorder                 = { bg = "none" },
+            FloatTitle                  = { bg = "none" },
+            Pmenu                       = { fg = theme.ui.shade0, bg = "NONE", blend = vim.o.pumblend }, -- add `blend = vim.o.pumblend` to enable transparency
+            PmenuSel                    = { fg = "NONE", bg = theme.ui.bg_p2 },
+            PmenuSbar                   = { bg = theme.ui.bg_m1 },
+            PmenuThumb                  = { bg = theme.ui.bg_p2 },
             -- Save an hlgroup with dark background and dimmed foreground
             -- so that you can use it where your still want darker windows.
             -- E.g.: autocmd TermOpen * setlocal winhighlight=Normal:NormalDark
-            NormalDark = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m3 },
+            NormalDark                  = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m3 },
 
             -- Popular plugins that open floats will link to NormalFloat by default;
             -- set their background accordingly if you wish to keep them dark and borderless
-            LazyNormal = { bg = theme.ui.bg_m3, fg = theme.ui.fg_dim },
-            MasonNormal = { bg = theme.ui.bg_m3, fg = theme.ui.fg_dim },
-            TelescopeTitle = { fg = theme.ui.special, bold = true },
-            TelescopePromptBorder = { fg = theme.ui.special, },
-            TelescopeResultsNormal = { fg = theme.ui.fg_dim, },
-            TelescopeResultsBorder = { fg = theme.ui.special, },
-            TelescopePreviewBorder = { fg = theme.ui.special },
+            LazyNormal                  = { bg = theme.ui.bg_m3, fg = theme.ui.fg_dim },
+            MasonNormal                 = { bg = theme.ui.bg_m3, fg = theme.ui.fg_dim },
+            TelescopeTitle              = { fg = theme.ui.special, bold = true },
+            TelescopePromptBorder       = { fg = theme.ui.special, },
+            TelescopeResultsNormal      = { fg = theme.ui.fg_dim, },
+            TelescopeResultsBorder      = { fg = theme.ui.special, },
+            TelescopePreviewBorder      = { fg = theme.ui.special },
+
+            BufferLineBufferSelected    = { fg = theme.ui.fg, bg = "none", bold = true },
+            BufferLineFill              = { bg = "none" },
+            BufferLineBackground        = { bg = "none" },
+            BufferLineSeparator         = { fg = theme.ui.bg_m3, bg = "none" },
+            BufferLineSeparatorVisible  = { fg = theme.ui.bg_m3, bg = "none" },
+            BufferLineSeparatorSelected = { fg = theme.ui.bg_m3, bg = "none" },
+
+            -- Matching the underline to Kanagawa's "Special" color (Gold/Yellow)
+            BufferLineIndicatorSelected = { fg = theme.ui.special, sp = theme.ui.special, bold = true, underline = true },
+
+            DiagnosticVirtualTextHint   = makeDiagnosticColor(theme.diag.hint),
+            DiagnosticVirtualTextInfo   = makeDiagnosticColor(theme.diag.info),
+            DiagnosticVirtualTextWarn   = makeDiagnosticColor(theme.diag.warning),
+            DiagnosticVirtualTextError  = makeDiagnosticColor(theme.diag.error),
+
+            String                      = {
+                fg = colors.palette.carpYellow,
+                italic = true
+            },
+
         }
     end,
-    theme = "wave",    -- Load "wave" theme when 'background' option is not set
-    background = {     -- map the value of 'background' option to a theme
-        dark = "wave", -- try "dragon" !
+    theme = "wave",      -- Load "wave" theme when 'background' option is not set
+    background = {       -- map the value of 'background' option to a theme
+        dark = "dragon", -- try "dragon" !
     },
 })
 

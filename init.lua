@@ -10,6 +10,7 @@ vim.pack.add({
     { src = "https://github.com/dhruvasagar/vim-prosession" },
     { src = "https://github.com/tpope/vim-obsession" },
 
+
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
     { src = "https://github.com/rebelot/kanagawa.nvim" },
@@ -24,6 +25,7 @@ vim.pack.add({
     { src = "https://github.com/nvim-treesitter/nvim-treesitter" },
     { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim" },
     { src = "https://github.com/refractalize/oil-git-status.nvim" },
+    { src = "https://github.com/akinsho/bufferline.nvim" },
 
 
     -- LSP
@@ -104,7 +106,7 @@ vim.o.wrapmargin = 0                 -- " Disable margin-based line wrapping
 vim.o.textwidth = 0                  -- " Disable hard wrapping at a fixed width
 vim.opt.formatoptions:remove("t")    -- " Remove the 't' flag to stop automatic text wrapping
 vim.opt.iskeyword:append("-")        -- Treat dash as part of word
-vim.opt.iskeyword:append("_")        -- Treat dash as part of word
+vim.opt.iskeyword:append("_")        -- Treat as part of word
 vim.o.updatetime = 50
 vim.o.hidden = true                  -- Allow hidden buffers
 vim.o.errorbells = false             -- No error bells
@@ -318,4 +320,22 @@ lualine.setup({
             },
         },
     },
+
+})
+
+require("bufferline").setup({
+    options = {
+        mode = "buffers",
+        separator_style = "slant",
+
+        indicator = {
+            style = 'underline',
+        },
+
+        show_buffer_icons = true,
+        show_buffer_close_icons = false,
+        show_close_icon = false,
+        persist_buffer_sort = true,
+        always_show_bufferline = false,
+    }
 })
