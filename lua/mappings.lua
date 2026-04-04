@@ -1,5 +1,7 @@
+local last = vim.fn.line("'>")
+vim.keymap.set("n", "q", "<nop>", { noremap = true, silent = true })
+local max = vim.fn.line("$")
 local Snacks = require("snacks")
-
 -- A function to search for the word under the cursor and then jump
 -- Sticky smart search state
 local sticky_active = false
@@ -73,55 +75,74 @@ end
 
 --- SPECIAL MAPPINGS ---
 
-vim.keymap.set("n", "q", "<nop>", { noremap = true, silent = true })
+vim.keymap.set("n", "<C-u>", "<C-u>zz")     -- Scroll Half-Page and Center
+vim.keymap.set("x", "J", function()
+    vim.keymap.set("n", "<C-d>", "<C-d>zz") -- Scroll Half-Page and Center
+    vim.keymap.set("n", "J", "mzJ`z")       -- Keep Cursor Position When Joining Lines
 
-vim.keymap.set("n", "<C-d>", "<C-d>zz") -- Scroll Half-Page and Center
-vim.keymap.set("n", "<C-u>", "<C-u>zz") -- Scroll Half-Page and Center
-vim.keymap.set("n", "J", "mzJ`z")       -- Keep Cursor Position When Joining Lines
-vim.keymap.set("n", "n", function()
-    if vim.fn.getreg("/") == "" then
-        vim.cmd("normal! *")
+    if last >= max then
+        return
     end
-    vim.cmd("normal! nzzzv")
-end, { silent = true })
+    vim.cmd("'<,'>move '>+1")
+    vim.cmd("normal! gv")
+end, { silent = true, desc = "Move selection down" })
 
-vim.keymap.set("n", "N", function()
-    if vim.fn.getreg("/") == "" then
-        vim.cmd("normal! *")
+vim.keymap.set("x", "K", function()
+    local first = vim.fn.line("'<")
+    if first <= 1 then
+        return
     end
-    vim.cmd("normal! Nzzzv")
-end, { silent = true })
-vim.keymap.set({ "v", "x" }, "J", ":m '>+1<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
-vim.keymap.set({ "v", "x" }, "K", ":m '<-2<CR>gv=gv")                       -- Move Selected Text Up/Down in Visual Mode
-vim.keymap.set({ "v", "x" }, ">", ">gv", { noremap = true, silent = true }) -- Outdent selected block of text
+    vim.cmd("'<,'>move '<-2")
+    vim.cmd("normal! gv")
+end, { silent = true, desc = "Move selection up" })
+
+vim.keymap.set("x", "J", ":move '>+1<CR>gv=gv", {
+    noremap = true,
+    silent = true,
+    desc = "Move selection down",
+})
+
+vim.keymap.set("x", "K", ":move '<-2<CR>gv=gv", {
+    noremap = true,
+    silent = true,
+    desc = "Move selection up",
+})
+
 vim.keymap.set({ "v", "x" }, "<", "<gv", { noremap = true, silent = true }) -- Outdent selected block of text
--- vim.keymap.set({ "n", "v" }, "y", '"+y', { noremap = true, silent = true })
--- vim.keymap.set("n", "Y", '"+Y', { noremap = true, silent = true })
--- delete (no register pollution)
+-- yank to system clipboard
+vim.keymap.set({ "n", "v" }, "y", '"+y', { noremap = true, silent = true })
+vim.keymap.set("n", "Y", '"+Y', { noremap = true, silent = true })
+
+-- delete/change without polluting clipboard
 vim.keymap.set({ "n", "v" }, "d", '"_d', { noremap = true, silent = true })
 vim.keymap.set("n", "D", '"_D', { noremap = true, silent = true })
--- change (no register pollution)
+
 vim.keymap.set({ "n", "v" }, "c", '"_c', { noremap = true, silent = true })
 vim.keymap.set("n", "C", '"_C', { noremap = true, silent = true })
--- substitute (no register pollution)
+
 vim.keymap.set({ "n", "v" }, "s", '"_s', { noremap = true, silent = true })
 vim.keymap.set("n", "S", '"_S', { noremap = true, silent = true })
--- single character delete
+
 vim.keymap.set("n", "x", '"_x', { noremap = true, silent = true })
 vim.keymap.set("n", "X", '"_X', { noremap = true, silent = true })
--- visual paste without overwriting clipboard
-vim.keymap.set("v", "p", '"_dP', { noremap = true, silent = true })
--- visual change (no register pollution, preserves clipboard-only workflow)
-vim.keymap.set("v", "c", '"_c', { noremap = true, silent = true })
 
+-- replace selection without overwriting clipboard
+vim.keymap.set("x", "p", '"_dP', { noremap = true, silent = true })
 vim.keymap.set("n", "<C-o>", "<nop>", { silent = true })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-]>", "<C-i>",
+vim.keymap.set({ "n" }, "<C-]>", "<C-i>",
     { noremap = true, silent = true, desc = "Jump to the next position" })
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-[>", "<C-o>",
+vim.keymap.set({ "n" }, "<C-[>", "<C-o>",
     { noremap = true, silent = true, desc = "Jump to the prev position" })
-vim.keymap.set({ "n", "v", "i", "t" }, "<Tab>", "<cmd>bn<CR>", { noremap = true, silent = true, desc = "Next Buffer" })
-vim.keymap.set({ "n", "v", "i", "t" }, "<S-Tab>", "<cmd>bp<CR>",
-    { noremap = true, silent = true, desc = "Previous Buffer" })
+vim.keymap.set("n", "<Tab>", "<cmd>bn<CR>", { noremap = true, silent = true, desc = "Next Buffer" })
+vim.keymap.set("n", "<S-Tab>", "<cmd>bp<CR>", { noremap = true, silent = true, desc = "Previous Buffer" })
+
+vim.keymap.set("n", "<leader>qn", function()
+    local notes = vim.fn.expand("~/quicknotes.txt")
+    if vim.fn.filereadable(notes) == 0 then
+        vim.fn.writefile({}, notes)
+    end
+    vim.cmd("FloatermNew --height=0.85 --width=0.85 --title=QuickNotes nvim " .. vim.fn.fnameescape(notes))
+end, { noremap = true, silent = true, desc = "Quick Notes" })
 
 vim.keymap.set("n", "zg", function()
     local cwd = vim.fn.getcwd()
@@ -196,7 +217,7 @@ vim.keymap.set({ "n", "x" }, "<C-l>", function() Snacks.picker.grep_word() end,
 
 vim.keymap.set("n", "<C-h>", function() Snacks.picker.keymaps() end, { desc = "Search Keymaps" })
 
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-b>", function()
+vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
     Snacks.picker.buffers({
         sort_mru = true,
         current = true,
@@ -393,7 +414,9 @@ local quit = function()
 
     -- 2. If empty [No Name] buffer → quit Neovim
     if name == "" and not modified then
-        vim.cmd("qa")
+        pcall(
+            vim.cmd, "qa"
+        )
         return
     end
 
@@ -401,9 +424,9 @@ local quit = function()
     local wins = vim.fn.win_findbuf(buf)
 
     if #wins > 1 then
-        vim.cmd("close")
+        pcall(vim.cmd, "close")
     else
-        vim.cmd("bd!")
+        pcall(vim.cmd, "bd!")
     end
 end
 
@@ -414,8 +437,8 @@ vim.keymap.set({ "n" }, "q", function()
     quit()
 end, { noremap = true, silent = true, desc = "Smart close / quit" })
 
-vim.keymap.set({ "n", "v" }, "zv", "<cmd>vsplit<CR>", { noremap = true, silent = true, desc = "Split Vertically" })
-vim.keymap.set({ "n", "v" }, "zh", "<cmd>split<CR>", { noremap = true, silent = true, desc = "Split Horizontally" })
+vim.keymap.set("n", "zv", "<cmd>vsplit<CR><C-w>l", { noremap = true, silent = true, desc = "Split Vertically" })
+vim.keymap.set("n", "zh", "<cmd>split<CR><C-w>j", { noremap = true, silent = true, desc = "Split Horizontally" })
 vim.keymap.set("n", "<C-w>", "<C-w>w", { noremap = true, silent = true, desc = "Switch to next window" })
 vim.keymap.set(
     "i",

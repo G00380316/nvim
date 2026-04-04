@@ -82,7 +82,9 @@ vim.o.shiftwidth = indent  -- Width of an indentation level (used for >> and <<)
 vim.o.softtabstop = indent -- How many spaces a <Tab> counts for while editing
 vim.o.expandtab = true     -- Convert tabs to spaces (set to false if you want actual tabs)
 vim.o.smartindent = true   -- Makes indenting "smarter" based on synta
-vim.o.matchtime = 2        -- How long to show matching bracket
+vim.opt.autoindent = true
+vim.opt.smarttab = true
+vim.o.matchtime = 2 -- How long to show matching bracket
 vim.o.paste = false
 
 vim.o.autoread = true -- Auto reload files changed outside vim
@@ -104,7 +106,7 @@ vim.o.wrap = true
 vim.o.linebreak = true
 vim.o.wrapmargin = 0                 -- " Disable margin-based line wrapping
 vim.o.textwidth = 0                  -- " Disable hard wrapping at a fixed width
-vim.opt.formatoptions:remove("t")    -- " Remove the 't' flag to stop automatic text wrapping
+vim.opt.formatoptions:remove({ "t", "c", "r", "o" })
 vim.opt.iskeyword:append("-")        -- Treat dash as part of word
 vim.opt.iskeyword:append("_")        -- Treat as part of word
 vim.o.updatetime = 50

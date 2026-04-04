@@ -264,33 +264,34 @@ end
 -- local web_dev_autosave = vim.api.nvim_create_augroup("WebDevAutoSave", { clear = true })
 local auto_save_group = vim.api.nvim_create_augroup("AutoSave", { clear = true })
 
--- vim.api.nvim_create_autocmd({ "InsertLeave" }, {
-vim.api.nvim_create_autocmd({ "TextChanged", "InsertLeave" }, {
+vim.api.nvim_create_autocmd("InsertLeave", {
     group = auto_save_group,
-    pattern = { "*" }, -- File types to target
+    pattern = "*",
     callback = function()
-        local bufnr = 0
-        -- Check if the buffer has a file name and has been modified
-        if vim.fn.filereadable(vim.api.nvim_buf_get_name(0)) == 1 and vim.bo.modified then
-            vim.cmd("update") -- Use "update" to save only if there are changes
-            if has_lsp(bufnr) then
-                vim.lsp.buf.format({ async = false })
-            end
+        local name = vim.api.nvim_buf_get_name(0)
+        if name ~= "" and vim.bo.modified and vim.bo.buftype == "" then
+            vim.cmd("silent! update")
         end
     end,
-    desc = "AutoSave All files",
+    desc = "Auto save on insert leave",
 })
 
+vim.api.nvim_create_autocmd("BufWritePre", {
+    group = auto_save_group,
+    pattern = "*",
+    callback = function(args)
+        if vim.bo[args.buf].buftype ~= "" then
+            return
+        end
+
+        if has_lsp(args.buf) then
+            pcall(vim.lsp.buf.format, { async = false, bufnr = args.buf })
+        end
+    end,
+    desc = "Format before save",
+})
 local yank_group = vim.api.nvim_create_augroup("HighlightYank", { clear = true })
 
-vim.api.nvim_create_autocmd("TextYankPost", {
-    callback = function()
-        vim.highlight.on_yank({
-            higroup = "Visual",
-            timeout = 120,
-        })
-    end,
-})
 
 vim.api.nvim_create_autocmd("TextYankPost", {
     group = yank_group,
@@ -325,5 +326,16 @@ vim.api.nvim_create_autocmd("BufWritePre", {
         local view = vim.fn.winsaveview()
         vim.cmd([[silent! %s/\r//ge]])
         vim.fn.winrestview(view)
+    end,
+})
+
+local diag_refresh_group = vim.api.nvim_create_augroup("DiagRefresh", { clear = true })
+
+vim.api.nvim_create_autocmd({ "DiagnosticChanged", "LspAttach", "BufEnter" }, {
+    group = diag_refresh_group,
+    callback = function()
+        vim.schedule(function()
+            pcall(vim.cmd, "redrawstatus")
+        end)
     end,
 })
