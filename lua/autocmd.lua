@@ -304,16 +304,6 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     end,
 })
 
-vim.api.nvim_create_autocmd("BufReadPost", {
-    pattern = "*",
-    callback = function(args)
-        if vim.bo[args.buf].buftype ~= "" then
-            return
-        end
-        vim.bo[args.buf].fileformat = "unix"
-    end,
-})
-
 vim.api.nvim_create_autocmd("BufWritePre", {
     pattern = "*",
     callback = function(args)
