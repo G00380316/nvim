@@ -108,6 +108,21 @@ vim.keymap.set("x", "K", ":move '<-2<CR>gv=gv", {
     desc = "Move selection up",
 })
 
+vim.keymap.set("n", "gx", function()
+    local raw = vim.fn.expand("<cWORD>")
+    local target = vim.fn.fnamemodify(vim.fn.expand(raw), ":p")
+
+    if target:match("^https?://") then
+        vim.system({ "open", target })
+    elseif vim.fn.isdirectory(target) == 1 then
+        vim.system({ "open", target })
+    elseif vim.fn.filereadable(target) == 1 then
+        vim.cmd("edit " .. target)
+    else
+        print("Unknown target: " .. raw)
+    end
+end, { silent = true })
+
 vim.keymap.set("n", "<BS>", "ge", { noremap = true, silent = true })
 
 vim.keymap.set({ "v", "x" }, "<", "<gv", { noremap = true, silent = true }) -- Outdent selected block of text
@@ -139,7 +154,7 @@ vim.keymap.set("n", "<Tab>", "<cmd>bn<CR>", { noremap = true, silent = true, des
 vim.keymap.set("n", "<S-Tab>", "<cmd>bp<CR>", { noremap = true, silent = true, desc = "Previous Buffer" })
 
 vim.keymap.set("n", "<leader>qn", function()
-    local notes = vim.fn.expand("~/quicknotes.txt")
+    local notes = vim.fn.expand("~/.quicknotes.txt")
     if vim.fn.filereadable(notes) == 0 then
         vim.fn.writefile({}, notes)
     end
