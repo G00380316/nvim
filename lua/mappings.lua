@@ -108,6 +108,8 @@ vim.keymap.set("x", "K", ":move '<-2<CR>gv=gv", {
     desc = "Move selection up",
 })
 
+vim.keymap.set("n", "<BS>", "ge", { noremap = true, silent = true })
+
 vim.keymap.set({ "v", "x" }, "<", "<gv", { noremap = true, silent = true }) -- Outdent selected block of text
 -- yank to system clipboard
 vim.keymap.set({ "n", "v" }, "y", '"+y', { noremap = true, silent = true })
