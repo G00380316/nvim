@@ -121,7 +121,7 @@ vim.keymap.set("n", "gx", function()
     else
         print("Unknown target: " .. raw)
     end
-end, { silent = true })
+end, { silent = true, desc = "Open Links and directories" })
 
 vim.keymap.set("n", "<BS>", "ge", { noremap = true, silent = true })
 
