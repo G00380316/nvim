@@ -45,7 +45,7 @@ local function smart_search_and_jump(direction)
     end
 
     -- Jump to next/previous match
-    vim.cmd("normal! " .. direction)
+    pcall(vim.cmd, "normal! " .. direction)
 end
 
 local function has_lsp(bufnr)
@@ -154,7 +154,7 @@ vim.keymap.set("n", "<Tab>", "<cmd>bn<CR>", { noremap = true, silent = true, des
 vim.keymap.set("n", "<S-Tab>", "<cmd>bp<CR>", { noremap = true, silent = true, desc = "Previous Buffer" })
 
 vim.keymap.set("n", "<leader>qn", function()
-    local notes = vim.fn.expand("~/.quicknotes.txt")
+    local notes = vim.fn.expand("~/Library/Mobile Documents/com~apple~CloudDocs/Desktop/quicknotes.txt")
     if vim.fn.filereadable(notes) == 0 then
         vim.fn.writefile({}, notes)
     end
@@ -322,6 +322,11 @@ vim.keymap.set('n', '<leader>p', function()
         require("oil").open("~/Documents/Github")
     end,
     { desc = "Open Project Directories" }
+)
+vim.keymap.set('n', '<leader>cd', function()
+        require("oil").open("~/Library/Mobile Documents/com~apple~CloudDocs/")
+    end,
+    { desc = "Open ICloud Documents" }
 )
 vim.keymap.set('n', '<leader>d', function()
         require("oil").open("~/")
