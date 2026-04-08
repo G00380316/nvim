@@ -252,12 +252,22 @@ vim.api.nvim_create_autocmd("LspAttach", {
                 { buffer = bufnr, silent = true, desc = "Xcode select Device" })
             vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>",
                 { buffer = bufnr, silent = true, desc = "Xcode select Scheme" })
-
+            vim.keymap.set("n", "<leader>xs", "<cmd>XcodebuildSetup<cr>",
+                { buffer = bufnr, silent = true, desc = "Xcode Setup" })
 
             vim.api.nvim_create_autocmd("BufWritePre", {
                 buffer = bufnr,
                 callback = function()
-                    vim.cmd("XcodebuildBuildRun")
+                    local ok, err = pcall(vim.cmd, "XcodebuildBuildRun")
+
+                    if not ok then
+                        vim.notify("XcodebuildBuildRun failed: " .. tostring(err), vim.log.levels.WARN)
+
+                        local setup_ok, setup_err = pcall(vim.cmd, "XcodebuildSetup")
+                        if not setup_ok then
+                            vim.notify("XcodebuildSetup failed: " .. tostring(setup_err), vim.log.levels.ERROR)
+                        end
+                    end
                 end,
             })
         end
