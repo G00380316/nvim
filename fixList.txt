@@ -1,0 +1,1 @@
+1 . Deleted file tabs should close themselves
