@@ -192,6 +192,50 @@ vim.api.nvim_create_autocmd("WinLeave", {
     end,
 })
 
+local function clean_dead_buffers()
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if not vim.api.nvim_buf_is_valid(bufnr) or not vim.api.nvim_buf_is_loaded(bufnr) then
+            goto continue
+        end
+
+        if vim.bo[bufnr].buftype ~= "" then
+            goto continue
+        end
+
+        if vim.bo[bufnr].buflisted == false then
+            goto continue
+        end
+
+        local name = vim.api.nvim_buf_get_name(bufnr)
+
+        if name ~= "" and vim.fn.filereadable(name) == 0 and vim.fn.isdirectory(name) == 0 then
+            vim.api.nvim_buf_delete(bufnr, { force = true })
+        end
+
+        ::continue::
+    end
+end
+
+vim.api.nvim_create_autocmd({
+    "BufEnter",
+    "BufWritePost",
+    "FocusGained",
+}, {
+    callback = function()
+        vim.schedule(clean_dead_buffers)
+    end,
+})
+
+vim.api.nvim_create_autocmd({
+    "BufEnter",
+    "BufWritePost",
+    "FocusGained",
+}, {
+    callback = function()
+        vim.schedule(clean_dead_buffers)
+    end,
+})
+
 local prosession_group =
     vim.api.nvim_create_augroup("ProSession", { clear = true })
 
