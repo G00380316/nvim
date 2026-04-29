@@ -448,3 +448,21 @@ vim.api.nvim_create_autocmd({ "DiagnosticChanged", "LspAttach", "BufEnter" }, {
         end)
     end,
 })
+
+-- ============================================================
+-- Markdown Auto Save
+-- Save markdown files when leaving the buffer/window.
+-- ============================================================
+
+vim.api.nvim_create_autocmd({ "BufLeave", "WinLeave" }, {
+    group = vim.api.nvim_create_augroup("MarkdownAutoSaveOnLeave", { clear = true }),
+    pattern = { "*.md", "*.markdown" },
+    callback = function(args)
+        if vim.bo[args.buf].modified and vim.bo[args.buf].buftype == "" then
+            vim.api.nvim_buf_call(args.buf, function()
+                vim.cmd("silent! update")
+            end)
+        end
+    end,
+    desc = "Auto save markdown files on leave",
+})
