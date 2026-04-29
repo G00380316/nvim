@@ -1,4 +1,6 @@
---- PLUGINS ---
+-- ============================================================
+-- PLUGINS
+-- ============================================================
 
 vim.pack.add({
     -- Navigation
@@ -9,7 +11,6 @@ vim.pack.add({
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
     { src = "https://github.com/dhruvasagar/vim-prosession" },
     { src = "https://github.com/tpope/vim-obsession" },
-
 
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
@@ -26,23 +27,20 @@ vim.pack.add({
     { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim" },
     { src = "https://github.com/refractalize/oil-git-status.nvim" },
     { src = "https://github.com/akinsho/bufferline.nvim" },
-
+    { src = "https://github.com/SmiteshP/nvim-navic" },
 
     -- LSP
     { src = "https://github.com/neovim/nvim-lspconfig" },
     { src = "https://github.com/b0o/SchemaStore.nvim" },
-
 
     -- Completion
     { src = "https://github.com/saghen/blink.cmp" },
     { src = "https://github.com/cohama/lexima.vim" },
     { src = "https://github.com/tronikelis/ts-autotag.nvim" },
 
-
     -- Snippets
     { src = "https://github.com/L3MON4D3/LuaSnip" },
     { src = "https://github.com/rafamadriz/friendly-snippets" },
-
 
     -- Tools
     { src = "https://github.com/nvim-lua/plenary.nvim" },
@@ -55,92 +53,131 @@ vim.pack.add({
 })
 
 
---- VIM SETTINGS ---
+-- ============================================================
+-- BASIC VIM SETTINGS
+-- ============================================================
+
+vim.g.mapleader = " "
+vim.g.maplocalleader = " "
 
 vim.cmd([[set mouse=]])
 vim.cmd([[set noswapfile]])
+
+vim.o.hidden = true
+vim.o.errorbells = false
+vim.o.backspace = "indent,eol,start"
+vim.o.autoread = true
+vim.o.updatetime = 50
+vim.o.timeoutlen = 500
+vim.o.ttimeoutlen = 0
+
+vim.o.termguicolors = true
+vim.o.undofile = true
+vim.o.clipboard = "unnamedplus"
+vim.o.winborder = "rounded"
+
+
+-- ============================================================
+-- FILE FORMAT / INDENTATION
+-- ============================================================
+
 vim.opt.fileformats = { "unix", "dos" }
 vim.opt.fileformat = "unix"
+
+local indent = 4
+vim.o.tabstop = indent
+vim.o.shiftwidth = indent
+vim.o.softtabstop = indent
+vim.o.expandtab = true
+vim.o.smartindent = true
+vim.opt.autoindent = true
+vim.opt.smarttab = true
+
+
+-- ============================================================
+-- SEARCH
+-- ============================================================
+
+vim.o.smartcase = true
+vim.o.hlsearch = true
+vim.o.incsearch = true
+
+
+-- ============================================================
+-- UI / EDITOR LOOK
+-- ============================================================
+
+vim.o.number = true
+vim.o.relativenumber = true
+vim.o.cursorline = true
+vim.o.signcolumn = "yes"
+vim.o.scrolloff = 10
+vim.o.matchtime = 2
+vim.o.paste = false
+
+vim.o.guicursor = "n-v-c-sm:block-blinkon1,i-ci-ve:ver25,r-cr-o:hor20,a:Cursor/Cursor"
+
+vim.o.wrap = true
+vim.o.linebreak = true
+vim.o.wrapmargin = 0
+vim.o.textwidth = 0
+
+vim.opt.formatoptions:remove({ "t", "c", "r", "o" })
+vim.opt.iskeyword:append("-")
+vim.opt.iskeyword:append("_")
+
+vim.cmd("set completeopt+=noselect")
+
+vim.diagnostic.config({
+    virtual_text = true,
+})
+
+
+-- ============================================================
+-- TRANSPARENCY / HIGHLIGHTS
+-- ============================================================
+
 vim.cmd([[hi @lsp.type.number gui=italic]])
 
 vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
 vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
 vim.api.nvim_set_hl(0, "EndOfBuffer", { bg = "none" })
+
 vim.cmd(":hi statusline guibg=NONE")
 vim.cmd(":hi signcolumn guibg=NONE")
-vim.cmd [[
-  highlight CursorLine cterm=NONE ctermbg=236 guibg=#2e2e2e
-]]
-vim.cmd("set completeopt+=noselect")
+
 vim.cmd([[
-    autocmd FileType alpha setlocal nofoldenable
+  highlight CursorLine cterm=NONE ctermbg=236 guibg=#2e2e2e
 ]])
 
-local indent = 4
-vim.o.tabstop = indent     -- Visual width of a tab character
-vim.o.shiftwidth = indent  -- Width of an indentation level (used for >> and <<)
-vim.o.softtabstop = indent -- How many spaces a <Tab> counts for while editing
-vim.o.expandtab = true     -- Convert tabs to spaces (set to false if you want actual tabs)
-vim.o.smartindent = true   -- Makes indenting "smarter" based on synta
-vim.opt.autoindent = true
-vim.opt.smarttab = true
-vim.o.matchtime = 2 -- How long to show matching bracket
-vim.o.paste = false
 
-vim.o.autoread = true -- Auto reload files changed outside vim
+-- ============================================================
+-- SESSIONS / PROSESSION
+-- ============================================================
 
-vim.o.winborder = "rounded"
-
-vim.o.smartcase = true -- Case sensitive if uppercase in search
-vim.o.hlsearch = true  -- `hlsearch = false`: Disables the highlighting of search results after searching.
-vim.o.incsearch = true -- `incsearch = true`: Shows incremental search results as you type.
-
-vim.o.number = true
-vim.o.relativenumber = true
-vim.o.cursorline = true
-vim.o.guicursor = "n-v-c-sm:block-blinkon1,i-ci-ve:ver25,r-cr-o:hor20,a:Cursor/Cursor"
-vim.o.signcolumn = "yes"
-vim.o.scrolloff = 10 -- Keeps 10 lines of context around the cursor when scrolling.
-vim.o.wrap = true
--- Stops words from being broken by wrapping
-vim.o.linebreak = true
-vim.o.wrapmargin = 0                 -- " Disable margin-based line wrapping
-vim.o.textwidth = 0                  -- " Disable hard wrapping at a fixed width
-vim.opt.formatoptions:remove({ "t", "c", "r", "o" })
-vim.opt.iskeyword:append("-")        -- Treat dash as part of word
-vim.opt.iskeyword:append("_")        -- Treat as part of word
-vim.o.updatetime = 50
-vim.o.hidden = true                  -- Allow hidden buffers
-vim.o.errorbells = false             -- No error bells
-vim.o.backspace = "indent,eol,start" -- Better backspace behavior
-
-vim.o.termguicolors = true
-vim.o.undofile = true
-vim.o.clipboard = "unnamedplus" -- Adding clipboard func with wl-clipboard
-vim.o.timeoutlen = 500          -- Key timeout duration
-vim.o.ttimeoutlen = 0           -- Key code timeout
-vim.diagnostic.config({ virtual_text = true })
-vim.g.mapleader = " "
-vim.g.maplocalleader = ' '
 vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
+
 vim.g.prosession_on_startup = 1
 vim.g.prosession_per_branch = 1
--- vim.g.prosession_ignore_dirs = {
---     vim.fn.expand("~"),
---     "/",
---     "/Users/enoch/"
--- }
+
 vim.g.Prosession_ignore_expr = function()
     local cwd = vim.fn.getcwd()
     return cwd ~= vim.fn.expand("~")
 end
-require("lsp")
-require("plugins")
-require("autocmd")
-require("mappings")
 
 
-vim.cmd("colorscheme kanagawa")
+-- ============================================================
+-- WINBAR
+-- Shows current function/class path using nvim-navic.
+-- ============================================================
+
+
+vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
+
+
+-- ============================================================
+-- INDENT / RAINBOW HIGHLIGHT GROUPS
+-- ============================================================
 
 local highlight = {
     "RainbowDelimiterRed",
@@ -151,7 +188,73 @@ local highlight = {
     "RainbowDelimiterViolet",
 }
 
--- Ensure the highlight groups exist
+
+-- ============================================================
+-- Rainbow Delimiters Safety
+-- ============================================================
+
+local rainbow_delimiters = require("rainbow-delimiters")
+
+local rainbow_excluded_filetypes = {
+    alpha = true,
+    dashboard = true,
+    snacks_picker = true,
+    snacks_picker_input = true,
+    snacks_dashboard = true,
+    snacks_notif = true,
+    lazy = true,
+    mason = true,
+    help = true,
+    oil = true,
+    floaterm = true,
+    terminal = true,
+    TelescopePrompt = true,
+}
+
+vim.g.rainbow_delimiters = {
+    strategy = {
+        [""] = function(bufnr)
+            local ft = vim.bo[bufnr].filetype
+            local bt = vim.bo[bufnr].buftype
+
+            if rainbow_excluded_filetypes[ft] or bt ~= "" then
+                return nil
+            end
+
+            local ok = pcall(vim.treesitter.get_parser, bufnr)
+            if not ok then
+                return nil
+            end
+
+            return rainbow_delimiters.strategy["global"]
+        end,
+    },
+
+    highlight = highlight,
+}
+
+
+-- ============================================================
+-- MODULE LOAD ORDER
+-- Load plugin configs before mappings/autocmds that rely on them.
+-- ============================================================
+
+require("lsp")
+require("plugins")
+require("autocmd")
+require("mappings")
+
+
+-- ============================================================
+-- COLORSCHEME
+-- ============================================================
+
+vim.cmd("colorscheme kanagawa")
+
+-- ============================================================
+-- INDENT BLANKLINE
+-- ============================================================
+
 local hooks = require("ibl.hooks")
 
 hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
@@ -163,16 +266,10 @@ hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
     vim.api.nvim_set_hl(0, "RainbowDelimiterViolet", { link = "Purple" })
 end)
 
-require("rainbow-delimiters.setup").setup({
-    highlight = highlight,
-})
-
-vim.g.rainbow_delimiters = {
-    highlight = highlight,
-}
-
 require("ibl").setup({
-    indent = { highlight = highlight },
+    indent = {
+        highlight = highlight,
+    },
     scope = {
         highlight = highlight,
         show_start = false,
@@ -180,7 +277,9 @@ require("ibl").setup({
     },
 })
 
-local lualine = require("lualine")
+-- ============================================================
+-- LUALINE HELPERS
+-- ============================================================
 
 local function floaterm_tabline()
     local tabs = {}
@@ -205,14 +304,6 @@ local function floaterm_tabline()
     return table.concat(tabs, " | ")
 end
 
-local kanagawa = require("lualine.themes.auto")
-
--- for _, m in pairs(kanagawa) do
--- 	if m.x then
--- 		m.x.bg = "none"
--- 	end
--- end
-
 local mode = {
     "mode",
     fmt = function(str)
@@ -229,24 +320,29 @@ local diff = {
     },
 }
 
-local filename = {
-    "filename",
-    file_status = true,
-    path = 0,
-}
-
 local branch = {
     "branch",
     icon = "",
 }
 
 local lsp_status = {
-    'lsp_status',
-    icon = '',
+    "lsp_status",
+    icon = "",
     symbols = {
-        spinner = { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' },
-        done = '✓',
-        separator = ' ',
+        spinner = {
+            "⠋",
+            "⠙",
+            "⠹",
+            "⠸",
+            "⠼",
+            "⠴",
+            "⠦",
+            "⠧",
+            "⠇",
+            "⠏",
+        },
+        done = "✓",
+        separator = " ",
     },
     ignore_lsp = {},
     show_name = true,
@@ -255,75 +351,121 @@ local lsp_status = {
         local clients = vim.lsp.get_clients({ bufnr = 0 })
 
         if #clients == 0 then
-            return { fg = "#6c7086" } -- no LSP
+            return { fg = "#6c7086" }
         end
 
         if vim.lsp.status() ~= "" then
-            return { fg = "#f9e2af" } -- working
+            return { fg = "#f9e2af" }
         end
 
-        return { fg = "#a6e3a1" } -- ready
+        return { fg = "#a6e3a1" }
     end,
 }
+
+local cwd_component = {
+    function()
+        local cwd = vim.fn.getcwd()
+        local home = vim.fn.expand("~")
+
+        if cwd:find(home, 0, true) == 1 then
+            cwd = "~" .. cwd:sub(#home + 0)
+        end
+
+        return "󰉋 " .. vim.fn.fnamemodify(cwd, ":t")
+    end,
+    color = {
+        fg = "#88b4fa",
+    },
+}
+
+local floaterm_component = {
+    floaterm_tabline,
+    cond = function()
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.bo[buf].filetype == "floaterm" then
+                return true
+            end
+        end
+
+        return false
+    end,
+}
+
+
+-- ============================================================
+-- LUALINE
+-- ============================================================
+
+local lualine = require("lualine")
+local kanagawa = require("lualine.themes.auto")
 
 lualine.setup({
     options = {
         icons_enabled = true,
         theme = kanagawa,
-        component_separators = { left = "|", right = "|" },
-        section_separators = { left = "|", right = "" },
+        component_separators = {
+            left = "|",
+            right = "|",
+        },
+        section_separators = {
+            left = "|",
+            right = "",
+        },
         disabled_filetypes = {
-            statusline = { "oil", "toggleterm", "terminal" },
-            winbar = { "oil", "toggleterm", "terminal" },
+            statusline = {
+                "oil",
+                "toggleterm",
+                "terminal",
+            },
+            winbar = {
+                "oil",
+                "toggleterm",
+                "terminal",
+            },
         },
     },
+
     sections = {
-        lualine_a = { mode },
-        lualine_b = { branch },
-        lualine_c = { diff, filename },
-        lualine_x = {
-            {
-                floaterm_tabline,
-                cond = function()
-                    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-                        if vim.bo[buf].filetype == "floaterm" then
-                            return true
-                        end
-                    end
-                    return false
-                end,
-            },
+        lualine_a = {
+            mode,
+        },
+
+        lualine_b = {
+            branch,
+            diff,
             {
                 "diagnostics",
-                sources = { "nvim_diagnostic" },
-                sections = { "error", "warn", "info", "hint" },
+                sources = {
+                    "nvim_diagnostic",
+                },
+                sections = {
+                    "error",
+                    "warn",
+                    "info",
+                    "hint",
+                },
                 symbols = {
                     error = " ",
-                    warn  = " ",
-                    info  = " ",
-                    hint  = "󰌵 ",
+                    warn = " ",
+                    info = " ",
+                    hint = "󰌵 ",
                 },
                 update_in_insert = true,
             },
-            { "filetype" },
+            cwd_component,
             lsp_status,
-            {
-                function()
-                    local cwd = vim.fn.getcwd()
-                    local home = vim.fn.expand("~")
-
-                    if cwd:find(home, 1, true) == 1 then
-                        cwd = "~" .. cwd:sub(#home + 1)
-                    end
-
-                    return "󰉋 " .. vim.fn.fnamemodify(cwd, ":t")
-                end,
-                color = { fg = "#89b4fa" },
-            },
+            floaterm_component,
         },
-    },
 
+        lualine_c = {},
+        lualine_x = {},
+    },
 })
+
+
+-- ============================================================
+-- BUFFERLINE
+-- ============================================================
 
 require("bufferline").setup({
     options = {
@@ -331,7 +473,7 @@ require("bufferline").setup({
         separator_style = "slant",
 
         indicator = {
-            style = 'underline',
+            style = "underline",
         },
 
         show_buffer_icons = true,
@@ -339,5 +481,5 @@ require("bufferline").setup({
         show_close_icon = false,
         persist_buffer_sort = true,
         always_show_bufferline = false,
-    }
+    },
 })

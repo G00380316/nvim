@@ -1,126 +1,82 @@
---- LSP ---
+-- ============================================================
+-- LSP
+-- ============================================================
+
+
+-- ============================================================
+-- Enable Language Servers
+-- Uses Neovim's native vim.lsp.enable().
+-- ============================================================
 
 vim.lsp.enable({
-    "lua_ls", -- Lua language server
-    -- Used mainly for Neovim config & plugins
-    -- Provides completion, diagnostics, Neovim API awareness
-
-    -- "basedpyright", -- Python type checker (Pyright fork)
-    -- Full, strict static typing
-    -- Slower but very accurate (large Python projects)
-
-    "ts_ls", -- TypeScript / JavaScript language server
-    -- Core JS/TS intelligence: types, refs, refactors
-    -- Overlaps with quick-lint-js / oxlint
-    -- Disable formatting if using dprint
-
-    "bashls", -- Bash / shell script language server
-    -- Syntax checking, basic completion for .sh files
-
-    -- "css_variables",-- CSS variables language server
-    -- Specialised support for CSS custom properties (--vars)
-    -- Autocomplete + go-to-definition for variables
-
-    "cssls", -- CSS / SCSS / LESS language server
-    -- Property & value completion, validation
-    -- Weak CSS variable support
-    -- Disable formatting if using dprint
-
-    "cssmodules_ls", -- CSS Modules language server
-    -- Enables class name completion between CSS modules
-    -- Useful for React / frontend projects
-
-    "texlab", -- LaTeX language server
-    -- Completion, diagnostics, references, build integration
-    -- Best general-purpose LaTeX LSP
-
-    -- "harper_ls", -- Grammar & style checker
-    -- Markdown / prose linting (clarity, grammar, wording)
-    -- Not a code intelligence server
-
-    "jdtls", -- Java language server
-    -- Full IDE-level Java support
-    -- Heavy but required for serious Java work
-
-    "markdown_oxide", -- Markdown language server
-    -- Link navigation, references, wiki-style notes
-    -- Great for docs and knowledge bases
-
-    "oxlint", -- JS / TS linter (ESLint-like)
-    -- Rules-based diagnostics
-    -- Overlaps with ts_ls and quick-lint-js
-
-    "phptools", -- PHP language server
-    -- Completion, diagnostics, symbol navigation
-    -- Lightweight PHP support
-
-    -- "pyrefly",      -- Experimental Python type checker
-    -- Research-focused, not very common in practice
-
-    "quick-lint-js", -- Ultra-fast JavaScript linter
-    -- Syntax errors only, instant feedback
-    -- JS-only, no types, no formatting
-
-    "ruff", -- Python linter (and optional formatter)
-    -- Extremely fast
-    -- Replaces flake8, isort, pycodestyle
-    -- Disable formatting if using dprint
-
-    "sourcekit", -- Swift / Objective-C language server
-    -- Apple's official language intelligence
-    -- Required for Swift development (macOS)
-
-    "superhtml", -- HTML language server
-    -- HTML tag/attribute completion & validation
-    -- Lightweight, framework-agnostic
-
-    "tailwindcss", -- Tailwind CSS language server
-    -- Utility class completion, hover docs, validation
-    -- Works in HTML, JSX, TSX, CSS
-
-    "tinymist", -- Typst language server
-    -- Completion, diagnostics, document tooling
-    -- Best LSP for Typst
-
-    "clangd", -- C / C++ / Objective-C language server
-    -- Fast, accurate diagnostics & completion
-    -- Requires compile_commands.json
-
-    "ty", -- Python type checker (Rust-based, by Astral)
-    -- Very fast, editor-focused
-    -- Less complete than basedpyright, but much faster
-
-    "sqruff", -- SQL language server / linter / formatter
-    -- SQL diagnostics, linting, and optional formatting
-    -- Supports multiple SQL dialects
-    -- Disable formatting if dprint or another formatter is used
-
-    "docker_language_server", -- Dockerfile language server
-    -- Provides validation, completion, and hover for Dockerfiles
-    -- Requires 'dockerfile' filetype to trigger
-
-    "yamlls", -- YAML language server
-    -- Unified support for YAML, Docker Compose, K8s, etc.
-    -- Requires schemaStore enabled for Docker Compose intelligence
-    -- Triggered by: .yml, .yaml
+    "lua_ls",                 -- Lua / Neovim config
+    "ts_ls",                  -- TypeScript / JavaScript
+    "bashls",                 -- Bash / shell scripts
+    "cssls",                  -- CSS / SCSS / LESS
+    "cssmodules_ls",          -- CSS Modules
+    "texlab",                 -- LaTeX
+    "jdtls",                  -- Java
+    "markdown_oxide",         -- Markdown
+    "oxlint",                 -- JS / TS linter
+    "phptools",               -- PHP
+    "quick-lint-js",          -- Fast JavaScript syntax linter
+    "ruff",                   -- Python linter
+    "sourcekit",              -- Swift / Objective-C
+    "superhtml",              -- HTML
+    "tailwindcss",            -- Tailwind CSS
+    "tinymist",               -- Typst
+    "clangd",                 -- C / C++ / Objective-C
+    "ty",                     -- Python type checker
+    "sqruff",                 -- SQL linter / formatter
+    "docker_language_server", -- Dockerfile
+    "yamlls",                 -- YAML
 })
 
---     Enables or disables inlay hints for the {filter}ed scope.
-vim.lsp.inlay_hint.enable()
--- vim.api.nvim_create_autocmd('LspAttach', {
--- 	group = vim.api.nvim_create_augroup('my.lsp', {}),
--- 	callback = function(args)
--- 		local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
---
--- 		if client:supports_method('textDocument/completion') then
--- 			vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
--- 		end
--- 	end,
--- })
 
--- vim.keymap.set('i', '<C-Space>', function()
--- 	vim.lsp.completion.get()
+-- ============================================================
+-- LSP Inlay Hints
+-- Enables native inlay hints per attached LSP buffer.
+-- Wrapped in pcall because nightly can throw extmark col errors.
+-- ============================================================
+
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(args)
+        pcall(function()
+            vim.lsp.inlay_hint.enable(true, {
+                bufnr = args.buf,
+            })
+        end)
+    end,
+})
+
+
+-- ============================================================
+-- Native LSP Completion Experiments
+-- Kept commented because blink.cmp handles completion instead.
+-- ============================================================
+
+-- vim.api.nvim_create_autocmd("LspAttach", {
+--     group = vim.api.nvim_create_augroup("my.lsp", {}),
+--     callback = function(args)
+--         local client = assert(vim.lsp.get_client_by_id(args.data.client_id))
+--
+--         if client:supports_method("textDocument/completion") then
+--             vim.lsp.completion.enable(true, client.id, args.buf, {
+--                 autotrigger = true,
+--             })
+--         end
+--     end,
+-- })
+--
+-- vim.keymap.set("i", "<C-Space>", function()
+--     vim.lsp.completion.get()
 -- end)
+
+
+-- ============================================================
+-- Completion Edit Helpers
+-- Ctrl-Space changes current/next word and opens blink completion.
+-- ============================================================
 
 vim.keymap.set("n", "<C-Space>", function()
     local col = vim.fn.col(".")
@@ -157,6 +113,12 @@ end, {
     desc = "Change selection and show blink completion",
 })
 
+
+-- ============================================================
+-- Lua Language Server
+-- Neovim-aware Lua settings.
+-- ============================================================
+
 vim.lsp.config("lua_ls", {
     settings = {
         Lua = {
@@ -179,54 +141,82 @@ vim.lsp.config("lua_ls", {
     },
 })
 
+
+-- ============================================================
+-- blink.cmp
+-- Main completion engine.
+-- ============================================================
+
 require("blink.cmp").setup({
-    signature = { enabled = true },
+    signature = {
+        enabled = true,
+    },
 
     sources = {
-        -- Remove 'buffer' if you don't want text completions, by default it's only enabled when LSP returns no items
-        default = { 'lsp', 'path', 'snippets' },
+        default = {
+            "lsp",
+            "path",
+            "snippets",
+        },
     },
 
     completion = {
-        documentation = { auto_show = true },
+        documentation = {
+            auto_show = true,
+        },
 
         menu = {
             auto_show = true,
             draw = {
-                treesitter = { "lsp" },
+                treesitter = {
+                    "lsp",
+                },
                 columns = {
-                    { "kind_icon", "label", "label_description", gap = 1 },
-                    { "kind" },
+                    {
+                        "kind_icon",
+                        "label",
+                        "label_description",
+                        gap = 1,
+                    },
+                    {
+                        "kind",
+                    },
                 },
             },
         },
     },
 
     fuzzy = {
-        implementation = "lua"
+        implementation = "lua",
     },
 
     keymap = {
-        preset = 'default',
-        -- Trigger completion (Ctrl-Space)
-        ["<C-Space>"] = { "show", "show_documentation", "hide_documentation" },
+        preset = "default",
 
-        -- Accept completion
-        ["<CR>"] = { "accept", "fallback" },
+        ["<C-Space>"] = {
+            "show",
+            "show_documentation",
+            "hide_documentation",
+        },
 
-        -- Abort
-        -- ["<Space>"] = { "hide", "fallback" },
+        ["<CR>"] = {
+            "accept",
+            "fallback",
+        },
     },
 })
--- Note that commented code above is to nuetralise Native Completion and opt for blink
 
+
+-- ============================================================
+-- Xcodebuild / SourceKit
+-- Adds Swift-only Xcode mappings when SourceKit attaches.
+-- ============================================================
 
 vim.api.nvim_create_autocmd("LspAttach", {
     group = vim.api.nvim_create_augroup("XcodebuildLSP", { clear = true }),
     callback = function(args)
         local client = vim.lsp.get_client_by_id(args.data.client_id)
 
-        -- Only attach these to SourceKit (Swift/Obj-C) buffers
         if client and client.name == "sourcekit" then
             local bufnr = args.buf
 
@@ -238,22 +228,45 @@ vim.api.nvim_create_autocmd("LspAttach", {
                         auto_open_on_error = true,
                     },
                 })
+
                 _G.xcodebuild_initialized = true
             end
 
+            vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<CR>", {
+                buffer = bufnr,
+                silent = true,
+                desc = "Xcode Picker",
+            })
 
-            vim.keymap.set("n", "<leader>xl", "<cmd>XcodebuildPicker<cr>",
-                { buffer = bufnr, silent = true, desc = "Xcode Picker" })
-            vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<cr>",
-                { buffer = bufnr, silent = true, desc = "Xcode Run" })
-            vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<cr>",
-                { buffer = bufnr, silent = true, desc = "Xcode Run test" })
-            vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<cr>",
-                { buffer = bufnr, silent = true, desc = "Xcode select Device" })
-            vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<cr>",
-                { buffer = bufnr, silent = true, desc = "Xcode select Scheme" })
-            vim.keymap.set("n", "<leader>xs", "<cmd>XcodebuildSetup<cr>",
-                { buffer = bufnr, silent = true, desc = "Xcode Setup" })
+            vim.keymap.set("n", "<leader>xr", "<cmd>XcodebuildBuildRun<CR>", {
+                buffer = bufnr,
+                silent = true,
+                desc = "Xcode Run",
+            })
+
+            vim.keymap.set("n", "<leader>xt", "<cmd>XcodebuildTest<CR>", {
+                buffer = bufnr,
+                silent = true,
+                desc = "Xcode Run Test",
+            })
+
+            vim.keymap.set("n", "<leader>xd", "<cmd>XcodebuildSelectDevice<CR>", {
+                buffer = bufnr,
+                silent = true,
+                desc = "Xcode Select Device",
+            })
+
+            vim.keymap.set("n", "<leader>xp", "<cmd>XcodebuildSelectScheme<CR>", {
+                buffer = bufnr,
+                silent = true,
+                desc = "Xcode Select Scheme",
+            })
+
+            vim.keymap.set("n", "<leader>xs", "<cmd>XcodebuildSetup<CR>", {
+                buffer = bufnr,
+                silent = true,
+                desc = "Xcode Setup",
+            })
 
             vim.api.nvim_create_autocmd("BufWritePre", {
                 buffer = bufnr,
@@ -261,15 +274,49 @@ vim.api.nvim_create_autocmd("LspAttach", {
                     local ok, err = pcall(vim.cmd, "XcodebuildBuildRun")
 
                     if not ok then
-                        vim.notify("XcodebuildBuildRun failed: " .. tostring(err), vim.log.levels.WARN)
+                        vim.notify(
+                            "XcodebuildBuildRun failed: " .. tostring(err),
+                            vim.log.levels.WARN
+                        )
 
                         local setup_ok, setup_err = pcall(vim.cmd, "XcodebuildSetup")
                         if not setup_ok then
-                            vim.notify("XcodebuildSetup failed: " .. tostring(setup_err), vim.log.levels.ERROR)
+                            vim.notify(
+                                "XcodebuildSetup failed: " .. tostring(setup_err),
+                                vim.log.levels.ERROR
+                            )
                         end
                     end
                 end,
             })
+        end
+    end,
+})
+
+
+-- ============================================================
+-- nvim-navic
+-- Shows current symbol/function path in winbar/statusline.
+-- Attaches globally to any LSP with document symbols.
+-- ============================================================
+
+local navic = require("nvim-navic")
+
+navic.setup({
+    highlight = true,
+    separator = " > ",
+    depth_limit = 4,
+})
+
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(event)
+        local client = vim.lsp.get_client_by_id(event.data.client_id)
+
+        if client
+            and client.server_capabilities
+            and client.server_capabilities.documentSymbolProvider
+        then
+            navic.attach(client, event.buf)
         end
     end,
 })
