@@ -450,9 +450,23 @@ local function quit()
     local buf = vim.api.nvim_get_current_buf()
     local name = vim.api.nvim_buf_get_name(buf)
     local modified = vim.bo[buf].modified
+    local buftype = vim.bo[buf].buftype
 
     if name == "" and not modified then
         pcall(vim.cmd, "qa")
+        return
+    end
+
+    -- Terminal buffers should close normally.
+    -- Do not replace them with a spare buffer.
+    if buftype == "terminal" then
+        if #vim.fn.win_findbuf(buf) > 1 then
+            pcall(vim.cmd, "close")
+        else
+            pcall(vim.cmd, "bd!")
+        end
+
+        refresh_split_layout()
         return
     end
 
