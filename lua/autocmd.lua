@@ -285,18 +285,58 @@ vim.api.nvim_create_autocmd("BufLeave", {
 -- Opens binary/document files externally and closes the buffer.
 -- ============================================================
 
-local function open_if_unsupported()
+local function open_external_file()
     local file = vim.fn.expand("<afile>")
+    if file == "" then
+        return
+    end
 
-    vim.fn.jobstart({ "open", file }, { detach = false })
-    vim.api.nvim_buf_delete(0, { force = true })
+    local ext = vim.fn.fnamemodify(file, ":e"):lower()
+
+    local video_exts = {
+        mp4 = true,
+        mkv = true,
+        mov = true,
+        avi = true,
+        webm = true,
+        m4v = true,
+        flv = true,
+        wmv = true,
+        ts = true,
+        m2ts = true,
+    }
+
+    if video_exts[ext] then
+        vim.fn.jobstart({ "mpv", file }, { detach = true })
+    else
+        vim.fn.jobstart({ "open", file }, { detach = true })
+    end
+
+    vim.schedule(function()
+        if vim.api.nvim_buf_is_valid(0) then
+            pcall(vim.api.nvim_buf_delete, 0, { force = true })
+        end
+    end)
 end
 
 vim.api.nvim_create_autocmd("BufEnter", {
-    pattern = { "*.pdf", "*.doc", "*.docx" },
-    callback = open_if_unsupported,
+    pattern = {
+        "*.pdf",
+        "*.doc",
+        "*.docx",
+        "*.mp4",
+        "*.mkv",
+        "*.mov",
+        "*.avi",
+        "*.webm",
+        "*.m4v",
+        "*.flv",
+        "*.wmv",
+        "*.ts",
+        "*.m2ts",
+    },
+    callback = open_external_file,
 })
-
 
 -- ============================================================
 -- Terminal Behaviour
