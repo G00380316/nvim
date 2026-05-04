@@ -193,6 +193,7 @@ local highlight = {
 -- Rainbow Delimiters Safety
 -- ============================================================
 
+vim.opt.runtimepath:append("~/.local/share/nvim/site")
 local rainbow_delimiters = require("rainbow-delimiters")
 
 local rainbow_excluded_filetypes = {
