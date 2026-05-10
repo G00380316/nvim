@@ -18,7 +18,6 @@ vim.pack.add({
     { src = "https://github.com/lewis6991/gitsigns.nvim" },
     { src = "https://github.com/tpope/vim-fugitive" },
     { src = "https://github.com/lukas-reineke/indent-blankline.nvim" },
-    { src = "https://github.com/HiPhish/rainbow-delimiters.nvim" },
     { src = "https://github.com/3rd/image.nvim" },
     { src = "https://github.com/goolord/alpha-nvim" },
     { src = "https://github.com/stevearc/dressing.nvim" },
@@ -76,6 +75,8 @@ vim.o.undofile = true
 vim.o.clipboard = "unnamedplus"
 vim.o.winborder = "rounded"
 
+vim.opt.runtimepath:append("~/.local/share/nvim/site")
+
 
 -- ============================================================
 -- FILE FORMAT / INDENTATION
@@ -117,7 +118,8 @@ vim.o.paste = false
 
 vim.o.guicursor = "n-v-c-sm:block-blinkon1,i-ci-ve:ver25,r-cr-o:hor20,a:Cursor/Cursor"
 
-vim.o.wrap = true
+-- vim.o.wrap = true
+vim.o.wrap = false
 vim.o.linebreak = true
 vim.o.wrapmargin = 0
 vim.o.textwidth = 0
@@ -130,6 +132,9 @@ vim.cmd("set completeopt+=noselect")
 
 vim.diagnostic.config({
     virtual_text = true,
+    float = {
+        border = "rounded",
+    },
 })
 
 
@@ -147,7 +152,7 @@ vim.cmd(":hi statusline guibg=NONE")
 vim.cmd(":hi signcolumn guibg=NONE")
 
 vim.cmd([[
-  highlight CursorLine cterm=NONE ctermbg=236 guibg=#2e2e2e
+  highlight CursorLine cterm=NONE ctermbg=236 guibg=#252535
 ]])
 
 
@@ -176,66 +181,6 @@ vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
 
 
 -- ============================================================
--- INDENT / RAINBOW HIGHLIGHT GROUPS
--- ============================================================
-
-local highlight = {
-    "RainbowDelimiterRed",
-    "RainbowDelimiterYellow",
-    "RainbowDelimiterBlue",
-    "RainbowDelimiterOrange",
-    "RainbowDelimiterGreen",
-    "RainbowDelimiterViolet",
-}
-
-
--- ============================================================
--- Rainbow Delimiters Safety
--- ============================================================
-
-vim.opt.runtimepath:append("~/.local/share/nvim/site")
-local rainbow_delimiters = require("rainbow-delimiters")
-
-local rainbow_excluded_filetypes = {
-    alpha = true,
-    dashboard = true,
-    snacks_picker = true,
-    snacks_picker_input = true,
-    snacks_dashboard = true,
-    snacks_notif = true,
-    lazy = true,
-    mason = true,
-    help = true,
-    oil = true,
-    floaterm = true,
-    terminal = true,
-    TelescopePrompt = true,
-}
-
-vim.g.rainbow_delimiters = {
-    strategy = {
-        [""] = function(bufnr)
-            local ft = vim.bo[bufnr].filetype
-            local bt = vim.bo[bufnr].buftype
-
-            if rainbow_excluded_filetypes[ft] or bt ~= "" then
-                return nil
-            end
-
-            local ok = pcall(vim.treesitter.get_parser, bufnr)
-            if not ok then
-                return nil
-            end
-
-            return rainbow_delimiters.strategy["global"]
-        end,
-    },
-
-    highlight = highlight,
-}
-
-
--- ============================================================
 -- MODULE LOAD ORDER
 -- Load plugin configs before mappings/autocmds that rely on them.
 -- ============================================================
@@ -252,31 +197,49 @@ require("mappings")
 
 vim.cmd("colorscheme kanagawa")
 
+
 -- ============================================================
 -- INDENT BLANKLINE
 -- ============================================================
 
 local hooks = require("ibl.hooks")
 
-hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
-    vim.api.nvim_set_hl(0, "RainbowDelimiterRed", { link = "Red" })
-    vim.api.nvim_set_hl(0, "RainbowDelimiterYellow", { link = "Yellow" })
-    vim.api.nvim_set_hl(0, "RainbowDelimiterBlue", { link = "Blue" })
-    vim.api.nvim_set_hl(0, "RainbowDelimiterOrange", { link = "Orange" })
-    vim.api.nvim_set_hl(0, "RainbowDelimiterGreen", { link = "Green" })
-    vim.api.nvim_set_hl(0, "RainbowDelimiterViolet", { link = "Purple" })
-end)
+vim.api.nvim_set_hl(0, "IblIndent", {
+    fg = "#3b4261", -- subtle grey-blue
+})
+
+vim.api.nvim_set_hl(0, "IblScope", {
+    underline = true,
+    sp = "#545c7e",
+})
 
 require("ibl").setup({
     indent = {
-        highlight = highlight,
+        highlight = "IblIndent",
+        char = "▏",
     },
+
     scope = {
-        highlight = highlight,
+        enabled = true,
         show_start = false,
         show_end = false,
+        highlight = "IblScope",
+    },
+
+    exclude = {
+        filetypes = {
+            "help",
+            "alpha",
+            "dashboard",
+            "lazy",
+            "mason",
+            "oil",
+            "terminal",
+            "floaterm",
+        },
     },
 })
+
 
 -- ============================================================
 -- LUALINE HELPERS
@@ -404,14 +367,16 @@ lualine.setup({
     options = {
         icons_enabled = true,
         theme = kanagawa,
-        component_separators = {
-            left = "|",
-            right = "|",
-        },
-        section_separators = {
-            left = "|",
-            right = "",
-        },
+        -- component_separators = {
+        --     left = "|",
+        --     right = "|",
+        -- },
+        -- section_separators = {
+        --     left = "|",
+        --     right = "",
+        -- },
+        component_separators = "",
+        section_separators = "",
         disabled_filetypes = {
             statusline = {
                 "oil",
@@ -471,7 +436,7 @@ lualine.setup({
 require("bufferline").setup({
     options = {
         mode = "buffers",
-        separator_style = "slant",
+        separator_style = "thin",
 
         indicator = {
             style = "underline",
