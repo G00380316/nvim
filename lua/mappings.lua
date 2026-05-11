@@ -431,6 +431,13 @@ local function switch_to_spare_buffer_or_close(current_buf)
 end
 
 local function quit()
+    local win_config = vim.api.nvim_win_get_config(0)
+    if win_config.relative ~= "" then
+        -- If it's a float (like Oil float), just close it and stop
+        pcall(vim.cmd, "close")
+        return
+    end
+
     local mode = vim.fn.mode()
 
     if mode == "i" then
