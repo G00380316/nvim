@@ -202,8 +202,6 @@ vim.cmd("colorscheme kanagawa")
 -- INDENT BLANKLINE
 -- ============================================================
 
-local hooks = require("ibl.hooks")
-
 vim.api.nvim_set_hl(0, "IblIndent", {
     fg = "#3b4261", -- subtle grey-blue
 })
