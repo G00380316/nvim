@@ -159,6 +159,8 @@ require("snacks").setup({
             input = {
                 keys = {
                     ["<C-d>"] = { "bufdelete", mode = { "n", "i" } },
+                    ["<C-l>"] = { "flash", mode = { "n", "i" } },
+                    ["s"] = { "flash" },
                 },
             },
         },
@@ -180,6 +182,28 @@ require("snacks").setup({
                 hidden = true,
             },
         },
+
+        actions = {
+            flash = function(picker)
+                require("flash").jump({
+                    pattern = "^",
+                    label = { after = { 0, 0 } },
+                    search = {
+                        mode = "search",
+                        exclude = {
+                            function(win)
+                                return vim.bo[vim.api.nvim_win_get_buf(win)].filetype ~= "snacks_picker_list"
+                            end,
+                        },
+                    },
+                    action = function(match)
+                        local idx = picker.list:row2idx(match.pos[1])
+                        picker.list:_move(idx, true, true)
+                    end,
+                })
+            end,
+        },
+
     },
 })
 
@@ -517,4 +541,23 @@ alpha.setup(dashboard.opts)
 -- ============================================================
 
 require("ssh_launcher").setup()
-require("grug-far").setup()
+require("grug-far").setup({
+    -- options related to the target window for goto or open actions
+    openTargetWindow = {
+        -- filter for windows to exclude when considering candidate targets. It's a list of either:
+        -- * filetype to exclude
+        -- * filter function of the form: function(winid: number): boolean (return true to exclude)
+        exclude = {},
+
+        -- preferred location for target window relative to the grug-far window. If an existing candidate
+        -- window that is not excluded by the exclude filter exists in that direction, it will be reused,
+        -- otherwise a new window will be created in that direction.
+        -- available options: "prev" | "left" | "right" | "above" | "below"
+        preferredLocation = 'right',
+
+        -- use a temporary scratch buffer, in order to prevent language servers starting up and
+        -- consuming resources as you are moving through the results. The buffer is converted to
+        -- a real buffer once you navigate to it explicitly
+        useScratchBuffer = true,
+    },
+})

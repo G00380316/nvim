@@ -198,18 +198,17 @@ local function ensure_blank_line_below(lnum)
 end
 
 local function safe_paste(direction)
-    local reg = vim.v.register
-    if reg == "" then
-        reg = '"'
-    end
-
     local mode = vim.fn.mode()
     local is_visual = mode:match("[vV\22]") ~= nil
 
-    -- Character-wise paste → leave untouched
-    if not regtype_is_linewise(reg) then
-        vim.cmd("normal! " .. direction)
-        return
+    -- Exit visual mode AFTER capturing it
+    if is_visual then
+        vim.cmd("normal! \27")
+    end
+
+    local reg = vim.v.register
+    if reg == "" then
+        reg = '"'
     end
 
     -- =========================
@@ -219,39 +218,45 @@ local function safe_paste(direction)
         local start_line = vim.fn.line("'<")
         local end_line = vim.fn.line("'>")
 
-        -- Add spacing before replacement
+        -- Grab yanked content BEFORE any deletion
+        local yanked = vim.fn.getreg('0')
+        local regtype = vim.fn.getregtype('0')
+
         ensure_blank_line_above(start_line)
         ensure_blank_line_below(end_line)
 
-        -- Replace selection
-        vim.cmd("normal! " .. direction)
+        -- Delete selection, restore register, paste
+        vim.cmd('normal! gv"_d')
+        vim.fn.setreg('"', yanked, regtype)
+        vim.cmd('normal! P')
 
         local last_pasted = vim.fn.line("']")
-
         ensure_blank_line_below(last_pasted)
         return
     end
 
+    -- Character-wise paste in normal mode → leave untouched
+    if not regtype_is_linewise(reg) then
+        vim.cmd("normal! " .. direction)
+        return
+    end
+
     -- =========================
-    -- NORMAL MODE (your original)
+    -- NORMAL MODE
     -- =========================
     local current_line = vim.fn.line(".")
-
     if direction == "p" then
         ensure_blank_line_below(current_line)
         vim.cmd("normal! p")
-
         local last_pasted = vim.fn.line("']")
         ensure_blank_line_below(last_pasted)
     else
         ensure_blank_line_above(current_line)
         vim.cmd("normal! P")
-
         local last_pasted = vim.fn.line("']")
         ensure_blank_line_below(last_pasted)
     end
 end
-
 -- ============================================================
 -- Persistent Previous File Helpers
 -- Used by zv / zh split mappings.
@@ -306,15 +311,19 @@ vim.api.nvim_create_autocmd("BufEnter", {
 })
 
 local function open_split_with_previous(split_cmd, move_cmd)
-    vim.cmd(split_cmd)
-    vim.cmd("wincmd " .. move_cmd)
+    pcall(vim.cmd, split_cmd)
+    pcall(vim.cmd, "wincmd " .. move_cmd)
 
     if previous_file and vim.fn.filereadable(previous_file) == 1 then
-        vim.cmd("edit " .. vim.fn.fnameescape(previous_file))
+        -- Use edit! to bypass the E37 protection check
+        local ok, err = pcall(vim.cmd, "edit! " .. vim.fn.fnameescape(previous_file))
+        if not ok then
+            print("Error opening previous file: " .. err)
+        end
     end
 
     vim.schedule(function()
-        vim.cmd("wincmd =")
+        pcall(vim.cmd, "wincmd =")
     end)
 end
 
@@ -383,63 +392,17 @@ local function save_current_file()
     write_buffer()
 end
 
-local function refresh_split_layout()
-    vim.schedule(function()
-        pcall(vim.cmd, "wincmd =")
-    end)
-end
-
-local function switch_to_spare_buffer_or_close(current_buf)
-    local visible = {}
-
-    -- Track buffers already open in windows.
-    for _, win in ipairs(vim.api.nvim_list_wins()) do
-        if vim.api.nvim_win_is_valid(win) then
-            local win_buf = vim.api.nvim_win_get_buf(win)
-
-            if win_buf ~= current_buf then
-                visible[win_buf] = true
-            end
-        end
-    end
-
-    -- Find any listed real buffer that is not already visible.
-    for _, info in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
-        local candidate = info.bufnr
-
-        if candidate ~= current_buf
-            and not visible[candidate]
-            and vim.api.nvim_buf_is_valid(candidate)
-            and vim.api.nvim_buf_is_loaded(candidate)
-            and vim.bo[candidate].buftype == ""
-        then
-            vim.api.nvim_set_current_buf(candidate)
-
-            vim.schedule(function()
-                if vim.api.nvim_buf_is_valid(current_buf) then
-                    pcall(vim.api.nvim_buf_delete, current_buf, { force = true })
-                end
-
-                pcall(vim.cmd, "wincmd =")
-            end)
-
-            return true
-        end
-    end
-
-    return false
-end
-
 local function quit()
+    -- 1. Handle Floating Windows (like Oil, Lazy, etc.)
+    -- Just close the window and stop.
     local win_config = vim.api.nvim_win_get_config(0)
     if win_config.relative ~= "" then
-        -- If it's a float (like Oil float), just close it and stop
         pcall(vim.cmd, "close")
         return
     end
 
+    -- 2. Exit specialized modes
     local mode = vim.fn.mode()
-
     if mode == "i" then
         vim.cmd("stopinsert")
     elseif mode == "t" then
@@ -450,6 +413,7 @@ local function quit()
         )
     end
 
+    -- 3. Plugin-specific exits (e.g., LeetCode)
     if pcall(vim.cmd, "Leet exit") then
         return
     end
@@ -459,38 +423,35 @@ local function quit()
     local modified = vim.bo[buf].modified
     local buftype = vim.bo[buf].buftype
 
-    if name == "" and not modified then
+    -- 4. Handle empty, unmodified buffers (close Neovim)
+    if name == "" and not modified and buftype == "" then
         pcall(vim.cmd, "qa")
         return
     end
 
-    -- Terminal buffers should close normally.
-    -- Do not replace them with a spare buffer.
-    if buftype == "terminal" then
-        if #vim.fn.win_findbuf(buf) > 1 then
-            pcall(vim.cmd, "close")
-        else
-            pcall(vim.cmd, "bd!")
-        end
-
-        refresh_split_layout()
-        return
-    end
-
+    -- 5. Standard Close Logic
+    -- If the buffer is shown in multiple windows, just close the current window.
+    -- Otherwise, delete the buffer (which also closes the window).
     local wins = vim.fn.win_findbuf(buf)
-
-    if switch_to_spare_buffer_or_close(buf) then
-        return
-    end
-
     if #wins > 1 then
         pcall(vim.cmd, "close")
     else
-        pcall(vim.cmd, "bd!")
+        -- Use 'bd' for normal buffers, 'bd!' for terminals/oil
+        if buftype == "terminal" or buftype == "oil" then
+            pcall(vim.cmd, "bd!")
+        else
+            -- Standard buffer delete (will prompt if unsaved)
+            local success, _ = pcall(vim.cmd, "confirm bd")
+            if not success then return end
+        end
     end
 
-    refresh_split_layout()
+    -- Optional: Keep the layout balanced after closing a split
+    vim.schedule(function()
+        pcall(vim.cmd, "wincmd =")
+    end)
 end
+
 
 -- ============================================================
 -- CONSISTENT SPLIT LAYOUTS
@@ -687,18 +648,22 @@ end, {
     desc = "Safe paste above",
 })
 
-vim.keymap.set("x", "p", '"_dP', {
+vim.keymap.set("x", "p", function()
+    safe_paste("p")
+end, {
     noremap = true,
     silent = true,
-    desc = "Replace selection without clipboard",
+    desc = "Safe paste replacement",
 })
 
-vim.keymap.set("x", "P", '"_dP', {
+-- Usually P in visual mode is the same as p, but we'll keep it consistent
+vim.keymap.set("x", "P", function()
+    safe_paste("P")
+end, {
     noremap = true,
     silent = true,
-    desc = "Replace selection without clipboard",
+    desc = "Safe paste replacement",
 })
-
 
 -- ============================================================
 -- Jump List / Buffers / Windows
@@ -1249,3 +1214,26 @@ vim.keymap.set("n", "zs", function()
 end, {
     desc = "Search window",
 })
+
+-- ============================================================
+-- Flash Search
+-- ============================================================
+
+vim.keymap.set({ "n", "x", "o" }, "s", function() require("flash").jump() end, { desc = "Flash" })
+-- vim.keymap.set({ "n" }, "sa", function()
+--     require("flash").jump({
+--         pattern = ".", -- initialize pattern with any char
+--         search = {
+--             mode = function(pattern)
+--                 -- remove leading dot
+--                 if pattern:sub(1, 1) == "." then
+--                     pattern = pattern:sub(2)
+--                 end
+--                 -- return word pattern and proper skip pattern
+--                 return ([[\<%s\w*\>]]):format(pattern), ([[\<%s]]):format(pattern)
+--             end,
+--         },
+--         -- select the range
+--         jump = { pos = "range" },
+--     })
+-- end, { desc = "Flash select any word" })

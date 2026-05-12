@@ -11,6 +11,7 @@ vim.pack.add({
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
     { src = "https://github.com/dhruvasagar/vim-prosession" },
     { src = "https://github.com/tpope/vim-obsession" },
+    { src = "https://github.com/folke/flash.nvim" },
 
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
