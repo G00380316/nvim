@@ -748,7 +748,7 @@ vim.keymap.set("t", "<C-w>", [[<C-\><C-n><C-w>w]], {
 -- Search / Replace
 -- ============================================================
 
-vim.keymap.set("n", "<leader>c", clear_search, {
+vim.keymap.set("n", "<leader>cs", clear_search, {
     desc = "Clear search highlight and pattern",
 })
 
@@ -943,7 +943,7 @@ end, {
     desc = "Open project directories",
 })
 
-vim.keymap.set("n", "<leader>cd", function()
+vim.keymap.set("n", "<leader>c", function()
     require("oil").open("~/Library/Mobile Documents/com~apple~CloudDocs/")
 end, {
     desc = "Open iCloud documents",
@@ -1001,7 +1001,7 @@ end, {
 
 
 -- ============================================================
--- Save / Source / Quit
+-- Save / Source / Quit / Set Working Dir
 -- ============================================================
 
 vim.keymap.set("n", "<leader>o", ":update<CR>:source<CR>", {
@@ -1026,6 +1026,16 @@ vim.keymap.set("n", "q", quit, {
     desc = "Smart close / quit",
 })
 
+vim.keymap.set('n', '<leader>cd', function()
+    -- Get the directory of the current file
+    local dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":h")
+    if dir == "" or vim.fn.isdirectory(dir) ~= 1 then
+        print("No valid directory for current buffer")
+        return
+    end
+    vim.cmd.cd(dir)
+    print("Working directory changed to: " .. dir)
+end, { desc = "Set working directory to current buffer's folder" })
 
 -- ============================================================
 -- Insert / Command / Terminal
