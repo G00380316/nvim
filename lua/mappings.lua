@@ -393,11 +393,26 @@ local function save_current_file()
 end
 
 local function quit()
-    -- 1. Handle Floating Windows (like Oil, Lazy, etc.)
-    -- Just close the window and stop.
+    local buf = vim.api.nvim_get_current_buf()
+    local name = vim.api.nvim_buf_get_name(buf)
+    local modified = vim.bo[buf].modified
+    local buftype = vim.bo[buf].buftype
+
+    -- 1. Handle Floating Windows
     local win_config = vim.api.nvim_win_get_config(0)
     if win_config.relative ~= "" then
-        pcall(vim.cmd, "close")
+        if buftype == "terminal" then
+            -- Terminal float (floaterm etc): send exit so process dies cleanly
+            local job_id = vim.b[buf].terminal_job_id
+            if job_id then
+                vim.fn.chansend(job_id, "exit\n")
+            else
+                pcall(vim.cmd, "bd!")
+            end
+        else
+            -- Normal float (Oil, Lazy, etc): just close the window
+            pcall(vim.cmd, "close")
+        end
         return
     end
 
@@ -418,11 +433,6 @@ local function quit()
         return
     end
 
-    local buf = vim.api.nvim_get_current_buf()
-    local name = vim.api.nvim_buf_get_name(buf)
-    local modified = vim.bo[buf].modified
-    local buftype = vim.bo[buf].buftype
-
     -- 4. Handle empty, unmodified buffers (close Neovim)
     if name == "" and not modified and buftype == "" then
         pcall(vim.cmd, "qa")
@@ -430,28 +440,22 @@ local function quit()
     end
 
     -- 5. Standard Close Logic
-    -- If the buffer is shown in multiple windows, just close the current window.
-    -- Otherwise, delete the buffer (which also closes the window).
     local wins = vim.fn.win_findbuf(buf)
     if #wins > 1 then
         pcall(vim.cmd, "close")
     else
-        -- Use 'bd' for normal buffers, 'bd!' for terminals/oil
         if buftype == "terminal" or buftype == "oil" then
             pcall(vim.cmd, "bd!")
         else
-            -- Standard buffer delete (will prompt if unsaved)
             local success, _ = pcall(vim.cmd, "confirm bd")
             if not success then return end
         end
     end
 
-    -- Optional: Keep the layout balanced after closing a split
     vim.schedule(function()
         pcall(vim.cmd, "wincmd =")
     end)
 end
-
 
 -- ============================================================
 -- CONSISTENT SPLIT LAYOUTS
@@ -1026,16 +1030,82 @@ vim.keymap.set("n", "q", quit, {
     desc = "Smart close / quit",
 })
 
-vim.keymap.set('n', '<leader>cd', function()
-    -- Get the directory of the current file
-    local dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":h")
-    if dir == "" or vim.fn.isdirectory(dir) ~= 1 then
-        print("No valid directory for current buffer")
+-- Universal toggle tables
+local state_file = vim.fn.stdpath("data") .. "/cwd_toggle_state.json"
+
+-- Load persisted state
+local function load_state()
+    local f = io.open(state_file, "r")
+    if not f then return { global = vim.loop.cwd() } end
+    local raw = f:read("*a")
+    f:close()
+    local ok, data = pcall(vim.fn.json_decode, raw)
+    return (ok and type(data) == "table") and data or { global = vim.loop.cwd() }
+end
+
+-- Save state to disk
+local function save_state(state)
+    local f = io.open(state_file, "w")
+    if not f then
+        vim.notify("cwd_toggle: could not write state file", vim.log.levels.WARN)
         return
     end
-    vim.cmd.cd(dir)
-    print("Working directory changed to: " .. dir)
-end, { desc = "Set working directory to current buffer's folder" })
+    f:write(vim.fn.json_encode(state))
+    f:close()
+end
+
+local state = load_state()
+
+-- Autocommand: track cwd changes
+vim.api.nvim_create_autocmd("DirChanged", {
+    callback = function(event)
+        local new_cwd  = event.file
+        -- Use stable string keys (tab/win number as string) instead of handles
+        local win_key  = "win_" .. tostring(vim.api.nvim_get_current_win())
+        local tab_key  = "tab_" .. tostring(vim.api.nvim_tabpage_get_number(
+            vim.api.nvim_get_current_tabpage()
+        ))
+        state[win_key] = new_cwd
+        state[tab_key] = new_cwd
+        state.global   = new_cwd
+        save_state(state)
+    end,
+})
+
+-- Keymap: toggle buffer folder ↔ last cwd
+vim.keymap.set('n', '<leader>cd', function()
+    local buf_dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":h")
+    if buf_dir == "" or vim.fn.isdirectory(buf_dir) ~= 1 then
+        vim.notify("No valid directory for current buffer", vim.log.levels.WARN)
+        return
+    end
+
+    local win_key = "win_" .. tostring(vim.api.nvim_get_current_win())
+    local tab_key = "tab_" .. tostring(vim.api.nvim_tabpage_get_number(
+        vim.api.nvim_get_current_tabpage()
+    ))
+    local current_cwd = vim.loop.cwd()
+
+    -- Priority: window > tab > global > current
+    local last_cwd = state[win_key]
+        or state[tab_key]
+        or state.global
+        or current_cwd
+
+    if current_cwd ~= buf_dir then
+        -- Save current before switching
+        state[win_key] = current_cwd
+        state[tab_key] = current_cwd
+        state.global   = current_cwd
+        save_state(state)
+        vim.cmd.cd(buf_dir)
+        vim.notify("cwd → buffer folder: " .. buf_dir)
+    else
+        -- Toggle back
+        vim.cmd.cd(last_cwd)
+        vim.notify("cwd → reverted: " .. last_cwd)
+    end
+end, { desc = "Toggle: buffer folder ↔ last cwd (window > tab > global)" })
 
 -- ============================================================
 -- Insert / Command / Terminal
