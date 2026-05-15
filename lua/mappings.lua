@@ -397,61 +397,71 @@ local function quit()
     local name = vim.api.nvim_buf_get_name(buf)
     local modified = vim.bo[buf].modified
     local buftype = vim.bo[buf].buftype
+    local mode = vim.fn.mode()
 
-    -- 1. Handle Floating Windows
+    -- 1. Exit terminal mode cleanly first
+    if mode == "t" then
+        vim.cmd("stopinsert")
+    elseif mode == "i" then
+        vim.cmd("stopinsert")
+    end
+
+    -- 2. Handle floating windows
     local win_config = vim.api.nvim_win_get_config(0)
     if win_config.relative ~= "" then
         if buftype == "terminal" then
-            -- Terminal float (floaterm etc): send exit so process dies cleanly
             local job_id = vim.b[buf].terminal_job_id
+
+            -- Kill terminal job directly instead of sending "exit"
             if job_id then
-                vim.fn.chansend(job_id, "exit\n")
-            else
-                pcall(vim.cmd, "bd!")
+                pcall(vim.fn.jobstop, job_id)
             end
+
+            pcall(vim.cmd, "bd!")
         else
-            -- Normal float (Oil, Lazy, etc): just close the window
+            -- Oil, Lazy, popup windows, etc.
             pcall(vim.cmd, "close")
         end
+
         return
     end
 
-    -- 2. Exit specialized modes
-    local mode = vim.fn.mode()
-    if mode == "i" then
-        vim.cmd("stopinsert")
-    elseif mode == "t" then
-        vim.api.nvim_feedkeys(
-            vim.api.nvim_replace_termcodes("<C-\\><C-n>", true, false, true),
-            "n",
-            false
-        )
-    end
-
-    -- 3. Plugin-specific exits (e.g., LeetCode)
+    -- 3. Plugin-specific exits
     if pcall(vim.cmd, "Leet exit") then
         return
     end
 
-    -- 4. Handle empty, unmodified buffers (close Neovim)
+    -- 4. Empty starter buffer -> quit nvim
     if name == "" and not modified and buftype == "" then
         pcall(vim.cmd, "qa")
         return
     end
 
-    -- 5. Standard Close Logic
+    -- 5. Standard close logic
     local wins = vim.fn.win_findbuf(buf)
+
     if #wins > 1 then
         pcall(vim.cmd, "close")
     else
-        if buftype == "terminal" or buftype == "oil" then
+        if buftype == "terminal" then
+            local job_id = vim.b[buf].terminal_job_id
+
+            if job_id then
+                pcall(vim.fn.jobstop, job_id)
+            end
+
+            pcall(vim.cmd, "bd!")
+        elseif buftype == "oil" then
             pcall(vim.cmd, "bd!")
         else
-            local success, _ = pcall(vim.cmd, "confirm bd")
-            if not success then return end
+            local success = pcall(vim.cmd, "confirm bd")
+            if not success then
+                return
+            end
         end
     end
 
+    -- 6. Rebalance layout
     vim.schedule(function()
         pcall(vim.cmd, "wincmd =")
     end)

@@ -119,8 +119,8 @@ vim.o.paste = false
 
 vim.o.guicursor = "n-v-c-sm:block-blinkon1,i-ci-ve:ver25,r-cr-o:hor20,a:Cursor/Cursor"
 
--- vim.o.wrap = true
-vim.o.wrap = false
+vim.o.wrap = true
+-- vim.o.wrap = false
 vim.o.linebreak = true
 vim.o.wrapmargin = 0
 vim.o.textwidth = 0
