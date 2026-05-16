@@ -2,6 +2,7 @@
 -- PLUGIN CONFIGS
 -- ============================================================
 
+local Snacks = require("snacks")
 
 -- ============================================================
 -- Kanagawa Theme
@@ -499,12 +500,82 @@ dashboard.section.header.opts.position = "center"
 dashboard.section.footer.opts.position = "center"
 
 dashboard.section.buttons.val = {
-    dashboard.button("o", "  Open Folders", function()
-        require("oil").open("~/")
-    end),
-
-    dashboard.button("p", "  Open Github Folders", function()
-        require("oil").open("~/Documents/Github/")
+    dashboard.button("o", "  Navigate Folders", function()
+        Snacks.picker.pick({
+            title = "Open Folder",
+            finder = function()
+                local roots = {
+                    vim.fn.expand("~/Documents/Github"),
+                    vim.fn.expand("~/Library/Mobile Documents/com~apple~CloudDocs"),
+                    vim.fn.expand("~/"),
+                }
+                local items = {}
+                for _, root in ipairs(roots) do
+                    local handle = vim.uv.fs_scandir(root)
+                    if handle then
+                        while true do
+                            local name, typ = vim.uv.fs_scandir_next(handle)
+                            if not name then break end
+                            if typ == "directory" then
+                                local full = root .. "/" .. name
+                                table.insert(items, {
+                                    text = full,
+                                    file = full,
+                                    label = name,
+                                    dir = root,
+                                })
+                            end
+                        end
+                    end
+                end
+                return items
+            end,
+            format = function(item)
+                return {
+                    { item.label,       "Directory" },
+                    { "  " .. item.dir, "Comment" },
+                }
+            end,
+            confirm = function(picker, item)
+                picker:close()
+                if not item then return end
+                vim.schedule(function()
+                    Snacks.picker.pick({
+                        title = "Action: " .. item.label,
+                        layout = {
+                            preview = false,
+                            layout = {
+                                width = 0.3,
+                                height = 0.2,
+                            },
+                        },
+                        finder = function()
+                            return {
+                                { text = "Find Files", label = " Find Files", action = "files", folder = item.file },
+                                { text = "Grep",       label = " Grep",       action = "grep",  folder = item.file },
+                                { text = "Oil",        label = " Oil",        action = "oil",   folder = item.file },
+                            }
+                        end,
+                        format = function(a)
+                            return { { a.label, "Function" } }
+                        end,
+                        confirm = function(picker2, action)
+                            picker2:close()
+                            if not action then return end
+                            vim.schedule(function()
+                                if action.action == "files" then
+                                    Snacks.picker.files({ cwd = action.folder })
+                                elseif action.action == "grep" then
+                                    Snacks.picker.grep({ cwd = action.folder })
+                                elseif action.action == "oil" then
+                                    require("oil").open(action.folder)
+                                end
+                            end)
+                        end,
+                    })
+                end)
+            end,
+        })
     end),
 
     dashboard.button("r", "  Connect to Remote", "<cmd>SshLauncher<CR>"),

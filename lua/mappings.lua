@@ -762,7 +762,7 @@ vim.keymap.set("t", "<C-w>", [[<C-\><C-n><C-w>w]], {
 -- Search / Replace
 -- ============================================================
 
-vim.keymap.set("n", "<leader>cs", clear_search, {
+vim.keymap.set("n", "<leader>c", clear_search, {
     desc = "Clear search highlight and pattern",
 })
 
