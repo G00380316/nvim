@@ -957,7 +957,7 @@ end, {
     desc = "Find user files",
 })
 
-vim.keymap.set("n", "<leader>m", function()
+vim.keymap.set("n", "<leader>p", function()
     Snacks.picker.pick({
         title = "Open Folder",
         finder = function()
