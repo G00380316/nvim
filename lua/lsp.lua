@@ -15,11 +15,9 @@ vim.lsp.enable({
     "cssls",                  -- CSS / SCSS / LESS
     "cssmodules_ls",          -- CSS Modules
     "texlab",                 -- LaTeX
-    "jdtls",                  -- Java
     "markdown_oxide",         -- Markdown
     "oxlint",                 -- JS / TS linter
     "phptools",               -- PHP
-    "quick-lint-js",          -- Fast JavaScript syntax linter
     "ruff",                   -- Python linter
     "sourcekit",              -- Swift / Objective-C
     "superhtml",              -- HTML

@@ -11,7 +11,6 @@ local Snacks = require("snacks")
 
 local sticky_active = false
 local sticky_word = nil
-local case_sensitive = false
 
 local previous_state_file = vim.fn.stdpath("data") .. "/previous_buffer.txt"
 local last_buffer = nil
@@ -62,8 +61,7 @@ end
 
 local function build_search_pattern(word)
     local escaped = vim.fn.escape(word, "\\")
-    local prefix = case_sensitive and "" or "\\c"
-    return prefix .. "\\<" .. escaped .. "\\>"
+    return "\\c\\<" .. escaped .. "\\>"
 end
 
 local function jump_quote(direction, quote)
@@ -347,7 +345,7 @@ local function save_current_file()
     end
 
     local function write_buffer()
-        if vim.bo[bufnr].filetype ~= "oil" and has_lsp(bufnr) then
+        if vim.bo[bufnr].filetype ~= "NvimTree" and has_lsp(bufnr) then
             pcall(vim.lsp.buf.format, { async = false })
         end
 
@@ -392,6 +390,40 @@ local function save_current_file()
     write_buffer()
 end
 
+local function next_editor_buffer(current)
+    local buffers = vim.fn.getbufinfo({ buflisted = 1 })
+    for _, info in ipairs(buffers) do
+        if info.bufnr ~= current
+            and vim.api.nvim_buf_is_valid(info.bufnr)
+            and vim.bo[info.bufnr].buftype == ""
+        then
+            return info.bufnr
+        end
+    end
+end
+
+local function close_editor_buffer(buf)
+    local win = vim.api.nvim_get_current_win()
+    local replacement = next_editor_buffer(buf)
+
+    -- Keep the editor zone alive between the fixed tree and terminal panels.
+    -- :bdelete on the displayed buffer would otherwise remove its window.
+    if replacement then
+        vim.api.nvim_win_set_buf(win, replacement)
+    else
+        require("dashboard").open({ win = win })
+    end
+
+    local success = pcall(vim.cmd, "confirm bdelete " .. buf)
+    if not success or (vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buflisted) then
+        if vim.api.nvim_buf_is_valid(buf) then
+            vim.api.nvim_win_set_buf(win, buf)
+        end
+        return false
+    end
+    return true
+end
+
 local function quit()
     local buf = vim.api.nvim_get_current_buf()
     local name = vim.api.nvim_buf_get_name(buf)
@@ -419,7 +451,7 @@ local function quit()
 
             pcall(vim.cmd, "bd!")
         else
-            -- Oil, Lazy, popup windows, etc.
+            -- NvimTree, Lazy, popup windows, etc.
             pcall(vim.cmd, "close")
         end
 
@@ -427,6 +459,15 @@ local function quit()
     end
 
     -- 3. Plugin-specific exits
+    local in_diffview = false
+    pcall(function()
+        in_diffview = require("diffview.lib").get_current_view() ~= nil
+    end)
+    if in_diffview or vim.bo[buf].filetype:match("^Neogit") then
+        vim.cmd("GitCloseAll")
+        return
+    end
+
     if pcall(vim.cmd, "Leet exit") then
         return
     end
@@ -451,11 +492,10 @@ local function quit()
             end
 
             pcall(vim.cmd, "bd!")
-        elseif buftype == "oil" then
-            pcall(vim.cmd, "bd!")
+        elseif buftype == "NvimTree" then
+            require("nvim-tree.api").tree.close()
         else
-            local success = pcall(vim.cmd, "confirm bd")
-            if not success then
+            if not close_editor_buffer(buf) then
                 return
             end
         end
@@ -481,6 +521,42 @@ vim.keymap.set("n", "z=", equalize_splits, {
     silent = true,
     desc = "Equalize split layout",
 })
+
+-- Toggle-only folding: current, all, and recursive.
+vim.keymap.set("n", "zo", function()
+    vim.cmd("normal! za")
+end, {
+    silent = true,
+    desc = "Toggle fold",
+})
+
+vim.keymap.set("n", "zO", function()
+    local has_closed_fold = false
+    for line = 1, vim.api.nvim_buf_line_count(0) do
+        if vim.fn.foldclosed(line) ~= -1 then
+            has_closed_fold = true
+            break
+        end
+    end
+    vim.cmd(has_closed_fold and "normal! zR" or "normal! zM")
+end, {
+    silent = true,
+    desc = "Toggle all folds",
+})
+
+vim.keymap.set("n", "zR", function()
+    vim.cmd("normal! zA")
+end, {
+    silent = true,
+    desc = "Toggle fold recursively",
+})
+
+for _, lhs in ipairs({ "zc", "zC", "zM" }) do
+    vim.keymap.set("n", lhs, "<Nop>", {
+        silent = true,
+        desc = "Disabled: use fold toggles",
+    })
+end
 
 vim.api.nvim_create_autocmd({
     "VimResized",
@@ -622,12 +698,6 @@ vim.keymap.set("n", "C", '"_C', {
     desc = "Change line without clipboard",
 })
 
-vim.keymap.set({ "n", "v" }, "s", '"_s', {
-    noremap = true,
-    silent = true,
-    desc = "Substitute without clipboard",
-})
-
 vim.keymap.set("n", "S", '"_S', {
     noremap = true,
     silent = true,
@@ -683,16 +753,6 @@ end, {
 -- Jump List / Buffers / Windows
 -- ============================================================
 
-vim.keymap.set("n", "<C-o>", "<nop>", {
-    silent = true,
-    desc = "Disable default previous jump",
-})
-
-vim.keymap.set("n", "<C-i>", "<nop>", {
-    silent = true,
-    desc = "Disable default forward jump",
-})
-
 vim.keymap.set("n", "<C-]>", "<C-i>", {
     noremap = true,
     silent = true,
@@ -733,31 +793,6 @@ end, {
     desc = "Horizontal split with previous file",
 })
 
-vim.keymap.set("n", "<C-w>", "<C-w>w", {
-    noremap = true,
-    silent = true,
-    desc = "Switch to next window",
-})
-
-vim.keymap.set("i", "<C-w>", "<Esc><C-w>w", {
-    noremap = true,
-    silent = true,
-    desc = "Switch to next window from insert mode",
-})
-
-vim.keymap.set("v", "<C-w>", "<C-w>w", {
-    noremap = true,
-    silent = true,
-    desc = "Switch to next window in visual mode",
-})
-
-vim.keymap.set("t", "<C-w>", [[<C-\><C-n><C-w>w]], {
-    noremap = true,
-    silent = true,
-    desc = "Switch to next window in terminal mode",
-})
-
-
 -- ============================================================
 -- Search / Replace
 -- ============================================================
@@ -776,22 +811,6 @@ vim.keymap.set({ "n", "x" }, "N", function()
     smart_search_and_jump("N")
 end, {
     desc = "Sticky search previous / matching pair",
-})
-
-vim.keymap.set("n", "<leader>s", function()
-    case_sensitive = not case_sensitive
-
-    if sticky_active and sticky_word then
-        vim.fn.setreg("/", build_search_pattern(sticky_word))
-    end
-
-    vim.notify(
-        "Sticky Search case-sensitive: " .. tostring(case_sensitive),
-        vim.log.levels.INFO,
-        { timeout = 1000 }
-    )
-end, {
-    desc = "Toggle sticky search case sensitivity",
 })
 
 vim.keymap.set("n", "<leader>r", "*Ncgn", {
@@ -846,35 +865,35 @@ end, {
 
 
 -- ============================================================
--- LSP / fzf-lua
+-- LSP navigation (Snacks is the single picker backend)
 -- ============================================================
 
 vim.keymap.set("n", "gd", function()
-    require("fzf-lua").lsp_definitions()
+    Snacks.picker.lsp_definitions()
 end, {
     desc = "LSP definitions",
 })
 
 vim.keymap.set("n", "gr", function()
-    require("fzf-lua").lsp_references()
+    Snacks.picker.lsp_references()
 end, {
     desc = "LSP references",
 })
 
 vim.keymap.set("n", "gi", function()
-    require("fzf-lua").lsp_implementations()
+    Snacks.picker.lsp_implementations()
 end, {
     desc = "LSP implementations",
 })
 
 vim.keymap.set("n", "<leader>dd", function()
-    require("fzf-lua").diagnostics_document()
+    Snacks.picker.diagnostics_buffer()
 end, {
     desc = "Diagnostics current buffer",
 })
 
 vim.keymap.set("n", "<leader>dw", function()
-    require("fzf-lua").diagnostics_workspace()
+    Snacks.picker.diagnostics({ cwd = require("workspace").get() })
 end, {
     desc = "Diagnostics workspace",
 })
@@ -885,13 +904,13 @@ end, {
 -- ============================================================
 
 vim.keymap.set({ "n", "v", "i" }, "<C-f>", function()
-    Snacks.picker.files()
+    Snacks.picker.files({ cwd = require("workspace").get() })
 end, {
     desc = "Find files",
 })
 
 vim.keymap.set({ "n", "v", "i" }, "<C-g>", function()
-    Snacks.picker.grep()
+    Snacks.picker.grep({ cwd = require("workspace").get() })
 end, {
     desc = "Grep",
 })
@@ -908,13 +927,13 @@ end, {
     desc = "Find config files",
 })
 
-vim.keymap.set({ "n", "x" }, "<C-l>", function()
-    Snacks.picker.grep_word()
+vim.keymap.set({ "n", "x" }, "<leader>l", function()
+    Snacks.picker.grep_word({ cwd = require("workspace").get() })
 end, {
     desc = "Grep word or visual selection",
 })
 
-vim.keymap.set("n", "<C-h>", function()
+vim.keymap.set("n", "<leader>k", function()
     Snacks.picker.keymaps()
 end, {
     desc = "Search keymaps",
@@ -951,90 +970,88 @@ end, {
 -- Project / Directory Navigation
 -- ============================================================
 
-vim.keymap.set("n", "zf", function()
+vim.keymap.set("n", "<leader>w", function()
+    Snacks.picker.explorer({
+        title = "Choose Folder as Workspace  ·  l expand  ·  Enter choose",
+        cwd = vim.fn.expand("~/"),
+        hidden = true,
+        ignored = true,
+        follow_file = false,
+        auto_close = true,
+        layout = { preset = "vertical", preview = false },
+        actions = {
+            choose_workspace = function(picker, item)
+                if not item or not item.file then return end
+
+                local path = vim.fs.normalize(item.file)
+                if vim.fn.isdirectory(path) == 0 then
+                    path = vim.fn.fnamemodify(path, ":h")
+                end
+
+                picker:close()
+                vim.schedule(function()
+                    require("workspace").open(path, { exact = true })
+                end)
+            end,
+        },
+        win = {
+            list = {
+                keys = {
+                    ["<CR>"] = "choose_workspace",
+                },
+            },
+        },
+    })
+end, {
+    desc = "Choose folder as workspace",
+})
+
+vim.keymap.set("n", "<leader>f", function()
     Snacks.picker.files({ cwd = vim.fn.expand("~/") })
 end, {
     desc = "Find user files",
 })
 
 vim.keymap.set("n", "<C-o>", function()
-    Snacks.picker.pick({
-        title = "Open Folder",
-        finder = function()
-            local roots = {
-                vim.fn.expand("~/Documents/Github"),
-                vim.fn.expand("~/Library/Mobile Documents/com~apple~CloudDocs"),
-                vim.fn.expand("~/"),
-            }
-            local items = {}
-            for _, root in ipairs(roots) do
-                local handle = vim.uv.fs_scandir(root)
-                if handle then
-                    while true do
-                        local name, typ = vim.uv.fs_scandir_next(handle)
-                        if not name then break end
-                        if typ == "directory" then
-                            local full = root .. "/" .. name
-                            table.insert(items, {
-                                text = full,
-                                file = full,
-                                label = name,
-                                dir = root,
-                            })
-                        end
-                    end
-                end
-            end
-            return items
-        end,
-        format = function(item)
-            return {
-                { item.label,       "Directory" },
-                { "  " .. item.dir, "Comment" },
-            }
-        end,
+    local dev = {}
+    for _, path in ipairs({
+        "~/Documents/Github",
+        "~/Library/Mobile Documents/com~apple~CloudDocs",
+        "~/dev",
+        "~/projects",
+    }) do
+        path = vim.fn.expand(path)
+        if vim.fn.isdirectory(path) == 1 then
+            dev[#dev + 1] = path
+        end
+    end
+
+    Snacks.picker.projects({
+        title = "Open Workspace",
+        dev = dev,
+        projects = { require("workspace").get() },
+        recent = true,
+        max_depth = 3,
+        patterns = {
+            ".git",
+            ".hg",
+            ".project",
+            "package.json",
+            "pyproject.toml",
+            "Cargo.toml",
+            "go.mod",
+            "Makefile",
+        },
         confirm = function(picker, item)
             picker:close()
             if not item then return end
             vim.schedule(function()
-                Snacks.picker.pick({
-                    title = "Action: " .. item.label,
-                    layout = {
-                        preview = false,
-                        layout = {
-                            width = 0.3,
-                            height = 0.2,
-                        },
-                    },
-                    finder = function()
-                        return {
-                            { text = "Find Files", label = " Find Files", action = "files", folder = item.file },
-                            { text = "Grep",       label = " Grep",       action = "grep",  folder = item.file },
-                            { text = "Oil",        label = " Oil",        action = "oil",   folder = item.file },
-                        }
-                    end,
-                    format = function(a)
-                        return { { a.label, "Function" } }
-                    end,
-                    confirm = function(picker2, action)
-                        picker2:close()
-                        if not action then return end
-                        vim.schedule(function()
-                            if action.action == "files" then
-                                Snacks.picker.files({ cwd = action.folder })
-                            elseif action.action == "grep" then
-                                Snacks.picker.grep({ cwd = action.folder })
-                            elseif action.action == "oil" then
-                                require("oil").open(action.folder)
-                            end
-                        end)
-                    end,
-                })
+                require("workspace").open(item.file, { exact = true })
             end)
         end,
     })
 end, {
-    desc = "Find folder → files or grep or oil",
+    desc = "Open workspace",
 })
 
 vim.keymap.set("n", "go", open_in_file_manager, {
@@ -1090,82 +1107,10 @@ vim.keymap.set("n", "q", quit, {
     desc = "Smart close / quit",
 })
 
--- Universal toggle tables
-local state_file = vim.fn.stdpath("data") .. "/cwd_toggle_state.json"
-
--- Load persisted state
-local function load_state()
-    local f = io.open(state_file, "r")
-    if not f then return { global = vim.loop.cwd() } end
-    local raw = f:read("*a")
-    f:close()
-    local ok, data = pcall(vim.fn.json_decode, raw)
-    return (ok and type(data) == "table") and data or { global = vim.loop.cwd() }
-end
-
--- Save state to disk
-local function save_state(state)
-    local f = io.open(state_file, "w")
-    if not f then
-        vim.notify("cwd_toggle: could not write state file", vim.log.levels.WARN)
-        return
-    end
-    f:write(vim.fn.json_encode(state))
-    f:close()
-end
-
-local state = load_state()
-
--- Autocommand: track cwd changes
-vim.api.nvim_create_autocmd("DirChanged", {
-    callback = function(event)
-        local new_cwd  = event.file
-        -- Use stable string keys (tab/win number as string) instead of handles
-        local win_key  = "win_" .. tostring(vim.api.nvim_get_current_win())
-        local tab_key  = "tab_" .. tostring(vim.api.nvim_tabpage_get_number(
-            vim.api.nvim_get_current_tabpage()
-        ))
-        state[win_key] = new_cwd
-        state[tab_key] = new_cwd
-        state.global   = new_cwd
-        save_state(state)
-    end,
-})
-
--- Keymap: toggle buffer folder ↔ last cwd
-vim.keymap.set('n', '<leader>cd', function()
-    local buf_dir = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":h")
-    if buf_dir == "" or vim.fn.isdirectory(buf_dir) ~= 1 then
-        vim.notify("No valid directory for current buffer", vim.log.levels.WARN)
-        return
-    end
-
-    local win_key = "win_" .. tostring(vim.api.nvim_get_current_win())
-    local tab_key = "tab_" .. tostring(vim.api.nvim_tabpage_get_number(
-        vim.api.nvim_get_current_tabpage()
-    ))
-    local current_cwd = vim.loop.cwd()
-
-    -- Priority: window > tab > global > current
-    local last_cwd = state[win_key]
-        or state[tab_key]
-        or state.global
-        or current_cwd
-
-    if current_cwd ~= buf_dir then
-        -- Save current before switching
-        state[win_key] = current_cwd
-        state[tab_key] = current_cwd
-        state.global   = current_cwd
-        save_state(state)
-        vim.cmd.cd(buf_dir)
-        vim.notify("cwd → buffer folder: " .. buf_dir)
-    else
-        -- Toggle back
-        vim.cmd.cd(last_cwd)
-        vim.notify("cwd → reverted: " .. last_cwd)
-    end
-end, { desc = "Toggle: buffer folder ↔ last cwd (window > tab > global)" })
+-- Deliberately change the workspace instead of creating a temporary cwd.
+vim.keymap.set("n", "zcd", function()
+    require("workspace").from_current_buffer()
+end, { desc = "Use current file's project as workspace" })
 
 -- ============================================================
 -- Insert / Command / Terminal
@@ -1228,7 +1173,7 @@ end, {
 
 
 -- ============================================================
--- Quick Notes / Kitty / Lazygit
+-- Quick Notes / Kitty
 -- ============================================================
 
 vim.keymap.set("n", "<leader>qn", function()
@@ -1238,6 +1183,7 @@ vim.keymap.set("n", "<leader>qn", function()
         vim.fn.writefile({}, notes)
     end
 
+    pcall(vim.cmd, "EditorFocus")
     vim.cmd(
         "FloatermNew"
         .. " --height=0.85"
@@ -1253,30 +1199,15 @@ end, {
     desc = "Quick notes",
 })
 
-vim.keymap.set("n", "zg", function()
-    vim.fn.jobstart({
-        "kitty",
-        "@",
-        "launch",
-        "--cwd",
-        vim.fn.getcwd(),
-        "--type",
-        "tab",
-        "lazygit",
-    }, {
-        detach = true,
-    })
-end, {
-    noremap = true,
-    silent = true,
-    desc = "Open Lazygit in Kitty tab",
-})
-
 -- ============================================================
 -- Alpha / Leet
 -- ============================================================
 
-vim.keymap.set({ "n", "t" }, "<C-a>", "<cmd>Alpha<CR>", {
+vim.keymap.set({ "n", "t" }, "<C-a>", function()
+    if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
+    pcall(vim.cmd, "EditorFocus")
+    require("dashboard").open()
+end, {
     noremap = true,
     silent = true,
     desc = "Open Alpha",
@@ -1326,34 +1257,6 @@ vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", {
     desc = "Reset Leet solution",
 })
 
-
--- ============================================================
--- Grug Far Search / Replace
--- ============================================================
-
-vim.keymap.set("n", "zsw", function()
-    require("grug-far").open({
-        prefills = {
-            search = vim.fn.expand("<cword>"),
-        },
-    })
-end, {
-    desc = "Search current word",
-})
-
-vim.keymap.set("v", "zsw", function()
-    require("grug-far").with_visual_selection()
-end, {
-    desc = "Search selection",
-})
-
-vim.keymap.set("n", "zs", function()
-    require("grug-far").open({
-        transient = true,
-    })
-end, {
-    desc = "Search window",
-})
 
 -- ============================================================
 -- Flash Search

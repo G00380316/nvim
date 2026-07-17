@@ -4,98 +4,11 @@
 
 
 -- ============================================================
--- Smart Working Directory
--- Changes cwd to the nearest project root, falling back to file dir.
--- ============================================================
-
-local smart_cd_group = vim.api.nvim_create_augroup("SmartCD", { clear = true })
-
-local function find_project_root(file_path)
-    -- Get the directory of the current file.
-    local dir = vim.fn.fnamemodify(file_path, ":h")
-    if dir == "" or not vim.fn.isdirectory(dir) then
-        return nil
-    end
-
-    -- Search upwards for project markers.
-    local markers = { ".git", "package.json", ".project" }
-
-    local root = vim.fs.find(markers, {
-        path = dir,
-        upward = true,
-        type = "directory",
-    })[1] or vim.fs.find(markers, {
-        path = dir,
-        upward = true,
-        type = "file",
-    })[1]
-
-    if root then
-        -- Return the directory containing the marker.
-        return vim.fn.fnamemodify(root, ":h")
-    end
-
-    return nil
-end
-
-vim.api.nvim_create_autocmd("BufEnter", {
-    group = smart_cd_group,
-    pattern = "*",
-    callback = function()
-        local file_path = vim.api.nvim_buf_get_name(0)
-        if file_path == "" then
-            return
-        end
-
-        local project_root = find_project_root(file_path)
-
-        local target_dir
-        if project_root then
-            target_dir = project_root
-        else
-            target_dir = vim.fn.fnamemodify(file_path, ":h")
-        end
-
-        if target_dir
-            and vim.fn.isdirectory(target_dir) == 1
-            and vim.fn.getcwd() ~= target_dir
-        then
-            vim.cmd.cd(target_dir)
-        end
-    end,
-    desc = "Smartly change directory to project root or file's directory",
-})
-
-
--- ============================================================
 -- Buffer Auto-Cleanup
 -- Limits buffer count and removes empty/directory/dead buffers.
 -- ============================================================
 
 local autoclose_group = vim.api.nvim_create_augroup("AutoCloseFloats", { clear = true })
-
-local function limit_buffers(max)
-    local bufs = vim.tbl_filter(function(buf)
-        return vim.api.nvim_buf_is_loaded(buf)
-            and vim.bo[buf].buflisted
-    end, vim.api.nvim_list_bufs())
-
-    if #bufs > max then
-        table.sort(bufs)
-
-        for i = 1, #bufs - max do
-            vim.api.nvim_buf_delete(bufs[i], { force = true })
-        end
-    end
-end
-
--- Limit total listed buffers.
-vim.api.nvim_create_autocmd("BufEnter", {
-    group = autoclose_group,
-    callback = function()
-        limit_buffers(20)
-    end,
-})
 
 -- Remove empty unnamed buffers after leaving them.
 vim.api.nvim_create_autocmd("BufLeave", {
@@ -204,17 +117,6 @@ vim.api.nvim_create_autocmd({
     end,
 })
 
-vim.api.nvim_create_autocmd({
-    "BufEnter",
-    "BufWritePost",
-    "FocusGained",
-}, {
-    callback = function()
-        vim.schedule(clean_dead_buffers)
-    end,
-})
-
-
 -- ============================================================
 -- Floating Window Auto-Close
 -- Closes floating windows when leaving them, except special UIs.
@@ -226,7 +128,6 @@ local exclude_filetypes = {
     "lazy",
     "mason",
     "noice",
-    "alpha",
     "trouble",
     "snacks",
     "Leet",
@@ -261,21 +162,6 @@ vim.api.nvim_create_autocmd("WinLeave", {
                 end
             end)
         end
-    end,
-})
-
-
--- ============================================================
--- Prosession Cleanup
--- Cleans sessions when leaving buffers.
--- ============================================================
-
-local prosession_group = vim.api.nvim_create_augroup("ProSession", { clear = true })
-
-vim.api.nvim_create_autocmd("BufLeave", {
-    group = prosession_group,
-    callback = function()
-        vim.cmd("ProsessionClean")
     end,
 })
 
@@ -454,7 +340,7 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 
 -- ============================================================
 -- File Format Cleanup
--- Forces unix line endings and strips carriage returns before save.
+-- Forces Unix line endings without scanning the complete buffer on every save.
 -- ============================================================
 
 vim.api.nvim_create_autocmd("BufWritePre", {
@@ -465,10 +351,6 @@ vim.api.nvim_create_autocmd("BufWritePre", {
         end
 
         vim.bo[args.buf].fileformat = "unix"
-
-        local view = vim.fn.winsaveview()
-        vim.cmd([[silent! %s/\r//ge]])
-        vim.fn.winrestview(view)
     end,
 })
 

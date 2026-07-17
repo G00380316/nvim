@@ -1,0 +1,3 @@
+WRN 2026-07-17T12:12:22.302 ?.76647    server_start:197: Failed to start server: operation not permitted: /tmp/nvim.enoch/5enq7C/nvim.76647.0
+WRN 2026-07-17T12:22:01.086 ?.84357    server_start:197: Failed to start server: operation not permitted: /tmp/nvim.enoch/ZR62Gm/nvim.84357.0
+WRN 2026-07-17T13:30:09.061 ?.16565    server_start:197: Failed to start server: operation not permitted: /tmp/nvim.enoch/DBD0oI/nvim.16565.0

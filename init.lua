@@ -2,30 +2,75 @@
 -- PLUGINS
 -- ============================================================
 
+-- Remove callbacks left in memory when this config is re-sourced after the
+-- migration from LuaSnip to Blink's native vim.snippet support.
+for _, group in ipairs({ "_luasnip_lazy_load", "luasnip" }) do
+    pcall(vim.api.nvim_del_augroup_by_name, group)
+end
+for _, command in ipairs({ "LuaSnipUnlinkCurrent", "LuaSnipListAvailable" }) do
+    pcall(vim.api.nvim_del_user_command, command)
+end
+for _, mode in ipairs({ "n", "i", "s", "x" }) do
+    for _, mapping in ipairs({
+        "<Plug>luasnip-expand-or-jump",
+        "<Plug>luasnip-expand-snippet",
+        "<Plug>luasnip-next-choice",
+        "<Plug>luasnip-prev-choice",
+        "<Plug>luasnip-jump-next",
+        "<Plug>luasnip-jump-prev",
+        "<Plug>luasnip-delete-check",
+        "<Plug>luasnip-expand-repeat",
+    }) do
+        pcall(vim.keymap.del, mode, mapping)
+    end
+end
+
+-- Stop legacy session plugins when this config is re-sourced in an instance
+-- that previously loaded them.
+for _, group in ipairs({ "obsession", "prosession", "ProSession" }) do
+    pcall(vim.api.nvim_del_augroup_by_name, group)
+end
+for _, command in ipairs({
+    "Obsession",
+    "Prosession",
+    "ProsessionClean",
+    "ProsessionDelete",
+    "ProsessionInfo",
+    "ProsessionLast",
+}) do
+    pcall(vim.api.nvim_del_user_command, command)
+end
+vim.g.this_obsession = nil
+
 vim.pack.add({
     -- Navigation
-    { src = "https://github.com/stevearc/oil.nvim" },
+    { src = "https://github.com/nvim-tree/nvim-tree.lua" },
     { src = "https://github.com/folke/snacks.nvim" },
-    { src = "https://github.com/ibhagwan/fzf-lua" },
     { src = "https://github.com/voldikss/vim-floaterm" },
     { src = "https://github.com/MagicDuck/grug-far.nvim" },
-    { src = "https://github.com/dhruvasagar/vim-prosession" },
-    { src = "https://github.com/tpope/vim-obsession" },
     { src = "https://github.com/folke/flash.nvim" },
+
+    -- Debugging
+    { src = "https://github.com/mason-org/mason.nvim" },
+    { src = "https://github.com/mfussenegger/nvim-dap" },
+    { src = "https://github.com/jay-babu/mason-nvim-dap.nvim" },
+    { src = "https://github.com/nvim-neotest/nvim-nio" },
+    { src = "https://github.com/rcarriga/nvim-dap-ui" },
+    { src = "https://github.com/theHamsta/nvim-dap-virtual-text" },
+    { src = "https://github.com/jbyuki/one-small-step-for-vimkind" },
+    { src = "https://github.com/mfussenegger/nvim-jdtls" },
 
     -- UI
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
     { src = "https://github.com/rebelot/kanagawa.nvim" },
     { src = "https://github.com/lewis6991/gitsigns.nvim" },
-    { src = "https://github.com/tpope/vim-fugitive" },
+    { src = "https://github.com/NeogitOrg/neogit" },
+    { src = "https://github.com/sindrets/diffview.nvim" },
     { src = "https://github.com/lukas-reineke/indent-blankline.nvim" },
     { src = "https://github.com/3rd/image.nvim" },
-    { src = "https://github.com/goolord/alpha-nvim" },
-    { src = "https://github.com/stevearc/dressing.nvim" },
     { src = "https://github.com/nvim-lualine/lualine.nvim" },
     { src = "https://github.com/nvim-treesitter/nvim-treesitter" },
     { src = "https://github.com/MeanderingProgrammer/render-markdown.nvim" },
-    { src = "https://github.com/refractalize/oil-git-status.nvim" },
     { src = "https://github.com/akinsho/bufferline.nvim" },
     { src = "https://github.com/SmiteshP/nvim-navic" },
 
@@ -38,8 +83,7 @@ vim.pack.add({
     { src = "https://github.com/cohama/lexima.vim" },
     { src = "https://github.com/tronikelis/ts-autotag.nvim" },
 
-    -- Snippets
-    { src = "https://github.com/L3MON4D3/LuaSnip" },
+    -- Snippets (Blink uses Neovim's native vim.snippet engine.)
     { src = "https://github.com/rafamadriz/friendly-snippets" },
 
     -- Tools
@@ -67,7 +111,7 @@ vim.o.hidden = true
 vim.o.errorbells = false
 vim.o.backspace = "indent,eol,start"
 vim.o.autoread = true
-vim.o.updatetime = 50
+vim.o.updatetime = 200
 vim.o.timeoutlen = 500
 vim.o.ttimeoutlen = 0
 
@@ -112,7 +156,10 @@ vim.o.incsearch = true
 vim.o.number = true
 vim.o.relativenumber = true
 vim.o.cursorline = true
+vim.o.cursorlineopt = "number,line"
 vim.o.signcolumn = "yes"
+vim.o.laststatus = 3
+vim.o.showmode = false
 vim.o.scrolloff = 10
 vim.o.matchtime = 2
 vim.o.paste = false
@@ -132,44 +179,17 @@ vim.opt.iskeyword:append("_")
 vim.cmd("set completeopt+=noselect")
 
 vim.diagnostic.config({
-    virtual_text = true,
+    severity_sort = true,
+    update_in_insert = false,
+    virtual_text = {
+        spacing = 2,
+        source = "if_many",
+        prefix = "●",
+    },
     float = {
         border = "rounded",
     },
 })
-
-
--- ============================================================
--- TRANSPARENCY / HIGHLIGHTS
--- ============================================================
-
-vim.cmd([[hi @lsp.type.number gui=italic]])
-
-vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
-vim.api.nvim_set_hl(0, "NormalNC", { bg = "none" })
-vim.api.nvim_set_hl(0, "EndOfBuffer", { bg = "none" })
-
-vim.cmd(":hi statusline guibg=NONE")
-vim.cmd(":hi signcolumn guibg=NONE")
-
-vim.cmd([[
-  highlight CursorLine cterm=NONE ctermbg=236 guibg=#252535
-]])
-
-
--- ============================================================
--- SESSIONS / PROSESSION
--- ============================================================
-
-vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
-
-vim.g.prosession_on_startup = 1
-vim.g.prosession_per_branch = 1
-
-vim.g.Prosession_ignore_expr = function()
-    local cwd = vim.fn.getcwd()
-    return cwd ~= vim.fn.expand("~")
-end
 
 
 -- ============================================================
@@ -186,8 +206,11 @@ vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
 -- Load plugin configs before mappings/autocmds that rely on them.
 -- ============================================================
 
+require("workspace").setup()
 require("lsp")
 require("plugins")
+require("debugger_bootstrap")
+require("mobile").setup()
 require("autocmd")
 require("mappings")
 
@@ -228,11 +251,10 @@ require("ibl").setup({
     exclude = {
         filetypes = {
             "help",
-            "alpha",
             "dashboard",
             "lazy",
             "mason",
-            "oil",
+            "NvimTree",
             "terminal",
             "floaterm",
         },
@@ -378,12 +400,12 @@ lualine.setup({
         section_separators = "",
         disabled_filetypes = {
             statusline = {
-                "oil",
+                "NvimTree",
                 "toggleterm",
                 "terminal",
             },
             winbar = {
-                "oil",
+                "NvimTree",
                 "toggleterm",
                 "terminal",
             },
@@ -398,6 +420,21 @@ lualine.setup({
         lualine_b = {
             branch,
             diff,
+        },
+
+        lualine_c = {
+            {
+                "filename",
+                path = 1,
+                symbols = {
+                    modified = " ●",
+                    readonly = " ",
+                    unnamed = "[Untitled]",
+                },
+            },
+        },
+
+        lualine_x = {
             {
                 "diagnostics",
                 sources = {
@@ -415,15 +452,20 @@ lualine.setup({
                     info = " ",
                     hint = "󰌵 ",
                 },
-                update_in_insert = true,
+                update_in_insert = false,
             },
-            cwd_component,
             lsp_status,
+        },
+
+        lualine_y = {
+            cwd_component,
             floaterm_component,
         },
 
-        lualine_c = {},
-        lualine_x = {},
+        lualine_z = {
+            "location",
+            "progress",
+        },
     },
 })
 
