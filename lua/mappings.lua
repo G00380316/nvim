@@ -12,11 +12,6 @@ local Snacks = require("snacks")
 local sticky_active = false
 local sticky_word = nil
 
-local previous_state_file = vim.fn.stdpath("data") .. "/previous_buffer.txt"
-local last_buffer = nil
-local previous_file = nil
-
-
 -- ============================================================
 -- General Helpers
 -- ============================================================
@@ -256,76 +251,6 @@ local function safe_paste(direction)
     end
 end
 -- ============================================================
--- Persistent Previous File Helpers
--- Used by zv / zh split mappings.
--- ============================================================
-
-local function save_previous_buffer(path)
-    if path and path ~= "" then
-        vim.fn.writefile({ path }, previous_state_file)
-    end
-end
-
-local function load_previous_buffer()
-    if vim.fn.filereadable(previous_state_file) == 1 then
-        local lines = vim.fn.readfile(previous_state_file)
-
-        if lines[1] and vim.fn.filereadable(lines[1]) == 1 then
-            return lines[1]
-        end
-    end
-
-    return nil
-end
-
-previous_file = load_previous_buffer()
-
-vim.api.nvim_create_autocmd("BufEnter", {
-    callback = function()
-        local current_buf = vim.api.nvim_get_current_buf()
-        local current_file = vim.api.nvim_buf_get_name(current_buf)
-
-        if not vim.api.nvim_buf_is_valid(current_buf) then
-            return
-        end
-
-        if vim.bo[current_buf].buftype ~= "" or current_file == "" then
-            return
-        end
-
-        if current_buf ~= last_buffer then
-            if last_buffer and vim.api.nvim_buf_is_valid(last_buffer) then
-                local last_file = vim.api.nvim_buf_get_name(last_buffer)
-
-                if last_file ~= "" and vim.fn.filereadable(last_file) == 1 then
-                    previous_file = last_file
-                    save_previous_buffer(previous_file)
-                end
-            end
-
-            last_buffer = current_buf
-        end
-    end,
-})
-
-local function open_split_with_previous(split_cmd, move_cmd)
-    pcall(vim.cmd, split_cmd)
-    pcall(vim.cmd, "wincmd " .. move_cmd)
-
-    if previous_file and vim.fn.filereadable(previous_file) == 1 then
-        -- Use edit! to bypass the E37 protection check
-        local ok, err = pcall(vim.cmd, "edit! " .. vim.fn.fnameescape(previous_file))
-        if not ok then
-            print("Error opening previous file: " .. err)
-        end
-    end
-
-    vim.schedule(function()
-        pcall(vim.cmd, "wincmd =")
-    end)
-end
-
--- ============================================================
 -- Save / Quit Helpers
 -- ============================================================
 
@@ -345,7 +270,7 @@ local function save_current_file()
     end
 
     local function write_buffer()
-        if vim.bo[bufnr].filetype ~= "NvimTree" and has_lsp(bufnr) then
+        if vim.bo[bufnr].filetype ~= "oil" and has_lsp(bufnr) then
             pcall(vim.lsp.buf.format, { async = false })
         end
 
@@ -391,15 +316,7 @@ local function save_current_file()
 end
 
 local function next_editor_buffer(current)
-    local buffers = vim.fn.getbufinfo({ buflisted = 1 })
-    for _, info in ipairs(buffers) do
-        if info.bufnr ~= current
-            and vim.api.nvim_buf_is_valid(info.bufnr)
-            and vim.bo[info.bufnr].buftype == ""
-        then
-            return info.bufnr
-        end
-    end
+    return require("buffers").replacement(current)
 end
 
 local function close_editor_buffer(buf)
@@ -451,7 +368,7 @@ local function quit()
 
             pcall(vim.cmd, "bd!")
         else
-            -- NvimTree, Lazy, popup windows, etc.
+            -- Oil help, Lazy, popup windows, etc.
             pcall(vim.cmd, "close")
         end
 
@@ -463,7 +380,7 @@ local function quit()
     pcall(function()
         in_diffview = require("diffview.lib").get_current_view() ~= nil
     end)
-    if in_diffview or vim.bo[buf].filetype:match("^Neogit") then
+    if in_diffview or vim.b[buf].lazygit_editor then
         vim.cmd("GitCloseAll")
         return
     end
@@ -492,8 +409,8 @@ local function quit()
             end
 
             pcall(vim.cmd, "bd!")
-        elseif buftype == "NvimTree" then
-            require("nvim-tree.api").tree.close()
+        elseif vim.bo[buf].filetype == "oil" then
+            pcall(vim.cmd, "close")
         else
             if not close_editor_buffer(buf) then
                 return
@@ -514,48 +431,6 @@ end
 
 local function equalize_splits()
     vim.cmd("wincmd =")
-end
-
-vim.keymap.set("n", "z=", equalize_splits, {
-    noremap = true,
-    silent = true,
-    desc = "Equalize split layout",
-})
-
--- Toggle-only folding: current, all, and recursive.
-vim.keymap.set("n", "zo", function()
-    vim.cmd("normal! za")
-end, {
-    silent = true,
-    desc = "Toggle fold",
-})
-
-vim.keymap.set("n", "zO", function()
-    local has_closed_fold = false
-    for line = 1, vim.api.nvim_buf_line_count(0) do
-        if vim.fn.foldclosed(line) ~= -1 then
-            has_closed_fold = true
-            break
-        end
-    end
-    vim.cmd(has_closed_fold and "normal! zR" or "normal! zM")
-end, {
-    silent = true,
-    desc = "Toggle all folds",
-})
-
-vim.keymap.set("n", "zR", function()
-    vim.cmd("normal! zA")
-end, {
-    silent = true,
-    desc = "Toggle fold recursively",
-})
-
-for _, lhs in ipairs({ "zc", "zC", "zM" }) do
-    vim.keymap.set("n", lhs, "<Nop>", {
-        silent = true,
-        desc = "Disabled: use fold toggles",
-    })
 end
 
 vim.api.nvim_create_autocmd({
@@ -750,47 +625,113 @@ end, {
 })
 
 -- ============================================================
--- Jump List / Buffers / Windows
+-- Editor Buffer Navigation
 -- ============================================================
 
-vim.keymap.set("n", "<C-]>", "<C-i>", {
-    noremap = true,
+local function cycle_editor_buffer(direction)
+    require("buffers").cycle(direction)
+end
+
+vim.keymap.set("n", "<C-]>", function() cycle_editor_buffer(1) end, {
     silent = true,
-    desc = "Jump to next position",
+    desc = "Next editor buffer",
 })
 
-vim.keymap.set("n", "<C-[>", "<C-o>", {
-    noremap = true,
+vim.keymap.set("n", "<C-[>", function() cycle_editor_buffer(-1) end, {
     silent = true,
-    desc = "Jump to previous position",
+    desc = "Previous editor buffer",
 })
 
-vim.keymap.set("n", "<Tab>", "<cmd>bn<CR>", {
-    noremap = true,
+vim.keymap.set("n", "<Tab>", function() cycle_editor_buffer(1) end, {
     silent = true,
-    desc = "Next buffer",
+    desc = "Next editor buffer",
 })
 
-vim.keymap.set("n", "<S-Tab>", "<cmd>bp<CR>", {
-    noremap = true,
+vim.keymap.set("n", "<S-Tab>", function() cycle_editor_buffer(-1) end, {
     silent = true,
-    desc = "Previous buffer",
+    desc = "Previous editor buffer",
 })
 
-vim.keymap.set("n", "zv", function()
-    open_split_with_previous("vsplit", "l")
-end, {
-    noremap = true,
+-- ============================================================
+-- Editor Splits / Pane Sizing
+-- ============================================================
+
+local function focus_editor_pane()
+    pcall(vim.cmd, "EditorFocus")
+end
+
+local function split_editor(command)
+    focus_editor_pane()
+    vim.cmd(command)
+end
+
+local function resize_editor(command)
+    focus_editor_pane()
+    vim.cmd(command)
+end
+
+vim.api.nvim_create_user_command("EditorSplitVertical", function()
+    split_editor("vsplit")
+end, { desc = "Split the current editor buffer vertically" })
+
+vim.api.nvim_create_user_command("EditorSplitHorizontal", function()
+    split_editor("split")
+end, { desc = "Split the current editor buffer horizontally" })
+
+vim.api.nvim_create_user_command("EditorPaneWider", function()
+    resize_editor("vertical resize +5")
+end, { desc = "Grow the editor pane horizontally" })
+
+vim.api.nvim_create_user_command("EditorPaneNarrower", function()
+    resize_editor("vertical resize -5")
+end, { desc = "Shrink the editor pane horizontally" })
+
+vim.api.nvim_create_user_command("EditorPaneTaller", function()
+    resize_editor("resize +3")
+end, { desc = "Grow the editor pane vertically" })
+
+vim.api.nvim_create_user_command("EditorPaneShorter", function()
+    resize_editor("resize -3")
+end, { desc = "Shrink the editor pane vertically" })
+
+vim.api.nvim_create_user_command("EditorPanesEqual", function()
+    focus_editor_pane()
+    vim.cmd("wincmd =")
+end, { desc = "Equalize editor panes" })
+
+vim.keymap.set("n", "zv", "<cmd>EditorSplitVertical<CR>", {
     silent = true,
-    desc = "Vertical split with previous file",
+    desc = "Vertical editor split",
 })
 
-vim.keymap.set("n", "zh", function()
-    open_split_with_previous("split", "j")
-end, {
-    noremap = true,
+vim.keymap.set("n", "zh", "<cmd>EditorSplitHorizontal<CR>", {
     silent = true,
-    desc = "Horizontal split with previous file",
+    desc = "Horizontal editor split",
+})
+
+vim.keymap.set("n", "z=", "<cmd>EditorPanesEqual<CR>", {
+    silent = true,
+    desc = "Equalize editor panes",
+})
+
+vim.keymap.set("n", "<C-Right>", "<cmd>EditorPaneWider<CR>", {
+    silent = true,
+    desc = "Grow editor pane right",
+})
+
+vim.keymap.set("n", "<C-Left>", "<cmd>EditorPaneNarrower<CR>", {
+    silent = true,
+    desc = "Shrink editor pane from right",
+})
+
+vim.keymap.set("n", "<C-Up>", "<cmd>EditorPaneTaller<CR>", {
+    silent = true,
+    desc = "Grow editor pane upward",
+})
+
+vim.keymap.set("n", "<C-Down>", "<cmd>EditorPaneShorter<CR>", {
+    silent = true,
+    desc = "Shrink editor pane vertically",
 })
 
 -- ============================================================
@@ -1200,18 +1141,8 @@ end, {
 })
 
 -- ============================================================
--- Alpha / Leet
+-- LeetCode
 -- ============================================================
-
-vim.keymap.set({ "n", "t" }, "<C-a>", function()
-    if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
-    pcall(vim.cmd, "EditorFocus")
-    require("dashboard").open()
-end, {
-    noremap = true,
-    silent = true,
-    desc = "Open Alpha",
-})
 
 vim.keymap.set("n", "zlo", function()
     vim.fn.jobstart({

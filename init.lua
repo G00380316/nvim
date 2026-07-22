@@ -44,10 +44,11 @@ vim.g.this_obsession = nil
 
 vim.pack.add({
     -- Navigation
-    { src = "https://github.com/nvim-tree/nvim-tree.lua" },
+    { src = "https://github.com/stevearc/oil.nvim" },
     { src = "https://github.com/folke/snacks.nvim" },
     { src = "https://github.com/voldikss/vim-floaterm" },
-    { src = "https://github.com/MagicDuck/grug-far.nvim" },
+    { src = "https://github.com/chrisgrieser/nvim-rip-substitute" },
+    { src = "https://github.com/stevearc/quicker.nvim" },
     { src = "https://github.com/folke/flash.nvim" },
 
     -- Debugging
@@ -64,7 +65,7 @@ vim.pack.add({
     { src = "https://github.com/nvim-tree/nvim-web-devicons" },
     { src = "https://github.com/rebelot/kanagawa.nvim" },
     { src = "https://github.com/lewis6991/gitsigns.nvim" },
-    { src = "https://github.com/NeogitOrg/neogit" },
+    { src = "https://github.com/refractalize/oil-git-status.nvim" },
     { src = "https://github.com/sindrets/diffview.nvim" },
     { src = "https://github.com/lukas-reineke/indent-blankline.nvim" },
     { src = "https://github.com/3rd/image.nvim" },
@@ -254,7 +255,7 @@ require("ibl").setup({
             "dashboard",
             "lazy",
             "mason",
-            "NvimTree",
+            "oil",
             "terminal",
             "floaterm",
         },
@@ -400,12 +401,14 @@ lualine.setup({
         section_separators = "",
         disabled_filetypes = {
             statusline = {
-                "NvimTree",
+                "oil",
+                "lazygit",
                 "toggleterm",
                 "terminal",
             },
             winbar = {
-                "NvimTree",
+                "oil",
+                "lazygit",
                 "toggleterm",
                 "terminal",
             },
@@ -488,5 +491,9 @@ require("bufferline").setup({
         show_close_icon = false,
         persist_buffer_sort = true,
         always_show_bufferline = false,
+        name_formatter = function(buf)
+            if vim.bo[buf.bufnr].filetype == "lazygit" then return " LazyGit" end
+            return buf.name
+        end,
     },
 })

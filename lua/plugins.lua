@@ -92,10 +92,12 @@ require("kanagawa").setup({
                 underline = true,
             },
 
-            NvimTreeNormal = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m1 },
-            NvimTreeNormalNC = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m1 },
-            NvimTreeCursorLine = { bg = theme.ui.bg_p1 },
-            NvimTreeWinSeparator = { fg = theme.ui.bg_p2, bg = theme.ui.bg_m1 },
+            OilNormal = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m1 },
+            OilNormalNC = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m1 },
+            OilCursorLine = { bg = theme.ui.bg_p1 },
+            OilSelectedFile = { fg = theme.ui.fg, bg = theme.ui.bg_p1, bold = true },
+            OilSelectedFileSign = { fg = theme.ui.special, bg = theme.ui.bg_m1 },
+            OilWinSeparator = { fg = theme.ui.bg_p2, bg = theme.ui.bg_m1 },
             WinSeparator = { fg = theme.ui.bg_p2, bg = theme.ui.bg },
 
             DiagnosticVirtualTextHint = makeDiagnosticColor(theme.diag.hint),
@@ -170,7 +172,7 @@ require("snacks").setup({
         },
         sections = {
             { section = "header" },
-            { section = "keys", gap = 1, padding = 1 },
+            { section = "keys",  gap = 1, padding = 1 },
             {
                 icon = " ",
                 title = "Recent Workspaces",
@@ -273,13 +275,11 @@ vim.api.nvim_create_autocmd("User", {
 
 
 -- ============================================================
--- NvimTree File Explorer
+-- Oil File Explorer Sidebar
 -- ============================================================
 
-local tree_api = require("nvim-tree.api")
-local tree_sort_modes = { "name", "extension", "modification_time" }
-local tree_sort_index = 1
-local tree_width = 30
+local oil = require("oil")
+local explorer_width = 30
 local last_editor_win = nil
 local last_panel_win = nil
 
@@ -297,10 +297,9 @@ end
 
 local function is_panel(win)
     local filetype = window_filetype(win)
-    return filetype == "NvimTree"
+    return filetype == "oil"
         or filetype == "floaterm"
-        or filetype == "NeogitStatus"
-        or filetype == "grug-far"
+        or filetype == "qf"
 end
 
 local function find_window(filetype)
@@ -312,7 +311,10 @@ local function find_window(filetype)
 end
 
 local function find_editor_window()
-    if window_is_valid(last_editor_win) and not is_panel(last_editor_win) then
+    if window_is_valid(last_editor_win)
+        and vim.api.nvim_win_get_tabpage(last_editor_win) == vim.api.nvim_get_current_tabpage()
+        and not is_panel(last_editor_win)
+    then
         return last_editor_win
     end
     for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
@@ -348,32 +350,7 @@ local function focus_editor_or_last_panel()
 end
 
 local function switch_editor_buffer(direction)
-    if focus_editor() or not is_panel(vim.api.nvim_get_current_win()) then
-        vim.cmd(direction > 0 and "bnext" or "bprevious")
-    end
-end
-
-local function focus_tree()
-    if leetcode_active() then
-        vim.notify("NvimTree is disabled in LeetCode", vim.log.levels.INFO)
-        return
-    end
-
-    local current = vim.api.nvim_get_current_win()
-    if window_filetype(current) == "NvimTree" then
-        tree_api.tree.close()
-        return
-    end
-
-    local tree = find_window("NvimTree")
-    if tree then
-        last_editor_win = not is_panel(current) and current or last_editor_win
-        last_panel_win = tree
-        vim.api.nvim_set_current_win(tree)
-    else
-        tree_api.tree.open({ path = require("workspace").get(), focus = true })
-        last_panel_win = vim.api.nvim_get_current_win()
-    end
+    require("buffers").cycle(direction)
 end
 
 local function focus_terminal()
@@ -405,145 +382,236 @@ vim.api.nvim_create_autocmd("WinEnter", {
     desc = "Remember the editor window between sidebar and terminal visits",
 })
 
-local function tree_node_path()
-    local node = tree_api.tree.get_node_under_cursor()
-    return node and node.absolute_path or nil
+local function oil_entry_path()
+    local entry = oil.get_cursor_entry()
+    local directory = oil.get_current_dir()
+    if not entry or not directory then return nil, nil end
+    return vim.fs.joinpath(directory, entry.name), entry
 end
 
-local function nvim_tree_on_attach(bufnr)
-    local function map(lhs, rhs, desc)
-        vim.keymap.set("n", lhs, rhs, {
-            buffer = bufnr,
-            noremap = true,
-            silent = true,
-            nowait = true,
-            desc = "NvimTree: " .. desc,
-        })
+-- Directories continue navigating inside the sidebar. Files deliberately open
+-- in the editor zone so Oil itself is never replaced by a selected file.
+local function select_oil_entry(kind)
+    local path, entry = oil_entry_path()
+    if not path then return end
+    if entry.type == "directory" then
+        oil.select()
+        return
     end
 
-    local function open_tree_node(action)
-        local node = tree_api.tree.get_node_under_cursor()
-        if node and node.name == ".git" and node.type == "directory" then
-            vim.notify(".git stays collapsed in the project explorer", vim.log.levels.INFO)
-            return
-        end
-        action()
+    focus_editor()
+    if kind == "vertical" then
+        vim.cmd("vsplit " .. vim.fn.fnameescape(path))
+    elseif kind == "horizontal" then
+        vim.cmd("split " .. vim.fn.fnameescape(path))
+    elseif kind == "tab" then
+        vim.cmd("tabedit " .. vim.fn.fnameescape(path))
+    else
+        vim.cmd("edit " .. vim.fn.fnameescape(path))
     end
-
-    -- Preserve the previous explorer mappings.
-    map("g?", tree_api.tree.toggle_help, "Help")
-    map("<CR>", function() open_tree_node(tree_api.node.open.edit) end, "Open")
-    map("zv", function() open_tree_node(tree_api.node.open.vertical) end, "Open: Vertical Split")
-    map("zh", function() open_tree_node(tree_api.node.open.horizontal) end, "Open: Horizontal Split")
-    map("gT", function() open_tree_node(tree_api.node.open.tab) end, "Open: New Tab")
-    map("<C-t>", focus_terminal, "Focus/Toggle Terminal")
-    map("<C-p>", tree_api.node.open.preview, "Preview")
-    map("<C-c>", tree_api.tree.close, "Hide Explorer")
-    map("q", tree_api.tree.close, "Hide Explorer")
-    map("<Space>l", tree_api.tree.reload, "Refresh")
-    map("<BS>", tree_api.node.navigate.parent_close, "Parent Node")
-    map("gr", function()
-        tree_api.tree.change_root(vim.fn.getcwd())
-    end, "Open Working Directory")
-    map("gc", function()
-        local path = tree_node_path()
-        if not path then return end
-        local dir = vim.fn.isdirectory(path) == 1 and path or vim.fn.fnamemodify(path, ":h")
-        require("workspace").set(dir, { exact = true })
-    end, "Set Workspace Root")
-    map("gd", function()
-        local path = tree_node_path()
-        if path then vim.system({ "open", "-R", path }, { detach = true }) end
-    end, "Reveal in Finder")
-    map("go", function()
-        local path = tree_node_path()
-        if path then vim.system({ "open", path }, { detach = true }) end
-    end, "Open Externally")
-    map("gs", function()
-        tree_sort_index = tree_sort_index % #tree_sort_modes + 1
-        tree_api.tree.reload()
-        vim.notify("Explorer sorted by " .. tree_sort_modes[tree_sort_index]:gsub("_", " "))
-    end, "Change Sort")
-    map("gx", tree_api.node.run.system, "Open Externally")
-    map("g.", tree_api.filter.dotfiles.toggle, "Toggle Hidden Files")
-    map("gt", function()
-        local trash = vim.fn.expand("~/.Trash")
-        if vim.fn.isdirectory(trash) == 1 then tree_api.tree.change_root(trash) end
-    end, "Open Trash")
-
-    -- Familiar tree editing/navigation keys in addition to the preserved keys.
-    map("a", tree_api.fs.create, "Create")
-    map("r", tree_api.fs.rename, "Rename")
-    map("d", tree_api.fs.trash, "Trash")
-    map("x", tree_api.fs.cut, "Cut")
-    map("c", tree_api.fs.copy.node, "Copy")
-    map("p", tree_api.fs.paste, "Paste")
-    map("y", tree_api.fs.copy.filename, "Copy Name")
-    map("Y", tree_api.fs.copy.absolute_path, "Copy Absolute Path")
-    map("<Tab>", function() switch_editor_buffer(1) end, "Next Editor Tab")
-    map("<S-Tab>", function() switch_editor_buffer(-1) end, "Previous Editor Tab")
 end
 
-require("nvim-tree").setup({
-    on_attach = nvim_tree_on_attach,
-    hijack_netrw = true,
-    sync_root_with_cwd = true,
-    respect_buf_cwd = true,
-    sort = {
-        sorter = function()
-            return tree_sort_modes[tree_sort_index]
-        end,
-    },
-    update_focused_file = {
-        enable = true,
-        update_root = false,
-        exclude = function(event)
-            local path = vim.api.nvim_buf_get_name(event.buf)
-            local filetype = vim.bo[event.buf].filetype
-            return path:find("/%.git/") ~= nil
-                or filetype:match("^Neogit") ~= nil
-                or filetype == "gitcommit"
-                or filetype == "gitrebase"
-        end,
-    },
-    view = {
-        side = "left",
-        width = tree_width,
-        preserve_window_proportions = true,
-        signcolumn = "yes",
-    },
-    renderer = {
-        group_empty = true,
-        highlight_git = "name",
-        highlight_opened_files = "name",
-        indent_markers = { enable = true },
-    },
-    filters = {
-        dotfiles = false,
-        git_ignored = false,
-    },
-    git = {
-        enable = true,
-        ignore = false,
-        show_on_dirs = true,
-    },
-    diagnostics = { enable = true },
-    actions = {
-        open_file = {
-            quit_on_open = false,
-            resize_window = false,
-            window_picker = { enable = true },
+local function close_oil_sidebar()
+    local win = find_window("oil")
+    if win then vim.api.nvim_win_close(win, true) end
+end
+
+oil.setup({
+    default_file_explorer = true,
+    watch_for_changes = true,
+    delete_to_trash = true,
+    skip_confirm_for_simple_edits = true,
+    columns = { "icon" },
+    use_default_keymaps = false,
+    view_options = {
+        show_hidden = true,
+        natural_order = true,
+        sort = {
+            { "type", "asc" },
+            { "name", "asc" },
         },
     },
-    tab = {
-        sync = { open = true, close = true },
+    win_options = {
+        number = false,
+        relativenumber = false,
+        cursorline = true,
+        signcolumn = "yes:3",
+        winfixwidth = true,
+        winhighlight = "Normal:OilNormal,NormalNC:OilNormalNC,WinSeparator:OilWinSeparator",
+    },
+    keymaps = {
+        ["g?"] = { "actions.show_help", mode = "n" },
+        ["<CR>"] = function() select_oil_entry() end,
+        ["zv"] = function() select_oil_entry("vertical") end,
+        ["zh"] = function() select_oil_entry("horizontal") end,
+        ["gT"] = function() select_oil_entry("tab") end,
+        ["<C-t>"] = focus_terminal,
+        ["<C-p>"] = "actions.preview",
+        ["<C-c>"] = close_oil_sidebar,
+        ["q"] = close_oil_sidebar,
+        ["<Space>l"] = "actions.refresh",
+        ["<BS>"] = { "actions.parent", mode = "n" },
+        ["gr"] = { "actions.open_cwd", mode = "n" },
+        ["gc"] = function()
+            local path = oil_entry_path()
+            if path then
+                local directory = vim.fn.isdirectory(path) == 1 and path or vim.fs.dirname(path)
+                require("workspace").set(directory, { exact = true })
+            end
+        end,
+        ["gd"] = function()
+            local path = oil_entry_path()
+            if path then vim.system({ "open", "-R", path }, { detach = true }) end
+        end,
+        ["go"] = function()
+            local path = oil_entry_path()
+            if path then vim.system({ "open", path }, { detach = true }) end
+        end,
+        ["gs"] = { "actions.change_sort", mode = "n" },
+        ["gx"] = "actions.open_external",
+        ["g."] = { "actions.toggle_hidden", mode = "n" },
+        ["gt"] = { "actions.toggle_trash", mode = "n" },
+        ["<Tab>"] = function() switch_editor_buffer(1) end,
+        ["<S-Tab>"] = function() switch_editor_buffer(-1) end,
     },
 })
+
+require("oil-git-status").setup({
+    show_ignored = true,
+    -- The first column is the index (staged), the second is the working tree.
+    -- These mirror the familiar NvimTree-style Git marks instead of raw
+    -- porcelain letters.
+    symbols = {
+        index = {
+            ["!"] = "◌",
+            ["?"] = "★",
+            ["A"] = "✓",
+            ["C"] = "✓",
+            ["D"] = "✓",
+            ["M"] = "✓",
+            ["R"] = "➜",
+            ["T"] = "✓",
+            ["U"] = "",
+            [" "] = " ",
+        },
+        working_tree = {
+            ["!"] = "◌",
+            ["?"] = "★",
+            ["A"] = "+",
+            ["C"] = "≡",
+            ["D"] = "",
+            ["M"] = "✗",
+            ["R"] = "➜",
+            ["T"] = "≠",
+            ["U"] = "",
+            [" "] = " ",
+        },
+    },
+})
+
+local oil_follow_namespace = vim.api.nvim_create_namespace("OilFollowedEditorFile")
+
+local function mark_oil_entry(win, filename)
+    if not window_is_valid(win) then return end
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.bo[buf].filetype ~= "oil" then return end
+
+    vim.api.nvim_buf_clear_namespace(buf, oil_follow_namespace, 0, -1)
+    for line = 1, vim.api.nvim_buf_line_count(buf) do
+        local entry = oil.get_entry_on_line(buf, line)
+        if entry and entry.name == filename then
+            vim.api.nvim_buf_set_extmark(buf, oil_follow_namespace, line - 1, 0, {
+                line_hl_group = "OilSelectedFile",
+                sign_text = "▎",
+                sign_hl_group = "OilSelectedFileSign",
+                priority = 150,
+            })
+            vim.api.nvim_win_set_cursor(win, { line, 0 })
+            return
+        end
+    end
+end
+
+local function reveal_editor_file_in_oil(path)
+    local sidebar = find_window("oil")
+    if not sidebar or path == "" or vim.fn.filereadable(path) ~= 1 then return end
+
+    local directory = vim.fs.normalize(vim.fs.dirname(path))
+    local filename = vim.fs.basename(path)
+    local oil_buf = vim.api.nvim_win_get_buf(sidebar)
+    local current_directory = oil.get_current_dir(oil_buf)
+
+    if current_directory and vim.fs.normalize(current_directory) == directory then
+        mark_oil_entry(sidebar, filename)
+        return
+    end
+
+    vim.api.nvim_win_call(sidebar, function()
+        oil.open(directory, nil, function()
+            vim.schedule(function() mark_oil_entry(sidebar, filename) end)
+        end)
+    end)
+end
+
+local function open_oil_sidebar(opts)
+    opts = opts or {}
+    if leetcode_active() then
+        close_oil_sidebar()
+        if opts.focus then vim.notify("Oil is disabled in LeetCode", vim.log.levels.INFO) end
+        return
+    end
+
+    local current = vim.api.nvim_get_current_win()
+    local existing = find_window("oil")
+    if existing then
+        if opts.focus then
+            last_editor_win = not is_panel(current) and current or last_editor_win
+            last_panel_win = existing
+            vim.api.nvim_set_current_win(existing)
+        end
+        return existing
+    end
+
+    focus_editor()
+    local editor_buf = vim.api.nvim_get_current_buf()
+    if vim.api.nvim_buf_get_name(editor_buf) == ""
+        and vim.bo[editor_buf].buftype == ""
+        and not vim.bo[editor_buf].modified
+    then
+        -- Give the editor side a durable filler before splitting. The generic
+        -- empty-buffer cleanup would otherwise wipe it and collapse the split.
+        require("dashboard").open({ win = vim.api.nvim_get_current_win() })
+    end
+    vim.cmd("topleft " .. explorer_width .. "vsplit")
+    local sidebar = vim.api.nvim_get_current_win()
+    oil.open(require("workspace").get(), nil, function()
+        if not window_is_valid(sidebar) then return end
+        vim.w[sidebar].oil_sidebar = true
+        vim.wo[sidebar].winfixwidth = true
+        vim.api.nvim_win_set_width(sidebar, explorer_width)
+        local editor = find_editor_window()
+        if editor then
+            reveal_editor_file_in_oil(vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(editor)))
+        end
+        if not opts.focus then focus_editor() end
+    end)
+    last_panel_win = sidebar
+    return sidebar
+end
+
+local function focus_tree()
+    local current = vim.api.nvim_get_current_win()
+    if window_filetype(current) == "oil" then
+        close_oil_sidebar()
+        return
+    end
+    open_oil_sidebar({ focus = true })
+end
 
 -- Keep the explorer at a compact IDE-sidebar width. winfixwidth prevents
 -- editor splits and equalize commands from stretching it.
 vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
-    pattern = "NvimTree",
+    pattern = "oil",
     callback = function(args)
         local win = vim.fn.bufwinid(args.buf)
         if win == -1 then
@@ -551,8 +619,8 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
         end
 
         vim.wo[win].winfixwidth = true
-        if vim.api.nvim_win_get_width(win) ~= tree_width then
-            vim.api.nvim_win_set_width(win, tree_width)
+        if vim.w[win].oil_sidebar and vim.api.nvim_win_get_width(win) ~= explorer_width then
+            vim.api.nvim_win_set_width(win, explorer_width)
         end
     end,
     desc = "Lock the project explorer to a compact sidebar width",
@@ -572,26 +640,44 @@ end, {
 -- Keep the project explorer present like an IDE sidebar. It stays open when
 -- files are selected; q, Ctrl-C, or Ctrl-E explicitly hide it.
 vim.api.nvim_create_autocmd("VimEnter", {
-    callback = function(data)
+    callback = function()
         vim.defer_fn(function()
-            if leetcode_active() then
-                tree_api.tree.close()
-                return
-            end
-
-            local path = vim.api.nvim_buf_get_name(data.buf)
-            local root = require("workspace").get()
-            if tree_api.tree.is_visible() then
-                tree_api.tree.change_root(root)
-            else
-                tree_api.tree.toggle({ path = root, focus = false })
-            end
-            if path ~= "" and vim.fn.isdirectory(path) ~= 1 then
-                tree_api.tree.find_file({ buf = data.buf, open = true, focus = false })
-            end
+            open_oil_sidebar({ focus = false })
         end, 50)
     end,
     desc = "Open the persistent project explorer sidebar",
+})
+
+vim.api.nvim_create_autocmd("TabNewEntered", {
+    callback = function()
+        vim.schedule(function() open_oil_sidebar({ focus = false }) end)
+    end,
+    desc = "Keep the Oil sidebar present in new tabs",
+})
+
+vim.api.nvim_create_user_command("OilSidebarOpen", function()
+    open_oil_sidebar({ focus = false })
+end, { desc = "Open the persistent Oil sidebar" })
+
+vim.api.nvim_create_autocmd("BufEnter", {
+    callback = function(args)
+        if not vim.api.nvim_buf_is_valid(args.buf)
+            or vim.bo[args.buf].buftype ~= ""
+            or vim.bo[args.buf].filetype == "oil"
+        then
+            return
+        end
+
+        local path = vim.api.nvim_buf_get_name(args.buf)
+        vim.schedule(function()
+            if vim.api.nvim_buf_is_valid(args.buf)
+                and vim.api.nvim_get_current_buf() == args.buf
+            then
+                reveal_editor_file_in_oil(path)
+            end
+        end)
+    end,
+    desc = "Reveal and mark the active editor file in Oil",
 })
 
 
@@ -605,60 +691,60 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     once = true,
     callback = function()
         require("image").setup({
-    backend = "kitty",
-    processor = "magick_cli",
+            backend = "kitty",
+            processor = "magick_cli",
 
-    integrations = {
-        markdown = {
-            enabled = true,
-            clear_in_insert_mode = false,
-            download_remote_images = true,
-            only_render_image_at_cursor = false,
-            only_render_image_at_cursor_mode = "popup",
-            floating_windows = false,
-            filetypes = { "markdown", "vimwiki" },
-        },
-        neorg = {
-            enabled = true,
-            filetypes = { "norg" },
-        },
-        typst = {
-            enabled = true,
-            filetypes = { "typst" },
-        },
-        html = {
-            enabled = false,
-        },
-        css = {
-            enabled = false,
-        },
-    },
+            integrations = {
+                markdown = {
+                    enabled = true,
+                    clear_in_insert_mode = false,
+                    download_remote_images = true,
+                    only_render_image_at_cursor = false,
+                    only_render_image_at_cursor_mode = "popup",
+                    floating_windows = false,
+                    filetypes = { "markdown", "vimwiki" },
+                },
+                neorg = {
+                    enabled = true,
+                    filetypes = { "norg" },
+                },
+                typst = {
+                    enabled = true,
+                    filetypes = { "typst" },
+                },
+                html = {
+                    enabled = false,
+                },
+                css = {
+                    enabled = false,
+                },
+            },
 
-    max_width = nil,
-    max_height = nil,
-    max_width_window_percentage = nil,
-    max_height_window_percentage = 50,
+            max_width = nil,
+            max_height = nil,
+            max_width_window_percentage = nil,
+            max_height_window_percentage = 50,
 
-    window_overlap_clear_enabled = false,
-    window_overlap_clear_ft_ignore = {
-        "cmp_menu",
-        "cmp_docs",
-        "snacks_notif",
-        "scrollview",
-        "scrollview_sign",
-    },
+            window_overlap_clear_enabled = false,
+            window_overlap_clear_ft_ignore = {
+                "cmp_menu",
+                "cmp_docs",
+                "snacks_notif",
+                "scrollview",
+                "scrollview_sign",
+            },
 
-    editor_only_render_when_focused = false,
-    tmux_show_only_in_active_window = false,
+            editor_only_render_when_focused = false,
+            tmux_show_only_in_active_window = false,
 
-    hijack_file_patterns = {
-        "*.png",
-        "*.jpg",
-        "*.jpeg",
-        "*.gif",
-        "*.webp",
-        "*.avif",
-    },
+            hijack_file_patterns = {
+                "*.png",
+                "*.jpg",
+                "*.jpeg",
+                "*.gif",
+                "*.webp",
+                "*.avif",
+            },
         })
     end,
     desc = "Load image rendering only for documents that need it",
@@ -716,7 +802,7 @@ vim.api.nvim_create_autocmd("FileType", {
         }
 
         vim.wo.winfixheight = true
-        vim.wo.winhighlight = "WinSeparator:NvimTreeWinSeparator"
+        vim.wo.winhighlight = "WinSeparator:OilWinSeparator"
         vim.b.floaterm_position = "belowright"
         terminal_height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
         vim.api.nvim_win_set_height(0, terminal_height)
@@ -812,20 +898,11 @@ vim.api.nvim_create_user_command("EditorTabPrevious", function()
     switch_editor_buffer(-1)
 end, { desc = "Open the previous editor tab from any panel" })
 
-vim.keymap.set("n", "ztk", function() resize_terminal(3) end, {
-    desc = "Make terminal panel taller",
-})
-
-vim.keymap.set("n", "ztj", function() resize_terminal(-3) end, {
-    desc = "Make terminal panel shorter",
-})
-
-
 -- ============================================================
 -- Source Control
 -- ============================================================
 
-local git_width = tree_width
+local git_width = explorer_width
 
 require("diffview").setup({
     enhanced_diff_hl = true,
@@ -839,78 +916,9 @@ require("diffview").setup({
     },
 })
 
-require("neogit").setup({
-    kind = "vsplit",
-    graph_style = "unicode",
-    integrations = {
-        diffview = true,
-        snacks = true,
-    },
-    status = {
-        recent_commit_count = 5,
-        HEAD_padding = 8,
-        mode_padding = 1,
-    },
-    preview_buffer = { kind = "floating_console" },
-    popup = { kind = "floating", show_title = true },
-    mappings = {
-        status = {
-            ["q"] = "Close",
-            ["<C-q>"] = "Close",
-            ["<C-j>"] = false,
-            ["<C-k>"] = false,
-            ["<C-t>"] = focus_terminal,
-        },
-        finder = {
-            ["q"] = "Close",
-            ["<C-q>"] = "Close",
-            ["<C-j>"] = false,
-            ["<C-k>"] = false,
-        },
-        commit_editor = {
-            ["q"] = "Close",
-            ["<C-q>"] = "Close",
-        },
-        rebase_editor = {
-            ["q"] = "Close",
-            ["<C-q>"] = "Close",
-        },
-    },
-})
+local lazygit_buf = nil
 
-local function git_window()
-    return find_window("NeogitStatus")
-end
-
-local function lock_git_width(buf)
-    local win = vim.fn.bufwinid(buf)
-    if win == -1 then return end
-    vim.wo[win].winfixwidth = true
-    vim.wo[win].winhighlight = "WinSeparator:NvimTreeWinSeparator"
-    if vim.api.nvim_win_get_width(win) ~= git_width then
-        vim.api.nvim_win_set_width(win, git_width)
-    end
-end
-
-local function close_git_panel(win)
-    local root = require("workspace").get()
-    local ok, status = pcall(function()
-        return require("neogit.buffers.status").instance(root)
-    end)
-    if ok and status then
-        status:close()
-    elseif window_is_valid(win) then
-        vim.api.nvim_win_close(win, true)
-    end
-end
-
-local closing_git_windows = false
-
-local function close_all_git_windows()
-    if closing_git_windows then return end
-    closing_git_windows = true
-
-    -- Dispose every Diffview tab, not only whichever one is currently focused.
+local function close_diffviews()
     pcall(function()
         local lib = require("diffview.lib")
         for index = #lib.views, 1, -1 do
@@ -919,104 +927,72 @@ local function close_all_git_windows()
             lib.dispose_view(view)
         end
     end)
-
-    -- Close Neogit's globally tracked overlays before the status sidebar.
-    for _, module_name in ipairs({
-        "neogit.lib.popup",
-        "neogit.buffers.commit_view",
-        "neogit.buffers.git_command_history",
-        "neogit.buffers.log_view",
-        "neogit.buffers.reflog_view",
-        "neogit.buffers.refs_view",
-        "neogit.buffers.commit_select_view",
-    }) do
-        pcall(function()
-            local module = require(module_name)
-            if module.instance and module.instance.close then
-                module.instance:close()
-            end
-        end)
-    end
-
-    local status_win = git_window()
-    if status_win then close_git_panel(status_win) end
-
-    -- Neogit closes windows on the scheduler. Sweep any untracked auxiliary
-    -- buffers after those safe plugin callbacks have run.
-    vim.schedule(function()
-        for _, win in ipairs(vim.api.nvim_list_wins()) do
-            local buf = vim.api.nvim_win_get_buf(win)
-            if vim.bo[buf].filetype:match("^Neogit") then
-                pcall(vim.api.nvim_win_close, win, true)
-            end
-        end
-        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-            if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype:match("^Neogit") then
-                pcall(vim.api.nvim_buf_delete, buf, { force = true })
-            end
-        end
-        focus_editor()
-        closing_git_windows = false
-    end)
 end
 
-vim.api.nvim_create_user_command("GitCloseAll", close_all_git_windows, {
-    desc = "Close every Neogit and Diffview window",
-})
+local function remember_editor_before_lazygit(win, buf)
+    vim.w[win].lazygit_previous_buf = buf
+    vim.w[win].lazygit_previous_bufhidden = vim.bo[buf].bufhidden
+    if vim.bo[buf].buftype == "" then vim.bo[buf].bufhidden = "hide" end
+end
 
-vim.api.nvim_create_autocmd("BufWinEnter", {
-    pattern = { "Neogit*", "COMMIT_EDITMSG", "git-rebase-todo" },
-    callback = function(args)
-        vim.schedule(function()
-            if not vim.api.nvim_buf_is_valid(args.buf) or vim.b[args.buf].git_close_all_wrapped then return end
+local function lazygit_editor_window()
+    if focus_editor() then return vim.api.nvim_get_current_win() end
 
-            local filetype = vim.bo[args.buf].filetype
-            local name = vim.api.nvim_buf_get_name(args.buf)
-            if filetype == "NeogitHelpPopup" then return end
+    -- Oil and the other panels are protected: LazyGit may only replace an
+    -- editor buffer. Recreate the editor zone if this tab has only panels.
+    if is_panel(vim.api.nvim_get_current_win()) then
+        vim.cmd("rightbelow vsplit")
+        require("dashboard").open({ win = vim.api.nvim_get_current_win() })
+    end
+    return vim.api.nvim_get_current_win()
+end
 
-            if not filetype:match("^Neogit")
-                and not (name:find("/%.git/") and (filetype == "gitcommit" or filetype == "gitrebase"))
+local function restore_editor_after_lazygit(buf)
+    for _, win in ipairs(vim.fn.win_findbuf(buf)) do
+        if vim.api.nvim_win_is_valid(win) then
+            local previous = vim.w[win].lazygit_previous_buf
+            if previous
+                and previous ~= buf
+                and vim.api.nvim_buf_is_valid(previous)
             then
-                return
+                vim.api.nvim_win_set_buf(win, previous)
+                vim.bo[previous].bufhidden = vim.w[win].lazygit_previous_bufhidden or ""
+            else
+                require("dashboard").open({ win = win })
             end
+            vim.w[win].lazygit_previous_buf = nil
+            vim.w[win].lazygit_previous_bufhidden = nil
+        end
+    end
+end
 
-            local plugin_close
-            for _, mapping in ipairs(vim.api.nvim_buf_get_keymap(args.buf, "n")) do
-                if mapping.lhs == "q" then
-                    plugin_close = mapping.callback
-                    break
-                end
-            end
+local function close_lazygit()
+    local buf = lazygit_buf
+    if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
+    restore_editor_after_lazygit(buf)
+    local job = vim.b[buf].terminal_job_id
+    if job then pcall(vim.fn.jobstop, job) end
+    if vim.api.nvim_buf_is_valid(buf) then
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+    end
+    lazygit_buf = nil
+end
 
-            local function close_git_stack()
-                if plugin_close then pcall(plugin_close) end
-                vim.schedule(close_all_git_windows)
-            end
+local function toggle_lazygit()
+    if vim.fn.executable("lazygit") ~= 1 then
+        vim.notify("lazygit is not installed", vim.log.levels.ERROR)
+        return
+    end
 
-            vim.keymap.set("n", "q", close_git_stack, {
-                buffer = args.buf,
-                silent = true,
-                desc = "Close all Git windows",
-            })
-            vim.keymap.set("n", "<C-q>", close_git_stack, {
-                buffer = args.buf,
-                silent = true,
-                desc = "Close all Git windows",
-            })
-            vim.b[args.buf].git_close_all_wrapped = true
-        end)
-    end,
-    desc = "Use one quit action for the Git UI stack except its help popup",
-})
-
-local function toggle_git_panel()
-    local win = git_window()
-    if win then
-        if vim.api.nvim_get_current_win() == win then
-            close_all_git_windows()
+    if lazygit_buf and vim.api.nvim_buf_is_valid(lazygit_buf) then
+        if vim.api.nvim_get_current_buf() == lazygit_buf then
+            restore_editor_after_lazygit(lazygit_buf)
         else
-            last_panel_win = win
-            vim.api.nvim_set_current_win(win)
+            local win = lazygit_editor_window()
+            local current = vim.api.nvim_get_current_buf()
+            if current ~= lazygit_buf then remember_editor_before_lazygit(win, current) end
+            vim.api.nvim_win_set_buf(win, lazygit_buf)
+            vim.cmd("startinsert")
         end
         return
     end
@@ -1028,45 +1004,86 @@ local function toggle_git_panel()
         return
     end
 
-    focus_editor()
-    require("neogit").open({ kind = "vsplit", cwd = root })
-    vim.schedule(function()
-        local opened = git_window()
-        if opened then
-            last_panel_win = opened
-            lock_git_width(vim.api.nvim_win_get_buf(opened))
-        end
-    end)
+    local editor_win = lazygit_editor_window()
+    remember_editor_before_lazygit(editor_win, vim.api.nvim_get_current_buf())
+    lazygit_buf = vim.api.nvim_create_buf(true, false)
+    vim.api.nvim_win_set_buf(editor_win, lazygit_buf)
+    local job = vim.fn.jobstart({ "lazygit" }, { term = true, cwd = root })
+    if job <= 0 then
+        local failed_buf = lazygit_buf
+        restore_editor_after_lazygit(failed_buf)
+        pcall(vim.api.nvim_buf_delete, failed_buf, { force = true })
+        lazygit_buf = nil
+        vim.notify("Could not start lazygit", vim.log.levels.ERROR)
+        return
+    end
+    vim.bo[lazygit_buf].filetype = "lazygit"
+    vim.bo[lazygit_buf].buflisted = true
+    vim.bo[lazygit_buf].bufhidden = "hide"
+    vim.b[lazygit_buf].lazygit_editor = true
+    pcall(vim.api.nvim_buf_set_name, lazygit_buf, "lazygit://" .. root)
+
+    vim.keymap.set("n", "q", close_lazygit, {
+        buffer = lazygit_buf,
+        silent = true,
+        desc = "Close LazyGit editor buffer",
+    })
+    vim.keymap.set({ "n", "t" }, "<C-q>", close_lazygit, {
+        buffer = lazygit_buf,
+        silent = true,
+        desc = "Close LazyGit editor buffer",
+    })
+
+    vim.api.nvim_create_autocmd("TermClose", {
+        buffer = lazygit_buf,
+        once = true,
+        callback = function(args)
+            vim.schedule(function()
+                if vim.api.nvim_buf_is_valid(args.buf) then
+                    restore_editor_after_lazygit(args.buf)
+                    pcall(vim.api.nvim_buf_delete, args.buf, { force = true })
+                end
+                if lazygit_buf == args.buf then lazygit_buf = nil end
+            end)
+        end,
+        desc = "Restore the editor after LazyGit exits",
+    })
+    vim.api.nvim_create_autocmd("BufEnter", {
+        buffer = lazygit_buf,
+        callback = function(args)
+            vim.schedule(function()
+                if vim.api.nvim_buf_is_valid(args.buf)
+                    and vim.api.nvim_get_current_buf() == args.buf
+                then
+                    vim.cmd("startinsert")
+                end
+            end)
+        end,
+        desc = "Enter terminal mode when revisiting the LazyGit buffer",
+    })
+    vim.cmd("startinsert")
 end
 
-vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
-    pattern = "NeogitStatus",
-    callback = function(args)
-        vim.schedule(function() lock_git_width(args.buf) end)
-    end,
-    desc = "Lock Source Control to the same width as the file explorer",
+local function close_all_git_windows()
+    close_diffviews()
+    close_lazygit()
+end
+
+vim.api.nvim_create_user_command("GitCloseAll", close_all_git_windows, {
+    desc = "Close LazyGit and every Diffview window",
 })
 
-vim.api.nvim_create_autocmd("User", {
-    pattern = "NeogitStatusRefreshed",
-    callback = function()
-        local win = git_window()
-        if win then lock_git_width(vim.api.nvim_win_get_buf(win)) end
-    end,
-    desc = "Restore Source Control width after Git refreshes",
+vim.api.nvim_create_user_command("GitPanel", toggle_lazygit, {
+    desc = "Toggle the LazyGit editor buffer",
 })
 
-vim.api.nvim_create_user_command("GitPanel", toggle_git_panel, {
-    desc = "Toggle the right Source Control panel",
-})
-
-vim.keymap.set({ "n", "t" }, "zgg", function()
+vim.keymap.set({ "n", "t" }, "zg", function()
     if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
-    toggle_git_panel()
+    toggle_lazygit()
 end, {
     noremap = true,
     silent = true,
-    desc = "Focus/toggle Source Control",
+    desc = "Focus/toggle LazyGit editor buffer",
 })
 vim.keymap.set("n", "zgd", function()
     vim.cmd("DiffviewOpen")
@@ -1074,11 +1091,6 @@ end, { desc = "Git changed-file diff" })
 vim.keymap.set("n", "zgh", function()
     vim.cmd("DiffviewFileHistory")
 end, { desc = "Git repository history" })
-vim.keymap.set("n", "zgc", function()
-    require("neogit").open({ "commit", cwd = require("workspace").get() })
-end, { desc = "Git commit" })
-
-
 -- ============================================================
 -- Gitsigns
 -- ============================================================
@@ -1109,14 +1121,14 @@ require("leetcode").setup({
         enter = {
             function()
                 vim.g.leetcode_active = true
-                tree_api.tree.close()
+                close_oil_sidebar()
             end,
         },
         leave = {
             function()
                 vim.g.leetcode_active = false
                 vim.schedule(function()
-                    tree_api.tree.open({ path = require("workspace").get(), focus = false })
+                    open_oil_sidebar({ focus = false })
                 end)
             end,
         },
@@ -1135,146 +1147,114 @@ require("leetcode").setup({
 -- ============================================================
 
 require("ssh_launcher").setup()
-require("grug-far").setup({
-    -- options related to the target window for goto or open actions
-    openTargetWindow = {
-        -- filter for windows to exclude when considering candidate targets. It's a list of either:
-        -- * filetype to exclude
-        -- * filter function of the form: function(winid: number): boolean (return true to exclude)
-        exclude = { "NvimTree", "floaterm", "NeogitStatus", "grug-far" },
-
-        -- preferred location for target window relative to the grug-far window. If an existing candidate
-        -- window that is not excluded by the exclude filter exists in that direction, it will be reused,
-        -- otherwise a new window will be created in that direction.
-        -- available options: "prev" | "left" | "right" | "above" | "below"
-        preferredLocation = 'right',
-
-        -- use a temporary scratch buffer, in order to prevent language servers starting up and
-        -- consuming resources as you are moving through the results. The buffer is converted to
-        -- a real buffer once you navigate to it explicitly
-        useScratchBuffer = true,
+require("rip-substitute").setup({
+    popupWin = {
+        border = "rounded",
+        title = " Replace ",
+        position = "bottom",
     },
 })
 
-local search_instance_name = "workspace-right-search"
-local restore_git_after_search = false
-
-vim.api.nvim_create_user_command("GrugRightPanelSlot", function()
-    local git = git_window()
-    restore_git_after_search = git ~= nil
-    if git then
-        close_git_panel(git)
-        -- Neogit schedules its window close. Vacate the shared sidebar now so
-        -- Grug Far cannot briefly create a second right-hand panel.
-        if vim.api.nvim_win_is_valid(git) then
-            vim.api.nvim_win_close(git, true)
-        end
-    end
-
-    focus_editor()
-    vim.cmd("rightbelow " .. git_width .. "vsplit")
-end, {
-    desc = "Create the disposable right Search/Replace slot",
+local quicker = require("quicker")
+quicker.setup({
+    edit = {
+        enabled = true,
+        autosave = "unmodified",
+    },
+    keys = {
+        {
+            ">",
+            function()
+                quicker.expand({ before = 2, after = 2, add_to_existing = true })
+            end,
+            desc = "Expand quickfix context",
+        },
+        {
+            "<",
+            function() quicker.collapse() end,
+            desc = "Collapse quickfix context",
+        },
+    },
+    on_qf = function(buf)
+        vim.keymap.set("n", "q", quicker.toggle, {
+            buffer = buf,
+            silent = true,
+            desc = "Close editable results",
+        })
+        vim.keymap.set("n", "<C-c>", quicker.toggle, {
+            buffer = buf,
+            silent = true,
+            desc = "Close editable results",
+        })
+    end,
 })
 
-local function configure_search_panel(instance)
-    local buf = instance:get_buf()
-    local should_restore_git = restore_git_after_search
-    restore_git_after_search = false
-    local git_restore_requested = false
+local function open_project_results(query)
+    query = vim.trim(query or "")
+    if query == "" then return end
 
-    local function restore_git()
-        if not should_restore_git or git_restore_requested then return end
-        git_restore_requested = true
+    local root = require("workspace").get()
+    vim.system({
+        "rg",
+        "--vimgrep",
+        "--smart-case",
+        "--hidden",
+        "--glob",
+        "!.git",
+        query,
+        ".",
+    }, { cwd = root, text = true }, function(result)
         vim.schedule(function()
-            if not git_window() then toggle_git_panel() end
-        end)
-    end
+            if result.code == 1 then
+                vim.notify("No matches for: " .. query, vim.log.levels.INFO)
+                return
+            end
+            if result.code ~= 0 then
+                local message = vim.trim(result.stderr or "")
+                vim.notify(message ~= "" and message or "Project search failed", vim.log.levels.ERROR)
+                return
+            end
 
-    local win = vim.fn.bufwinid(buf)
-    if win ~= -1 then
-        vim.wo[win].winfixwidth = true
-        vim.wo[win].winhighlight = "WinSeparator:NvimTreeWinSeparator"
-        vim.api.nvim_win_set_width(win, git_width)
-        last_panel_win = win
-    end
-
-    local function close_search()
-        if not instance:is_valid() then return end
-        -- Closing while Grug Far is still doing its first scheduled render can
-        -- leave queued search updates targeting a buffer that has been wiped.
-        instance:when_ready(function()
-            vim.schedule(function()
-                if not instance:is_valid() then return end
-                local context = instance._params.context
-                require("grug-far.tasks").abortAndFinishAllTasks(context)
-                context.state.bufClosed = true
-                instance:close()
-                restore_git()
-            end)
-        end)
-    end
-    vim.keymap.set("n", "q", close_search, {
-        buffer = buf,
-        silent = true,
-        desc = "Close and wipe Search/Replace",
-    })
-    vim.keymap.set("n", "<C-c>", close_search, {
-        buffer = buf,
-        silent = true,
-        desc = "Close and wipe Search/Replace",
-    })
-
-    vim.api.nvim_create_autocmd("BufWipeout", {
-        buffer = buf,
-        once = true,
-        callback = restore_git,
-        desc = "Restore Source Control after transient Search/Replace",
-    })
-end
-
-local function open_search_panel(opts, visual)
-    local grug = require("grug-far")
-    if grug.has_instance(search_instance_name) then
-        local instance = grug.get_instance(search_instance_name)
-        if instance and instance:is_valid() then
-            instance:open()
-            return
-        end
-        require("grug-far.instances").remove_instance(search_instance_name)
-    end
-
-    opts = vim.tbl_deep_extend("force", opts or {}, {
-        transient = true,
-        instanceName = search_instance_name,
-        windowCreationCommand = "GrugRightPanelSlot",
-    })
-    local instance = visual and grug.with_visual_selection(opts) or grug.open(opts)
-    configure_search_panel(instance)
-end
-
-vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
-    pattern = "grug-far",
-    callback = function(args)
-        vim.schedule(function()
-            local win = vim.fn.bufwinid(args.buf)
-            if win ~= -1 then
-                vim.wo[win].winfixwidth = true
-                vim.api.nvim_win_set_width(win, git_width)
+            vim.fn.setqflist({}, "r", {
+                title = "Search: " .. query,
+                lines = vim.split(result.stdout or "", "\n", { trimempty = true }),
+                efm = "%f:%l:%c:%m",
+            })
+            if quicker.is_open() then
+                quicker.refresh()
+                local results_win = find_window("qf")
+                if results_win then vim.api.nvim_set_current_win(results_win) end
+            else
+                quicker.open({ focus = true })
             end
         end)
-    end,
-    desc = "Keep Search/Replace in the fixed right sidebar slot",
+    end)
+end
+
+vim.api.nvim_create_user_command("ProjectResults", function(opts)
+    if opts.args ~= "" then
+        open_project_results(opts.args)
+        return
+    end
+    vim.ui.input({
+        prompt = "Project search: ",
+        default = vim.fn.expand("<cword>"),
+    }, open_project_results)
+end, {
+    nargs = "*",
+    desc = "Search the workspace into an editable quickfix buffer",
 })
 
-vim.keymap.set("n", "<leader>s", function()
-    open_search_panel({}, false)
-end, { desc = "Search/Replace right panel" })
+vim.keymap.set({ "n", "x" }, "<leader>s", function()
+    require("rip-substitute").sub()
+end, { desc = "Replace in buffer or selection" })
 
-vim.keymap.set("n", "<leader>sw", function()
-    open_search_panel({ prefills = { search = vim.fn.expand("<cword>") } }, false)
-end, { desc = "Search current word in right panel" })
+vim.keymap.set("n", "<leader>sq", "<cmd>ProjectResults<CR>", {
+    silent = true,
+    desc = "Search project into editable results",
+})
 
-vim.keymap.set("v", "<leader>sw", function()
-    open_search_panel({}, true)
-end, { desc = "Search selection in right panel" })
+vim.keymap.set("n", "<leader>st", quicker.toggle, {
+    silent = true,
+    desc = "Toggle editable results",
+})

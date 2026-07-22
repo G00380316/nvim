@@ -124,7 +124,7 @@ vim.api.nvim_create_autocmd({
 
 local exclude_filetypes = {
     "TelescopePrompt",
-    "NvimTree",
+    "oil",
     "lazy",
     "mason",
     "noice",
@@ -252,9 +252,10 @@ local augroup = vim.api.nvim_create_augroup("UserConfig", {})
 
 vim.api.nvim_create_autocmd("TermClose", {
     group = augroup,
-    callback = function()
-        if vim.v.event.status == 0 then
-            vim.api.nvim_buf_delete(0, {})
+    callback = function(args)
+        if vim.b[args.buf].lazygit_editor then return end
+        if vim.v.event.status == 0 and vim.api.nvim_buf_is_valid(args.buf) then
+            vim.api.nvim_buf_delete(args.buf, {})
         end
     end,
 })

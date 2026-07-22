@@ -135,10 +135,11 @@ function M.set(path, opts)
     set_current_directory(root)
     remember(root)
 
-    if vim.g.NvimTreeSetup == 1 then
-        local tree = require("nvim-tree.api")
-        if tree.tree.is_visible() then
-            tree.tree.change_root(root)
+    for _, oil_win in ipairs(vim.api.nvim_list_wins()) do
+        if vim.bo[vim.api.nvim_win_get_buf(oil_win)].filetype == "oil" then
+            vim.api.nvim_win_call(oil_win, function()
+                require("oil").open(root)
+            end)
         end
     end
 
@@ -178,9 +179,7 @@ function M.open(path, opts)
     pcall(vim.cmd, "EditorFocus")
     require("dashboard").open({ win = vim.api.nvim_get_current_win() })
 
-    if vim.g.NvimTreeSetup == 1 then
-        require("nvim-tree.api").tree.open({ path = root, focus = false })
-    end
+    if vim.fn.exists(":OilSidebarOpen") == 2 then pcall(vim.cmd, "OilSidebarOpen") end
 
     return true
 end
