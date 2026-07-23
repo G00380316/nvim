@@ -416,6 +416,25 @@ local function close_oil_sidebar()
     if win then vim.api.nvim_win_close(win, true) end
 end
 
+-- The explorer must never be fully closable, only hidden (<C-e> always brings
+-- it back). q/<C-c> already route through close_oil_sidebar; this guards the
+-- remaining native ways to lose the window: window-close commands and typing
+-- :q/:qa while it's the focused window.
+vim.api.nvim_create_user_command("OilSidebarQuitGuard", function()
+    close_oil_sidebar()
+    vim.notify("The explorer sidebar only hides, it never quits — use <C-e> to reopen, or quit from the dashboard",
+        vim.log.levels.INFO)
+end, { desc = "Hide the persistent Oil sidebar instead of closing/quitting" })
+
+vim.cmd(
+    [[cnoreabbrev <expr> q (getcmdtype() ==# ':' && getcmdline() ==# 'q' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'q']])
+vim.cmd(
+    [[cnoreabbrev <expr> qa (getcmdtype() ==# ':' && getcmdline() ==# 'qa' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'qa']])
+vim.cmd(
+    [[cnoreabbrev <expr> q! (getcmdtype() ==# ':' && getcmdline() ==# 'q!' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'q!']])
+vim.cmd(
+    [[cnoreabbrev <expr> qa! (getcmdtype() ==# ':' && getcmdline() ==# 'qa!' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'qa!']])
+
 oil.setup({
     default_file_explorer = true,
     watch_for_changes = true,
@@ -593,7 +612,9 @@ local function open_oil_sidebar(opts)
         if editor then
             reveal_editor_file_in_oil(vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(editor)))
         end
-        if not opts.focus then focus_editor() end
+        -- Oil finalizes its own window setup after this callback returns, so
+        -- reclaiming focus has to happen on the next tick to actually stick.
+        if not opts.focus then vim.schedule(focus_editor) end
     end)
     last_panel_win = sidebar
     return sidebar
@@ -622,6 +643,13 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
         if vim.w[win].oil_sidebar and vim.api.nvim_win_get_width(win) ~= explorer_width then
             vim.api.nvim_win_set_width(win, explorer_width)
         end
+
+        -- <C-w>q/<C-w>c/ZZ bypass the q/<C-c> keymaps below since they close the
+        -- window directly; redirect them to the same hide-only path.
+        local guard_opts = { buffer = args.buf, silent = true, nowait = true }
+        vim.keymap.set("n", "<C-w>q", close_oil_sidebar, guard_opts)
+        vim.keymap.set("n", "<C-w>c", close_oil_sidebar, guard_opts)
+        vim.keymap.set("n", "ZZ", close_oil_sidebar, guard_opts)
     end,
     desc = "Lock the project explorer to a compact sidebar width",
 })
@@ -792,6 +820,61 @@ local function new_terminal()
     vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("workspace").get()))
 end
 
+local terminal_width = 90
+
+local function split_terminal()
+    focus_editor()
+    vim.cmd(
+        "FloatermNew --wintype=vsplit --position=botright --cwd="
+        .. vim.fn.fnameescape(require("workspace").get())
+    )
+end
+
+local function terminal_picker()
+    local bufnrs = vim.fn["floaterm#buflist#gather"]()
+    if #bufnrs == 0 then
+        vim.notify("No terminals open", vim.log.levels.INFO)
+        return
+    end
+
+    Snacks.picker.pick({
+        title = "Terminals",
+        finder = function()
+            local items = {}
+            for index, bufnr in ipairs(bufnrs) do
+                local title = vim.fn.getbufvar(bufnr, "floaterm_title")
+                if title == "" or title:find("%$1") then
+                    title = string.format("terminal %d/%d", index, #bufnrs)
+                end
+                local cwd = vim.fn.getbufvar(bufnr, "floaterm_cwd")
+                items[#items + 1] = {
+                    text = title,
+                    bufnr = bufnr,
+                    label = title,
+                    dir = cwd ~= "" and cwd or nil,
+                    current = bufnr == vim.fn["floaterm#buflist#curr"](),
+                }
+            end
+            return items
+        end,
+        format = function(item)
+            local line = { { (item.current and "● " or "  ") .. item.label, "Function" } }
+            if item.dir then
+                table.insert(line, { "  " .. item.dir, "Comment" })
+            end
+            return line
+        end,
+        confirm = function(picker, item)
+            picker:close()
+            if not item then return end
+            vim.schedule(function() vim.fn["floaterm#show"](0, item.bufnr, "") end)
+        end,
+    })
+end
+
+-- Horizontal (bottom-panel) and vertical (side-by-side) floaterm windows need
+-- different fixed-size handling; forcing belowright/height onto a vsplit term
+-- would fight its own --wintype=vsplit layout.
 vim.api.nvim_create_autocmd("FileType", {
     pattern = "floaterm",
     callback = function()
@@ -801,26 +884,23 @@ vim.api.nvim_create_autocmd("FileType", {
             buffer = true,
         }
 
-        vim.wo.winfixheight = true
         vim.wo.winhighlight = "WinSeparator:OilWinSeparator"
-        vim.b.floaterm_position = "belowright"
-        terminal_height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
-        vim.api.nvim_win_set_height(0, terminal_height)
 
-        if not vim.b.floaterm_initial_clear then
-            vim.b.floaterm_initial_clear = true
-            local buf = vim.api.nvim_get_current_buf()
-            vim.defer_fn(function()
-                if not vim.api.nvim_buf_is_valid(buf) then return end
-                local job = vim.b[buf].terminal_job_id
-                if job then vim.api.nvim_chan_send(job, "clear\r") end
-            end, 150)
+        if vim.b.floaterm_wintype == "vsplit" then
+            vim.wo.winfixwidth = true
+            terminal_width = math.min(terminal_width, math.max(40, vim.o.columns - 40))
+            vim.api.nvim_win_set_width(0, terminal_width)
+        else
+            vim.wo.winfixheight = true
+            vim.b.floaterm_position = "belowright"
+            terminal_height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
+            vim.api.nvim_win_set_height(0, terminal_height)
+
+            vim.keymap.set("t", "<C-Up>", function() resize_terminal(3) end, opts)
+            vim.keymap.set("t", "<C-Down>", function() resize_terminal(-3) end, opts)
+            vim.keymap.set("n", "<C-Up>", function() resize_terminal(3) end, opts)
+            vim.keymap.set("n", "<C-Down>", function() resize_terminal(-3) end, opts)
         end
-
-        vim.keymap.set("t", "<C-Up>", function() resize_terminal(3) end, opts)
-        vim.keymap.set("t", "<C-Down>", function() resize_terminal(-3) end, opts)
-        vim.keymap.set("n", "<C-Up>", function() resize_terminal(3) end, opts)
-        vim.keymap.set("n", "<C-Down>", function() resize_terminal(-3) end, opts)
     end,
 })
 
@@ -842,6 +922,21 @@ vim.keymap.set("n", "<Space>t", new_terminal, {
     noremap = true,
     silent = true,
     desc = "Open another bottom terminal",
+})
+
+vim.keymap.set("n", "<Space>v", split_terminal, {
+    noremap = true,
+    silent = true,
+    desc = "Open a terminal in a vertical split",
+})
+
+vim.keymap.set({ "n", "t" }, "zt", function()
+    if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
+    terminal_picker()
+end, {
+    noremap = true,
+    silent = true,
+    desc = "List and jump to an open terminal",
 })
 
 vim.keymap.set("t", "<C-t>", function()
@@ -891,6 +986,8 @@ vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
 vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Focus or toggle the file explorer" })
 vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Focus or toggle the terminal" })
 vim.api.nvim_create_user_command("TerminalNew", new_terminal, { desc = "Open another bottom terminal" })
+vim.api.nvim_create_user_command("TerminalSplit", split_terminal, { desc = "Open a terminal in a vertical split" })
+vim.api.nvim_create_user_command("TerminalList", terminal_picker, { desc = "List and jump to an open terminal" })
 vim.api.nvim_create_user_command("EditorTabNext", function()
     switch_editor_buffer(1)
 end, { desc = "Open the next editor tab from any panel" })
