@@ -487,7 +487,7 @@ local function setup_once(sourcekit_client_name)
             integrations = {
                 xcode_build_server = {
                     enabled = true,
-                    guess_scheme = true,
+                    guess_scheme = false,
                 },
 
                 -- Native xcrun lldb-dap is used on Xcode 16+.
