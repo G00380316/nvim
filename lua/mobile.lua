@@ -814,6 +814,30 @@ local function open_hub_terminal(root, title, command, on_exit)
     vim.wo[win].winhighlight = "WinSeparator:OilWinSeparator"
     state.term_win, state.term_buf = win, buf
 
+    -- Authoritative safety net: whatever closes this window — the q keymap
+    -- below, a generic <C-w>c/:close, or open_hub_terminal replacing it with
+    -- a new command — focus always lands back on the hub, never on whatever
+    -- window happened to be behind it.
+    vim.api.nvim_create_autocmd("WinClosed", {
+        pattern = tostring(win),
+        once = true,
+        callback = function()
+            if state.term_win == win then
+                state.term_win = nil
+                state.term_buf = nil
+            end
+            vim.schedule(function()
+                if is_open() then vim.api.nvim_set_current_win(state.win) end
+            end)
+        end,
+    })
+
+    local function restore_hub_focus()
+        if is_open() and state.term_win == win then
+            vim.api.nvim_set_current_win(state.win)
+        end
+    end
+
     local parts = {}
     for _, value in ipairs(command) do
         parts[#parts + 1] = vim.fn.shellescape(value)
@@ -822,7 +846,16 @@ local function open_hub_terminal(root, title, command, on_exit)
     local job = vim.fn.jobstart(table.concat(parts, " "), {
         term = true,
         cwd = root,
-        on_exit = on_exit and vim.schedule_wrap(on_exit) or nil,
+        -- The job can exit on its own (command finishes, or <C-c> inside the
+        -- terminal kills it) without the window ever closing; the panel is
+        -- kept open so output stays visible, but focus still returns to the
+        -- hub rather than sitting in a now-inert terminal.
+        -- Callers (e.g. android_setup passing M.refresh) expect a plain
+        -- completion callback, not jobstart's (job_id, exit_code, event).
+        on_exit = vim.schedule_wrap(function()
+            if on_exit then on_exit() end
+            restore_hub_focus()
+        end),
     })
     if job <= 0 then
         vim.notify("Could not start: " .. title, vim.log.levels.ERROR)
@@ -832,7 +865,7 @@ local function open_hub_terminal(root, title, command, on_exit)
 
     vim.keymap.set("t", "<Esc>", function()
         vim.cmd("stopinsert")
-        if is_open() then vim.api.nvim_set_current_win(state.win) end
+        restore_hub_focus()
     end, { buffer = buf, silent = true })
     vim.keymap.set("n", "q", close_hub_terminal, { buffer = buf, silent = true })
 
@@ -904,14 +937,24 @@ local function android_setup()
     terminal_command(vim.fn.expand("~"), "android-emulator-setup", { script }, M.refresh)
 end
 
+-- Called eagerly from M.setup() (Neovim startup), not just lazily on first
+-- hub action: xcodebuild.setup() wires up its oil.nvim integration, which
+-- auto-registers new/renamed/moved files in project.pbxproj as you create
+-- them through Oil. If setup() only ran on first hub interaction, any file
+-- created via Oil earlier in the session would silently miss that tracking
+-- and later break with "File not found in the project" the moment you
+-- opened it (exactly what happened with VODPlaybackLoadingView.swift).
+local function ensure_xcodebuild_initialized()
+    if _G.xcodebuild_initialized then return end
+    require("xcodebuild").setup({
+        show_build_progress_bar = true,
+        logs = { auto_open_on_success = false, auto_open_on_error = true },
+    })
+    _G.xcodebuild_initialized = true
+end
+
 local function ensure_configured_project(prompt)
-    if not _G.xcodebuild_initialized then
-        require("xcodebuild").setup({
-            show_build_progress_bar = true,
-            logs = { auto_open_on_success = false, auto_open_on_error = true },
-        })
-        _G.xcodebuild_initialized = true
-    end
+    ensure_xcodebuild_initialized()
 
     local config = require("xcodebuild.project.config")
     if not config.settings.projectFile or not config.settings.scheme then
@@ -1438,6 +1481,11 @@ function M.toggle()
 end
 
 function M.setup()
+    -- workspace.setup() (called before this, in init.lua) already set the
+    -- real cwd synchronously, so xcodebuild's per-project settings.json
+    -- loads correctly here rather than waiting for the first hub action.
+    ensure_xcodebuild_initialized()
+
     vim.api.nvim_create_user_command("MobileDevices", M.toggle, {
         desc = "Toggle the workspace mobile device hub",
     })
