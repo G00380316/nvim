@@ -411,8 +411,24 @@ local function select_oil_entry(kind)
     end
 end
 
+-- Prefer the window explicitly marked as the sidebar; a stray oil buffer that
+-- landed in an editor window must never be mistaken for the real explorer.
+local function find_oil_sidebar()
+    local fallback
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if window_filetype(win) == "oil" and vim.api.nvim_win_get_config(win).relative == "" then
+            if vim.w[win].oil_sidebar then return win end
+            fallback = fallback or win
+        end
+    end
+    return fallback
+end
+
 local function close_oil_sidebar()
-    local win = find_window("oil")
+    local win = find_oil_sidebar()
+    -- Hide only. bufhidden=hide plus cleanup_delay_ms=false keeps the buffer
+    -- (and its filesystem watcher) alive, so reopening is a re-display rather
+    -- than a rebuild.
     if win then vim.api.nvim_win_close(win, true) end
 end
 
@@ -442,6 +458,11 @@ oil.setup({
     skip_confirm_for_simple_edits = true,
     columns = { "icon" },
     use_default_keymaps = false,
+    -- The sidebar is a persistent IDE panel: hiding it must never destroy it.
+    -- Oil's default (2000ms) deletes every hidden oil buffer once none are
+    -- displayed — which is exactly the moment the sidebar is hidden — so the
+    -- explorer was being torn down and rebuilt from scratch on every toggle.
+    cleanup_delay_ms = false,
     view_options = {
         show_hidden = true,
         natural_order = true,
@@ -552,7 +573,7 @@ local function mark_oil_entry(win, filename)
 end
 
 local function reveal_editor_file_in_oil(path)
-    local sidebar = find_window("oil")
+    local sidebar = find_oil_sidebar()
     if not sidebar or path == "" or vim.fn.filereadable(path) ~= 1 then return end
 
     local directory = vim.fs.normalize(vim.fs.dirname(path))
@@ -581,8 +602,9 @@ local function open_oil_sidebar(opts)
     end
 
     local current = vim.api.nvim_get_current_win()
-    local existing = find_window("oil")
+    local existing = find_oil_sidebar()
     if existing then
+        vim.w[existing].oil_sidebar = true
         if opts.focus then
             last_editor_win = not is_panel(current) and current or last_editor_win
             last_panel_win = existing
@@ -603,6 +625,10 @@ local function open_oil_sidebar(opts)
     end
     vim.cmd("topleft " .. explorer_width .. "vsplit")
     local sidebar = vim.api.nvim_get_current_win()
+    -- Marked before oil.open so the singleton guard below can tell this
+    -- window apart from a stray oil buffer the moment BufWinEnter fires;
+    -- oil's callback runs too late to claim ownership in time.
+    vim.w[sidebar].oil_sidebar = true
     oil.open(require("workspace").get(), nil, function()
         if not window_is_valid(sidebar) then return end
         vim.w[sidebar].oil_sidebar = true
@@ -628,6 +654,75 @@ local function focus_tree()
     end
     open_oil_sidebar({ focus = true })
 end
+
+-- Exactly one explorer instance: oil may only ever live in the sidebar window.
+-- Anything that drops an oil buffer into an editor window instead -- the netrw
+-- hijack on `:edit <dir>`, a plugin calling oil.open(), a stray split -- would
+-- otherwise become a second, unmanaged explorer sitting next to the real one.
+-- Such a window is evicted and its directory surfaced in the one true sidebar.
+--
+-- This scans window state rather than trusting the triggering event's buffer:
+-- oil swaps in a scratch buffer while BufWinEnter fires, so the event's `buf`
+-- and the window's actual buffer disagree mid-flight.
+local oil_guard_busy = false
+
+local function enforce_single_oil()
+    if oil_guard_busy or leetcode_active() then return end
+
+    local sidebar, strays = nil, {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if window_filetype(win) == "oil"
+            and vim.api.nvim_win_get_config(win).relative == ""
+            and not vim.wo[win].previewwindow
+        then
+            if vim.w[win].oil_sidebar and not sidebar then
+                sidebar = win
+            else
+                strays[#strays + 1] = win
+            end
+        end
+    end
+    if #strays == 0 then return end
+
+    oil_guard_busy = true
+    local directory
+    for _, win in ipairs(strays) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        directory = directory or oil.get_current_dir(buf)
+        local previous = vim.fn.bufnr("#")
+        if previous > 0
+            and previous ~= buf
+            and vim.api.nvim_buf_is_valid(previous)
+            and vim.bo[previous].filetype ~= "oil"
+        then
+            vim.api.nvim_win_set_buf(win, previous)
+        else
+            require("dashboard").open({ win = win })
+        end
+    end
+    oil_guard_busy = false
+
+    -- Honour the intent: show the requested directory in the real explorer.
+    local target = sidebar or open_oil_sidebar({ focus = false })
+    if directory and target and window_is_valid(target) then
+        vim.api.nvim_win_call(target, function() oil.open(directory) end)
+    end
+end
+
+local oil_guard_pending = false
+vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType", "WinEnter" }, {
+    callback = function()
+        -- These events fire in bursts (oil alone emits several per open);
+        -- coalesce them into one check per tick.
+        if oil_guard_pending then return end
+        oil_guard_pending = true
+        vim.schedule(function()
+            oil_guard_pending = false
+            enforce_single_oil()
+        end)
+    end,
+    desc = "Keep Oil to a single sidebar instance",
+})
 
 -- Keep the explorer at a compact IDE-sidebar width. winfixwidth prevents
 -- editor splits and equalize commands from stretching it.
@@ -820,61 +915,84 @@ local function new_terminal()
     vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("workspace").get()))
 end
 
-local terminal_width = 90
-
-local function split_terminal()
-    focus_editor()
-    vim.cmd(
-        "FloatermNew --wintype=vsplit --position=botright --cwd="
-        .. vim.fn.fnameescape(require("workspace").get())
-    )
+-- Splits the bottom panel itself in half rather than carving a full-height
+-- column out of the editor. floaterm's vsplit runs a plain `:vsplit` against
+-- the *current* window, so focusing the panel first keeps the new terminal
+-- inside the bottom strip.
+-- Terminal windows sharing the bottom row, left to right.
+local function terminal_row_windows()
+    local wins = {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if window_filetype(win) == "floaterm" and vim.api.nvim_win_get_config(win).relative == "" then
+            wins[#wins + 1] = win
+        end
+    end
+    table.sort(wins, function(a, b)
+        return vim.api.nvim_win_get_position(a)[2] < vim.api.nvim_win_get_position(b)[2]
+    end)
+    return wins
 end
 
-local function terminal_picker()
-    local bufnrs = vim.fn["floaterm#buflist#gather"]()
-    if #bufnrs == 0 then
-        vim.notify("No terminals open", vim.log.levels.INFO)
+-- floaterm sizes a vsplit from g:floaterm_width, which leaves lopsided halves;
+-- share the panel's width evenly instead.
+local function balance_terminal_row()
+    local wins = terminal_row_windows()
+    if #wins < 2 then return end
+
+    local total = 0
+    for _, win in ipairs(wins) do
+        total = total + vim.api.nvim_win_get_width(win)
+    end
+    total = total + (#wins - 1) -- separators reclaimed by the split itself
+
+    local share = math.floor(total / #wins)
+    for index = 1, #wins - 1 do
+        pcall(vim.api.nvim_win_set_width, wins[index], share)
+    end
+end
+
+-- The panel must only ever redistribute its own width. Anything that asks for
+-- more than the panel has makes Vim reclaim the difference from its neighbours
+-- -- in practice crushing the fixed-width explorer down to a single column.
+local function restore_sidebar_width()
+    local sidebar = find_oil_sidebar()
+    if sidebar
+        and vim.api.nvim_win_is_valid(sidebar)
+        and vim.api.nvim_win_get_width(sidebar) ~= explorer_width
+    then
+        pcall(vim.api.nvim_win_set_width, sidebar, explorer_width)
+    end
+end
+
+local function split_terminal()
+    local terminal = find_window("floaterm")
+    if not terminal then
+        new_terminal()
         return
     end
 
-    Snacks.picker.pick({
-        title = "Terminals",
-        finder = function()
-            local items = {}
-            for index, bufnr in ipairs(bufnrs) do
-                local title = vim.fn.getbufvar(bufnr, "floaterm_title")
-                if title == "" or title:find("%$1") then
-                    title = string.format("terminal %d/%d", index, #bufnrs)
-                end
-                local cwd = vim.fn.getbufvar(bufnr, "floaterm_cwd")
-                items[#items + 1] = {
-                    text = title,
-                    bufnr = bufnr,
-                    label = title,
-                    dir = cwd ~= "" and cwd or nil,
-                    current = bufnr == vim.fn["floaterm#buflist#curr"](),
-                }
-            end
-            return items
-        end,
-        format = function(item)
-            local line = { { (item.current and "● " or "  ") .. item.label, "Function" } }
-            if item.dir then
-                table.insert(line, { "  " .. item.dir, "Comment" })
-            end
-            return line
-        end,
-        confirm = function(picker, item)
-            picker:close()
-            if not item then return end
-            vim.schedule(function() vim.fn["floaterm#show"](0, item.bufnr, "") end)
-        end,
-    })
+    vim.api.nvim_set_current_win(terminal)
+    -- Without an explicit width floaterm sizes the new window from
+    -- g:floaterm_width (a fraction of the whole screen), which does not fit
+    -- inside the panel and steals the shortfall from the sidebar.
+    local half = math.max(10, math.floor(vim.api.nvim_win_get_width(terminal) / 2))
+    vim.cmd(string.format(
+        "FloatermNew --wintype=vsplit --position=rightbelow --width=%d --cwd=%s",
+        half,
+        vim.fn.fnameescape(require("workspace").get())
+    ))
+    vim.schedule(function()
+        balance_terminal_row()
+        restore_sidebar_width()
+    end)
 end
 
--- Horizontal (bottom-panel) and vertical (side-by-side) floaterm windows need
--- different fixed-size handling; forcing belowright/height onto a vsplit term
--- would fight its own --wintype=vsplit layout.
+local function terminal_picker()
+    require("terminals").pick()
+end
+
+-- Every terminal belongs to the bottom panel, including the halves created by
+-- split_terminal: they share the panel's height and stay pinned to it.
 vim.api.nvim_create_autocmd("FileType", {
     pattern = "floaterm",
     callback = function()
@@ -885,32 +1003,42 @@ vim.api.nvim_create_autocmd("FileType", {
         }
 
         vim.wo.winhighlight = "WinSeparator:OilWinSeparator"
+        vim.wo.winfixheight = true
+        -- Height is pinned, width is not: the halves of a split panel have to
+        -- be able to give width to each other, and an inherited winfixwidth
+        -- silently defeats balancing them.
+        vim.wo.winfixwidth = false
+        vim.b.floaterm_position = "belowright"
+        terminal_height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
+        vim.api.nvim_win_set_height(0, terminal_height)
 
-        if vim.b.floaterm_wintype == "vsplit" then
-            vim.wo.winfixwidth = true
-            terminal_width = math.min(terminal_width, math.max(40, vim.o.columns - 40))
-            vim.api.nvim_win_set_width(0, terminal_width)
-        else
-            vim.wo.winfixheight = true
-            vim.b.floaterm_position = "belowright"
-            terminal_height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
-            vim.api.nvim_win_set_height(0, terminal_height)
-
-            vim.keymap.set("t", "<C-Up>", function() resize_terminal(3) end, opts)
-            vim.keymap.set("t", "<C-Down>", function() resize_terminal(-3) end, opts)
-            vim.keymap.set("n", "<C-Up>", function() resize_terminal(3) end, opts)
-            vim.keymap.set("n", "<C-Down>", function() resize_terminal(-3) end, opts)
-        end
+        vim.keymap.set({ "n", "t" }, "<C-Up>", function() resize_terminal(3) end, opts)
+        vim.keymap.set({ "n", "t" }, "<C-Down>", function() resize_terminal(-3) end, opts)
     end,
 })
 
-vim.api.nvim_set_keymap("n", "zp", ":FloatermPrev<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("v", "zp", ":FloatermPrev<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("t", "zp", "<cmd>:FloatermPrev<CR>", { noremap = true, silent = true })
+-- Terminal-mode mappings must never be bare letters: a `t` mapping for "zp"
+-- swallows those keystrokes before the shell sees them, so they could not be
+-- typed at a prompt. Letter mappings stay in normal/visual mode only, and
+-- terminal mode gets Ctrl-chords alongside <C-Up>/<C-Down> for resizing.
+local function cycle_terminal(direction)
+    return function()
+        -- Switching windows is not allowed from terminal mode; drop out first
+        -- and defer, then focus() puts the target terminal back into insert.
+        if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
+        vim.schedule(function() require("terminals").cycle(direction) end)
+    end
+end
 
-vim.api.nvim_set_keymap("n", "zn", ":FloatermNext<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("v", "zn", ":FloatermNext<CR>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("t", "zn", "<cmd>:FloatermNext<CR>", { noremap = true, silent = true })
+vim.keymap.set({ "n", "v" }, "zp", cycle_terminal(-1),
+    { noremap = true, silent = true, desc = "Focus the previous terminal" })
+vim.keymap.set({ "n", "v" }, "zn", cycle_terminal(1),
+    { noremap = true, silent = true, desc = "Focus the next terminal" })
+
+vim.keymap.set({ "n", "t" }, "<C-Left>", cycle_terminal(-1),
+    { noremap = true, silent = true, desc = "Focus the previous terminal" })
+vim.keymap.set({ "n", "t" }, "<C-Right>", cycle_terminal(1),
+    { noremap = true, silent = true, desc = "Focus the next terminal" })
 
 vim.keymap.set({ "n", "v", "i" }, "<C-t>", focus_terminal, {
     noremap = true,
@@ -927,17 +1055,58 @@ vim.keymap.set("n", "<Space>t", new_terminal, {
 vim.keymap.set("n", "<Space>v", split_terminal, {
     noremap = true,
     silent = true,
-    desc = "Open a terminal in a vertical split",
+    desc = "Split the bottom terminal panel in half",
 })
 
-vim.keymap.set({ "n", "t" }, "zt", function()
-    if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
-    terminal_picker()
-end, {
+vim.keymap.set("n", "zt", terminal_picker, {
     noremap = true,
     silent = true,
     desc = "List and jump to an open terminal",
 })
+
+-- Every terminal action has a terminal-mode chord, so managing terminals never
+-- requires leaving insert/terminal mode first. The actions themselves run
+-- window commands, which are illegal from terminal mode, so each one drops to
+-- normal mode and defers -- Neovim refuses to re-enter normal mode from within
+-- a terminal-mode mapping's own callback.
+local function from_terminal(action)
+    return function()
+        if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
+        vim.schedule(action)
+    end
+end
+
+-- <C-v> is deliberately not used here: mappings.lua already owns it as "exit
+-- terminal mode". <C-s> shadows XON flow control, which is inert in a modern
+-- shell -- the same trade this config already makes for <C-w>/<C-h>.
+vim.keymap.set("t", "<C-s>", from_terminal(split_terminal),
+    { noremap = true, silent = true, desc = "Split the bottom terminal panel in half" })
+vim.keymap.set("t", "<C-\\>", from_terminal(terminal_picker),
+    { noremap = true, silent = true, desc = "List and jump to an open terminal" })
+
+-- One "make me a new thing" key: whatever you are looking at decides what gets
+-- created. In a terminal it is another terminal; anywhere else it is a new
+-- file in the editor zone (never in the explorer or the terminal panel).
+local function new_file_or_terminal()
+    if window_filetype(vim.api.nvim_get_current_win()) == "floaterm" then
+        new_terminal()
+        return
+    end
+
+    focus_editor()
+    vim.cmd("enew")
+    vim.cmd("startinsert")
+end
+
+vim.keymap.set({ "n", "v", "i" }, "<C-a>", function()
+    if vim.fn.mode():sub(1, 1) ~= "n" then
+        vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
+    end
+    new_file_or_terminal()
+end, { noremap = true, silent = true, desc = "New file (new terminal in a terminal)" })
+
+vim.keymap.set("t", "<C-a>", from_terminal(new_terminal),
+    { noremap = true, silent = true, desc = "Open another bottom terminal" })
 
 vim.keymap.set("t", "<C-t>", function()
     vim.cmd("stopinsert")
@@ -986,7 +1155,8 @@ vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
 vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Focus or toggle the file explorer" })
 vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Focus or toggle the terminal" })
 vim.api.nvim_create_user_command("TerminalNew", new_terminal, { desc = "Open another bottom terminal" })
-vim.api.nvim_create_user_command("TerminalSplit", split_terminal, { desc = "Open a terminal in a vertical split" })
+vim.api.nvim_create_user_command("TerminalSplit", split_terminal,
+    { desc = "Split the bottom terminal panel in half" })
 vim.api.nvim_create_user_command("TerminalList", terminal_picker, { desc = "List and jump to an open terminal" })
 vim.api.nvim_create_user_command("EditorTabNext", function()
     switch_editor_buffer(1)

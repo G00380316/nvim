@@ -212,6 +212,7 @@ require("lsp")
 require("plugins")
 require("debugger_bootstrap")
 require("mobile").setup()
+require("terminals").setup()
 require("autocmd")
 require("mappings")
 
@@ -267,27 +268,12 @@ require("ibl").setup({
 -- LUALINE HELPERS
 -- ============================================================
 
+-- Terminals are identified by their working directory rather than the shell
+-- binary: `:t` on a terminal buffer name only ever yielded "zsh", identical
+-- for every terminal and useless for telling them apart. The focused terminal
+-- is highlighted so the active one is obvious at a glance.
 local function floaterm_tabline()
-    local tabs = {}
-    local current = vim.api.nvim_get_current_buf()
-
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf)
-            and vim.bo[buf].filetype == "floaterm"
-        then
-            local name = vim.fn.fnamemodify(
-                vim.api.nvim_buf_get_name(buf),
-                ":t"
-            )
-
-            local label = (buf == current and " " or " ")
-                .. (name ~= "" and name or "Terminal")
-
-            table.insert(tabs, label)
-        end
-    end
-
-    return table.concat(tabs, " | ")
+    return require("terminals").tabline()
 end
 
 local mode = {
@@ -434,6 +420,15 @@ lualine.setup({
                     readonly = " ",
                     unnamed = "[Untitled]",
                 },
+                -- A terminal's buffer name is the raw
+                -- `term://<cwd>//<pid>:<shell>` URI: long, and it says nothing
+                -- useful. Show the terminal's directory instead.
+                fmt = function(name)
+                    if vim.bo.filetype == "floaterm" then
+                        return require("terminals").name(vim.api.nvim_get_current_buf())
+                    end
+                    return name
+                end,
             },
         },
 
