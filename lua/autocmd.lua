@@ -331,7 +331,10 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     group = yank_group,
     pattern = "*",
     callback = function()
-        vim.highlight.on_yank({
+        -- vim.highlight.on_yank -> vim.hl.on_yank -> vim.hl.hl_op; the first
+        -- two are deprecated shims and the chain is removed in 0.14. Same
+        -- options, and hl_op also handles TextPutPost if that is ever wanted.
+        vim.hl.hl_op({
             higroup = "Visual",
             timeout = 300,
         })

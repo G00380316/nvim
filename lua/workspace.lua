@@ -177,7 +177,7 @@ function M.open(path, opts)
     end
 
     pcall(vim.cmd, "EditorFocus")
-    require("dashboard").open({ win = vim.api.nvim_get_current_win() })
+    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
 
     if vim.fn.exists(":OilSidebarOpen") == 2 then pcall(vim.cmd, "OilSidebarOpen") end
 

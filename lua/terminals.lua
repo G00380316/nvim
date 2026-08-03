@@ -213,7 +213,48 @@ local function replace_closed(bufnr, win)
     cwd_cache[bufnr] = nil
 end
 
+---Copy a terminal's scrollback into a normal, modifiable buffer.
+---
+---A `:terminal` buffer is not editable: in terminal-normal mode you can move,
+---visually select and yank, but `i`/`a` re-enter *terminal* mode, which hands
+---the keys to the shell and snaps the cursor to its prompt. That is Neovim's
+---design, not something a mapping can change -- so to actually edit output,
+---take a copy of it somewhere editing works.
+function M.edit()
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.bo[buf].buftype ~= "terminal" then
+        vim.notify("Not a terminal", vim.log.levels.WARN)
+        return
+    end
+
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    while #lines > 0 and lines[#lines]:match("^%s*$") do
+        table.remove(lines)
+    end
+    if #lines == 0 then
+        vim.notify("Terminal has no output yet", vim.log.levels.INFO)
+        return
+    end
+
+    local scratch = vim.api.nvim_create_buf(true, true)
+    vim.api.nvim_buf_set_lines(scratch, 0, -1, false, lines)
+    vim.bo[scratch].buftype = "nofile"
+    vim.bo[scratch].bufhidden = "hide"
+    vim.bo[scratch].swapfile = false
+    vim.bo[scratch].modifiable = true
+    pcall(vim.api.nvim_buf_set_name, scratch, "terminal://" .. M.name(buf) .. " (scratch)")
+
+    -- Land it in the editor zone, never over the explorer or the panel itself.
+    pcall(vim.cmd, "EditorFocus")
+    vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(), scratch)
+    vim.api.nvim_win_set_cursor(0, { #lines, 0 })
+end
+
 function M.setup()
+    vim.api.nvim_create_user_command("TerminalEdit", M.edit, {
+        desc = "Open this terminal's output in an editable scratch buffer",
+    })
+
     vim.api.nvim_set_hl(0, "TerminalTabActive", { link = "Function", default = true })
     vim.api.nvim_set_hl(0, "TerminalTabInactive", { link = "Comment", default = true })
 

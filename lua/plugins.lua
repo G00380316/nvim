@@ -257,7 +257,7 @@ vim.api.nvim_create_autocmd("User", {
     callback = function()
         local buf = vim.api.nvim_get_current_buf()
         if vim.bo[buf].filetype == "snacks_dashboard" then
-            require("dashboard").keep_single(buf)
+            require("editor_filler").keep_single(buf)
             vim.keymap.set("n", "q", "<cmd>confirm qa<CR>", {
                 buffer = buf,
                 silent = true,
@@ -621,7 +621,7 @@ local function open_oil_sidebar(opts)
     then
         -- Give the editor side a durable filler before splitting. The generic
         -- empty-buffer cleanup would otherwise wipe it and collapse the split.
-        require("dashboard").open({ win = vim.api.nvim_get_current_win() })
+        require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
     end
     vim.cmd("topleft " .. explorer_width .. "vsplit")
     local sidebar = vim.api.nvim_get_current_win()
@@ -697,7 +697,7 @@ local function enforce_single_oil()
         then
             vim.api.nvim_win_set_buf(win, previous)
         else
-            require("dashboard").open({ win = win })
+            require("editor_filler").open({ win = win })
         end
     end
     oil_guard_busy = false
@@ -1014,6 +1014,8 @@ vim.api.nvim_create_autocmd("FileType", {
 
         vim.keymap.set({ "n", "t" }, "<C-Up>", function() resize_terminal(3) end, opts)
         vim.keymap.set({ "n", "t" }, "<C-Down>", function() resize_terminal(-3) end, opts)
+        vim.keymap.set("n", "<leader>e", function() require("terminals").edit() end,
+            vim.tbl_extend("force", opts, { desc = "Edit this terminal's output" }))
     end,
 })
 
@@ -1083,6 +1085,12 @@ vim.keymap.set("t", "<C-s>", from_terminal(split_terminal),
     { noremap = true, silent = true, desc = "Split the bottom terminal panel in half" })
 vim.keymap.set("t", "<C-\\>", from_terminal(terminal_picker),
     { noremap = true, silent = true, desc = "List and jump to an open terminal" })
+
+-- Terminal buffers are read-only, so "edit this output" means editing a copy.
+-- <C-g> from terminal mode, and <leader>e once <C-v> has dropped you into
+-- terminal-normal mode (letters are safe there -- the shell never sees them).
+vim.keymap.set("t", "<C-g>", from_terminal(function() require("terminals").edit() end),
+    { noremap = true, silent = true, desc = "Edit terminal output in a scratch buffer" })
 
 -- One "make me a new thing" key: whatever you are looking at decides what gets
 -- created. In a terminal it is another terminal; anywhere else it is a new
@@ -1209,7 +1217,7 @@ local function lazygit_editor_window()
     -- editor buffer. Recreate the editor zone if this tab has only panels.
     if is_panel(vim.api.nvim_get_current_win()) then
         vim.cmd("rightbelow vsplit")
-        require("dashboard").open({ win = vim.api.nvim_get_current_win() })
+        require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
     end
     return vim.api.nvim_get_current_win()
 end
@@ -1225,7 +1233,7 @@ local function restore_editor_after_lazygit(buf)
                 vim.api.nvim_win_set_buf(win, previous)
                 vim.bo[previous].bufhidden = vim.w[win].lazygit_previous_bufhidden or ""
             else
-                require("dashboard").open({ win = win })
+                require("editor_filler").open({ win = win })
             end
             vim.w[win].lazygit_previous_buf = nil
             vim.w[win].lazygit_previous_bufhidden = nil
@@ -1524,4 +1532,71 @@ vim.keymap.set("n", "<leader>sq", "<cmd>ProjectResults<CR>", {
 vim.keymap.set("n", "<leader>st", quicker.toggle, {
     silent = true,
     desc = "Toggle editable results",
+})
+
+
+-- ============================================================
+-- Live Server
+-- ============================================================
+
+-- Every option has a working default, and root detection already falls back to
+-- the editor cwd -- which workspace.setup() pins to the workspace root -- so
+-- the project the server picks matches the one the rest of this config uses.
+require("live_server").setup({})
+
+
+-- ============================================================
+-- Layout Invariant
+--
+-- The IDE frame has two rules that must hold no matter how a window was
+-- closed: the explorer is the leftmost window at its fixed width, and there is
+-- always at least one editor window. `wincmd =` (run from several places, and
+-- on every WinClosed/WinNew/BufWinEnter) is happy to violate the first, and
+-- closing the last editor buffer violates the second -- which then lets the
+-- sidebar stretch across the whole frame. This re-asserts both instead of
+-- trying to catch every individual path that can break them.
+-- ============================================================
+
+local layout_guard_busy = false
+
+local function enforce_layout()
+    if layout_guard_busy or leetcode_active() then return end
+    layout_guard_busy = true
+
+    local ok = pcall(function()
+        local sidebar = find_oil_sidebar()
+
+        -- An editor zone must exist for the sidebar to sit beside. Without one
+        -- the sidebar is the only window and inherits the full width.
+        if not find_editor_window() then
+            if sidebar and vim.api.nvim_win_is_valid(sidebar) then
+                vim.api.nvim_win_call(sidebar, function()
+                    vim.cmd("rightbelow vsplit")
+                    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+                end)
+            end
+        end
+
+        if sidebar and vim.api.nvim_win_is_valid(sidebar) then
+            -- Leftmost: anything that ended up left of it gets moved aside.
+            if vim.api.nvim_win_get_position(sidebar)[2] ~= 0 then
+                vim.api.nvim_win_call(sidebar, function() vim.cmd("wincmd H") end)
+            end
+            if vim.api.nvim_win_get_width(sidebar) ~= explorer_width then
+                vim.api.nvim_win_set_width(sidebar, explorer_width)
+            end
+            vim.wo[sidebar].winfixwidth = true
+        end
+    end)
+
+    layout_guard_busy = false
+    return ok
+end
+
+vim.api.nvim_create_user_command("LayoutEnforce", enforce_layout,
+    { desc = "Re-assert the explorer width and the presence of an editor zone" })
+
+vim.api.nvim_create_autocmd({ "WinClosed", "WinNew", "BufWinEnter", "VimResized" }, {
+    callback = function() vim.schedule(enforce_layout) end,
+    desc = "Hold the IDE layout invariant",
 })

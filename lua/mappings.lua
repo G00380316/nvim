@@ -328,7 +328,7 @@ local function close_editor_buffer(buf)
     if replacement then
         vim.api.nvim_win_set_buf(win, replacement)
     else
-        require("dashboard").open({ win = win })
+        require("editor_filler").open({ win = win })
     end
 
     local success = pcall(vim.cmd, "confirm bdelete " .. buf)
@@ -418,9 +418,10 @@ local function quit()
         end
     end
 
-    -- 6. Rebalance layout
+    -- 6. Rebalance layout, then restore the parts `wincmd =` does not respect
     vim.schedule(function()
         pcall(vim.cmd, "wincmd =")
+        pcall(vim.cmd, "LayoutEnforce")
     end)
 end
 
@@ -431,6 +432,9 @@ end
 
 local function equalize_splits()
     vim.cmd("wincmd =")
+    -- `wincmd =` redistributes width across every window, so the fixed-width
+    -- explorer has to be re-asserted immediately afterwards.
+    pcall(vim.cmd, "LayoutEnforce")
 end
 
 vim.api.nvim_create_autocmd({
@@ -451,45 +455,43 @@ vim.api.nvim_create_autocmd({
 -- ============================================================
 
 require("render-markdown").setup({
-    opts = {
-        heading = {
-            width = "block",
-            min_width = 50,
-            border = true,
-            backgrounds = {
-                "RenderMarkdownH1Bg",
-                "RenderMarkdownH2Bg",
-                "RenderMarkdownH3Bg",
-                "RenderMarkdownH4Bg",
-                "RenderMarkdownH5Bg",
-                "RenderMarkdownH6Bg",
-            },
-            foregrounds = {
-                "RenderMarkdownH1",
-                "RenderMarkdownH2",
-                "RenderMarkdownH3",
-                "RenderMarkdownH4",
-                "RenderMarkdownH5",
-                "RenderMarkdownH6",
-            },
+    heading = {
+        width = "block",
+        min_width = 50,
+        border = true,
+        backgrounds = {
+            "RenderMarkdownH1Bg",
+            "RenderMarkdownH2Bg",
+            "RenderMarkdownH3Bg",
+            "RenderMarkdownH4Bg",
+            "RenderMarkdownH5Bg",
+            "RenderMarkdownH6Bg",
         },
-        render_modes = { "n", "v", "i", "c" },
-        checkbox = {
-            unchecked = { icon = "󰄱 " },
-            checked = { icon = " " },
-            custom = {
-                todo = {
-                    raw = "[>]",
-                    rendered = "󰥔 ",
-                },
+        foregrounds = {
+            "RenderMarkdownH1",
+            "RenderMarkdownH2",
+            "RenderMarkdownH3",
+            "RenderMarkdownH4",
+            "RenderMarkdownH5",
+            "RenderMarkdownH6",
+        },
+    },
+    render_modes = { "n", "v", "i", "c" },
+    checkbox = {
+        unchecked = { icon = "󰄱 " },
+        checked = { icon = " " },
+        custom = {
+            todo = {
+                raw = "[>]",
+                rendered = "󰥔 ",
             },
         },
-        code = {
-            position = "right",
-            width = "block",
-            left_pad = 2,
-            right_pad = 4,
-        },
+    },
+    code = {
+        position = "right",
+        width = "block",
+        left_pad = 2,
+        right_pad = 4,
     },
 })
 
@@ -1186,6 +1188,44 @@ vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", {
     noremap = true,
     silent = true,
     desc = "Reset Leet solution",
+})
+
+
+-- ============================================================
+-- Live Server
+-- ============================================================
+
+-- Keyed under zs (server) rather than the plugin's suggested <leader>l*:
+-- <leader>l is already grep-word here, and a multi-key map sharing that prefix
+-- would make it sit waiting out timeoutlen on every use. zl* is LeetCode.
+vim.keymap.set("n", "zss", "<cmd>LiveServer toggle<CR>", {
+    noremap = true,
+    silent = true,
+    desc = "Start/stop live server for this project",
+})
+
+vim.keymap.set("n", "zsm", "<cmd>LiveServer<CR>", {
+    noremap = true,
+    silent = true,
+    desc = "Live server manager",
+})
+
+vim.keymap.set("n", "zso", "<cmd>LiveServer open<CR>", {
+    noremap = true,
+    silent = true,
+    desc = "Open the current page in a browser",
+})
+
+vim.keymap.set("n", "zsl", "<cmd>LiveServer logs<CR>", {
+    noremap = true,
+    silent = true,
+    desc = "Tail live server output",
+})
+
+vim.keymap.set("n", "zsr", "<cmd>LiveServer restart<CR>", {
+    noremap = true,
+    silent = true,
+    desc = "Restart live server on the same port",
 })
 
 

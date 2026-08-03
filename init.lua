@@ -80,6 +80,9 @@ vim.pack.add({
     { src = "https://github.com/b0o/SchemaStore.nvim" },
 
     -- Completion
+    -- blink.lib is a hard dependency of blink.cmp from v2 onward; without it
+    -- blink.cmp errors out at require time and takes the rest of init with it.
+    { src = "https://github.com/saghen/blink.lib" },
     { src = "https://github.com/saghen/blink.cmp" },
     { src = "https://github.com/cohama/lexima.vim" },
     { src = "https://github.com/tronikelis/ts-autotag.nvim" },
@@ -94,6 +97,7 @@ vim.pack.add({
     { src = "https://github.com/kawre/leetcode.nvim" },
     { src = "https://github.com/MunifTanjim/nui.nvim" },
     { src = "https://github.com/G00380316/ssh-launcher.nvim" },
+    { src = "https://github.com/G00380316/live-server.nvim" },
     { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" },
 })
 
@@ -385,19 +389,12 @@ lualine.setup({
         -- },
         component_separators = "",
         section_separators = "",
+        -- Nothing is excluded: the statusline is the one constant piece of
+        -- chrome, so blanking it in the explorer or a terminal made those
+        -- panels look detached from the rest of the frame.
         disabled_filetypes = {
-            statusline = {
-                "oil",
-                "lazygit",
-                "toggleterm",
-                "terminal",
-            },
-            winbar = {
-                "oil",
-                "lazygit",
-                "toggleterm",
-                "terminal",
-            },
+            statusline = {},
+            winbar = {},
         },
     },
 
