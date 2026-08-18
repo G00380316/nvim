@@ -258,7 +258,10 @@ function M.setup()
     vim.api.nvim_set_hl(0, "TerminalTabActive", { link = "Function", default = true })
     vim.api.nvim_set_hl(0, "TerminalTabInactive", { link = "Comment", default = true })
 
+    local group = vim.api.nvim_create_augroup("TerminalPanel", { clear = true })
+
     vim.api.nvim_create_autocmd("TermClose", {
+        group = group,
         callback = function(args)
             if vim.bo[args.buf].filetype ~= "floaterm" then return end
             -- Captured synchronously: floaterm closes the panel itself before
@@ -273,6 +276,7 @@ function M.setup()
     -- poll slowly while one is on screen so a `cd` is reflected without
     -- needing an explicit refresh.
     vim.api.nvim_create_autocmd({ "BufEnter", "TermEnter", "TermLeave", "WinEnter" }, {
+        group = group,
         callback = function(args)
             if vim.bo[args.buf].filetype == "floaterm" then M.refresh() end
         end,

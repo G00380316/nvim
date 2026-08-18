@@ -295,6 +295,20 @@ local function window_filetype(win)
     return window_is_valid(win) and vim.bo[vim.api.nvim_win_get_buf(win)].filetype or ""
 end
 
+-- A terminal that is not one of ours belongs to another plugin's session
+-- (ssh-launcher opens one per tab via jobstart({term=true})). Reshaping the
+-- windows around it while it is still connecting can tear the session down, so
+-- this frame's rules simply do not apply to such a tab.
+local function has_foreign_terminal()
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].buftype == "terminal" and vim.bo[buf].filetype ~= "floaterm" then
+            return true
+        end
+    end
+    return false
+end
+
 local function is_panel(win)
     local filetype = window_filetype(win)
     return filetype == "oil"
@@ -711,6 +725,7 @@ end
 
 local oil_guard_pending = false
 vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType", "WinEnter" }, {
+    group = vim.api.nvim_create_augroup("OilSingleton", { clear = true }),
     callback = function()
         -- These events fire in bursts (oil alone emits several per open);
         -- coalesce them into one check per tick.
@@ -772,8 +787,13 @@ vim.api.nvim_create_autocmd("VimEnter", {
 })
 
 vim.api.nvim_create_autocmd("TabNewEntered", {
+    group = vim.api.nvim_create_augroup("OilTabSidebar", { clear = true }),
     callback = function()
-        vim.schedule(function() open_oil_sidebar({ focus = false }) end)
+        vim.schedule(function()
+            -- A tab opened for someone else's terminal session is theirs.
+            if has_foreign_terminal() then return end
+            open_oil_sidebar({ focus = false })
+        end)
     end,
     desc = "Keep the Oil sidebar present in new tabs",
 })
@@ -1560,7 +1580,7 @@ require("live_server").setup({})
 local layout_guard_busy = false
 
 local function enforce_layout()
-    if layout_guard_busy or leetcode_active() then return end
+    if layout_guard_busy or leetcode_active() or has_foreign_terminal() then return end
     layout_guard_busy = true
 
     local ok = pcall(function()
@@ -1597,6 +1617,7 @@ vim.api.nvim_create_user_command("LayoutEnforce", enforce_layout,
     { desc = "Re-assert the explorer width and the presence of an editor zone" })
 
 vim.api.nvim_create_autocmd({ "WinClosed", "WinNew", "BufWinEnter", "VimResized" }, {
+    group = vim.api.nvim_create_augroup("LayoutInvariant", { clear = true }),
     callback = function() vim.schedule(enforce_layout) end,
     desc = "Hold the IDE layout invariant",
 })

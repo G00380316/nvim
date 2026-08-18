@@ -5,7 +5,7 @@
       "src": "https://github.com/L3MON4D3/LuaSnip"
     },
     "SchemaStore.nvim": {
-      "rev": "9f98b46e1dd61aeb666989c344d76517df63af55",
+      "rev": "a652fcc01bf03946ab94b815be8c80ee157cbe1a",
       "src": "https://github.com/b0o/SchemaStore.nvim"
     },
     "alpha-nvim": {
@@ -17,7 +17,7 @@
       "src": "https://github.com/rmagatti/auto-session"
     },
     "blink.cmp": {
-      "rev": "005f8c859997f40f65bfbec5f4b400c45fecc06a",
+      "rev": "cba53eff1948109ec0f47cbead4f07494d1e25c9",
       "src": "https://github.com/saghen/blink.cmp"
     },
     "blink.lib": {
@@ -27,6 +27,10 @@
     "bufferline.nvim": {
       "rev": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3",
       "src": "https://github.com/akinsho/bufferline.nvim"
+    },
+    "codecompanion.nvim": {
+      "rev": "41aac78df89faa428eb1066b758f4e56c4c47662",
+      "src": "https://github.com/olimorris/codecompanion.nvim"
     },
     "diffview.nvim": {
       "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
@@ -45,7 +49,7 @@
       "src": "https://github.com/rafamadriz/friendly-snippets"
     },
     "fzf-lua": {
-      "rev": "28440c741e927592877514fba3db21eb188caec8",
+      "rev": "8671012a7b2a1648595952c655039d51fb301c14",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
     "gitsigns.nvim": {
@@ -81,7 +85,7 @@
       "src": "https://github.com/cohama/lexima.vim"
     },
     "live-server.nvim": {
-      "rev": "918db1524308adff13f1522cdd3858f1b01390f4",
+      "rev": "ee1f2bdd2e0493959cc74efb4dfc723324a09fed",
       "src": "https://github.com/G00380316/live-server.nvim"
     },
     "lspsaga.nvim": {
@@ -125,7 +129,7 @@
       "src": "https://github.com/mfussenegger/nvim-jdtls"
     },
     "nvim-lspconfig": {
-      "rev": "1c0d8f70dbc8827263eedc3cf7021ceba0f68689",
+      "rev": "43ed3797b266e1ee8d222e491379ad471c9d3146",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-navic": {
@@ -137,7 +141,7 @@
       "src": "https://github.com/nvim-neotest/nvim-nio"
     },
     "nvim-rip-substitute": {
-      "rev": "5aafa8e31971d2fb1dbb207f1ecd3b12b1ba0f88",
+      "rev": "6a398eebc581ff2df2fcef93216ca08b1870a397",
       "src": "https://github.com/chrisgrieser/nvim-rip-substitute"
     },
     "nvim-spectre": {
@@ -145,11 +149,11 @@
       "src": "https://github.com/nvim-pack/nvim-spectre"
     },
     "nvim-tree.lua": {
-      "rev": "4213bd6eabac38b16dd6615002b6243b23cf3bf6",
+      "rev": "b2aadda94b107480c48e548d6db51c6840b7b33c",
       "src": "https://github.com/nvim-tree/nvim-tree.lua"
     },
     "nvim-treesitter": {
-      "rev": "7b6cc8949f9999c5ed91436cbe24aa5f99c42025",
+      "rev": "3d3321b560a63ff92a8692401f303a5123336b86",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-ts-autotag": {
@@ -197,7 +201,7 @@
       "src": "https://github.com/folke/snacks.nvim"
     },
     "ssh-launcher.nvim": {
-      "rev": "49b11f3a0d02bd2067e1a5cf8a2f960940a0eb66",
+      "rev": "6a208cc5fdf0b7a70729f0186e05c371f552709f",
       "src": "https://github.com/G00380316/ssh-launcher.nvim"
     },
     "telescope-ui-select.nvim": {
@@ -235,6 +239,10 @@
     "vim-suda": {
       "rev": "c492741b4679b3cdd4d9e34138209784e061d916",
       "src": "https://github.com/lambdalisue/vim-suda"
+    },
+    "wtf.nvim": {
+      "rev": "010c779f84a151477f74398c8ead71e42d70b816",
+      "src": "https://github.com/piersolenski/wtf.nvim"
     },
     "xcodebuild.nvim": {
       "rev": "633eb71c0b354581837025581b7261dbe5361226",

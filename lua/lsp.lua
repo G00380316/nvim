@@ -593,11 +593,11 @@ local function add_debugger_mappings(bufnr)
         return
     end
 
-    map(bufnr, "n", "<leader>dd", xdap.build_and_debug, "Debug: build and start")
-    map(bufnr, "n", "<leader>dr", xdap.debug_without_build, "Debug: start without build")
-    map(bufnr, "n", "<leader>da", xdap.attach_and_debug, "Debug: attach to running app")
-    map(bufnr, "n", "<leader>dt", xdap.debug_func_test, "Debug: nearest test")
-    map(bufnr, "n", "<leader>dT", xdap.debug_class_tests, "Debug: test class")
+    map(bufnr, "n", "zdd", xdap.build_and_debug, "Debug: build and start")
+    map(bufnr, "n", "zdr", xdap.debug_without_build, "Debug: start without build")
+    map(bufnr, "n", "zda", xdap.attach_and_debug, "Debug: attach to running app")
+    map(bufnr, "n", "zdt", xdap.debug_func_test, "Debug: nearest test")
+    map(bufnr, "n", "zdT", xdap.debug_class_tests, "Debug: test class")
 
     map(bufnr, "n", "<leader>db", xdap.toggle_breakpoint, "Debug: toggle breakpoint")
     map(bufnr, "n", "<leader>dB", function()

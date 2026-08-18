@@ -1233,6 +1233,42 @@ vim.keymap.set("n", "zsr", "<cmd>LiveServer restart<CR>", {
 -- Flash Search
 -- ============================================================
 
+-- flash.nvim locates the end of a match by reading Neovim's internal
+-- `search_match_lines` / `search_match_endcol` C globals over LuaJIT FFI.
+-- Neovim nightly no longer exports either symbol, so every `s` jump died with
+-- "symbol not found" before a single match could be collected. Upstream has no
+-- fix (checked against origin/main), so re-derive the end position with an
+-- ordinary `ce` search, which needs no internals at all.
+local function patch_flash_ffi()
+    local exported = pcall(function()
+        local ffi = require("ffi")
+        ffi.cdef([[unsigned int search_match_lines;]])
+        return ffi.C.search_match_lines
+    end)
+    if exported then return end
+
+    local ok, Search = pcall(require, "flash.search")
+    if not ok then return end
+    local Pos = require("flash.search.pos")
+
+    function Search:_next(flags)
+        flags = flags or ""
+        local pattern = self.state.pattern.search
+        local found, pos = pcall(vim.fn.searchpos, pattern, flags)
+        if not found or pos[1] == 0 then return end
+
+        local start = Pos({ pos[1], pos[2] - 1 })
+        -- "ce" lands on the final character of the match just matched; "n"
+        -- keeps the cursor put so the caller's own iteration is unaffected.
+        local ok_end, epos = pcall(vim.fn.searchpos, pattern, "ceWn")
+        local finish = (ok_end and epos[1] ~= 0) and Pos({ epos[1], epos[2] - 1 }) or start
+
+        return { win = self.win, pos = start, end_pos = finish }
+    end
+end
+
+pcall(patch_flash_ffi)
+
 vim.keymap.set({ "n", "x", "o" }, "s", function() require("flash").jump() end, { desc = "Flash" })
 -- vim.keymap.set({ "n" }, "sa", function()
 --     require("flash").jump({

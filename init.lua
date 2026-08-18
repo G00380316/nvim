@@ -98,6 +98,9 @@ vim.pack.add({
     { src = "https://github.com/MunifTanjim/nui.nvim" },
     { src = "https://github.com/G00380316/ssh-launcher.nvim" },
     { src = "https://github.com/G00380316/live-server.nvim" },
+
+    -- AI (OpenAI API key required -- a ChatGPT subscription does not cover it)
+    { src = "https://github.com/olimorris/codecompanion.nvim" },
     { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" },
 })
 
