@@ -1063,24 +1063,6 @@ vim.keymap.set({ "n", "v", "i" }, "<C-t>", focus_terminal, {
     desc = "Open/focus bottom terminal",
 })
 
-vim.keymap.set("n", "<Space>t", new_terminal, {
-    noremap = true,
-    silent = true,
-    desc = "Open another bottom terminal",
-})
-
-vim.keymap.set("n", "<Space>v", split_terminal, {
-    noremap = true,
-    silent = true,
-    desc = "Split the bottom terminal panel in half",
-})
-
-vim.keymap.set("n", "zt", terminal_picker, {
-    noremap = true,
-    silent = true,
-    desc = "List and jump to an open terminal",
-})
-
 -- Every terminal action has a terminal-mode chord, so managing terminals never
 -- requires leaving insert/terminal mode first. The actions themselves run
 -- window commands, which are illegal from terminal mode, so each one drops to
@@ -1371,20 +1353,6 @@ vim.api.nvim_create_user_command("GitPanel", open_lazygit, {
     desc = "Open or focus the LazyGit editor buffer",
 })
 
-vim.keymap.set({ "n", "t" }, "zg", function()
-    if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
-    open_lazygit()
-end, {
-    noremap = true,
-    silent = true,
-    desc = "Open/focus LazyGit editor buffer",
-})
-vim.keymap.set("n", "zgd", function()
-    vim.cmd("DiffviewOpen")
-end, { desc = "Git changed-file diff" })
-vim.keymap.set("n", "zgh", function()
-    vim.cmd("DiffviewFileHistory")
-end, { desc = "Git repository history" })
 -- ============================================================
 -- Gitsigns
 -- ============================================================

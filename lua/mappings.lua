@@ -341,6 +341,23 @@ local function close_editor_buffer(buf)
     return true
 end
 
+local function protect_terminal_tab_before_close()
+    local current = vim.api.nvim_get_current_win()
+    if vim.api.nvim_win_get_config(current).relative ~= "" then return end
+
+    local normal_windows = vim.tbl_filter(function(win)
+        return vim.api.nvim_win_get_config(win).relative == ""
+    end, vim.api.nvim_tabpage_list_wins(0))
+    if #normal_windows > 1 then return end
+
+    -- Floaterm closes its own window while its buffer/job is being deleted.
+    -- If that is the tab's sole window, Neovim closes the whole tab (and the
+    -- last tab can look like, or become, an application quit). Give it an
+    -- editor landing window first so Ctrl-Q can only remove the terminal.
+    vim.cmd("aboveleft new")
+    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+end
+
 local function close_current()
     local buf = vim.api.nvim_get_current_buf()
     local buftype = vim.bo[buf].buftype
@@ -400,9 +417,10 @@ local function close_current()
     end
 
     if buftype == "terminal" then
+        protect_terminal_tab_before_close()
         local job_id = vim.b[buf].terminal_job_id
         if job_id then pcall(vim.fn.jobstop, job_id) end
-        pcall(vim.cmd, "bd!")
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
     elseif buftype == "quickfix" then
         pcall(vim.cmd, "cclose")
     elseif filetype == "oil" then
@@ -1247,81 +1265,6 @@ end, {
     silent = true,
     desc = "Open quick notes in this Neovim instance",
 })
-
--- ============================================================
--- LeetCode
--- ============================================================
-
-vim.keymap.set("n", "zlo", function()
-    vim.cmd("Leet")
-end, {
-    noremap = true,
-    silent = true,
-    desc = "Open Leet in this Neovim instance",
-})
-
-vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Test Leet solution",
-})
-
-vim.keymap.set("n", "zls", "<cmd>Leet Submit<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Submit Leet solution",
-})
-
-vim.keymap.set("n", "zll", "<cmd>Leet List<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "List Leet problems",
-})
-
-vim.keymap.set("n", "zlr", "<cmd>Leet Reset<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Reset Leet solution",
-})
-
-
--- ============================================================
--- Live Server
--- ============================================================
-
--- Keyed under zs (server) rather than the plugin's suggested <leader>l*:
--- <leader>l is already grep-word here, and a multi-key map sharing that prefix
--- would make it sit waiting out timeoutlen on every use. zl* is LeetCode.
-vim.keymap.set("n", "zss", "<cmd>LiveServer toggle<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Start/stop live server for this project",
-})
-
-vim.keymap.set("n", "zsm", "<cmd>LiveServer<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Live server manager",
-})
-
-vim.keymap.set("n", "zso", "<cmd>LiveServer open<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Open the current page in a browser",
-})
-
-vim.keymap.set("n", "zsl", "<cmd>LiveServer logs<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Tail live server output",
-})
-
-vim.keymap.set("n", "zsr", "<cmd>LiveServer restart<CR>", {
-    noremap = true,
-    silent = true,
-    desc = "Restart live server on the same port",
-})
-
 
 -- ============================================================
 -- Flash Search

@@ -41,13 +41,20 @@ local entries = {
     { "Terminal", "<C-v> → i", "t", "Jump through output, then edit at the cursor", "terminal_normal" },
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable buffer", "terminal_edit" },
     { "Terminal", "<C-q>", "n/t", "Close the current terminal", "close_terminal" },
-    { "Terminal", "<leader>t", "n", "Create a terminal" },
-    { "Terminal", "<leader>v", "n", "Create a split terminal" },
-    { "Terminal", "zt", "n", "Choose a terminal" },
+    { "Terminal", "<leader>t", "n", "Open terminal action selector" },
 
-    { "Git", "zg", "n/t", "Open or focus LazyGit in the editor" },
-    { "Git", "zgd", "n", "Review changed files" },
-    { "Git", "zgh", "n", "Browse repository history" },
+    { "Git", "zg", "n", "Open Git action selector" },
+
+    { "Debug", "zd", "n", "Open debug action selector" },
+    { "Debug", "<F5>", "n", "Start or continue debugging" },
+    { "Debug", "<F9>", "n", "Toggle breakpoint" },
+    { "Debug", "<F10>", "n", "Step over" },
+    { "Debug", "<F11>", "n", "Step into" },
+    { "Debug", "<F12>", "n", "Step out" },
+
+    { "Tools", "zl", "n", "Open LeetCode action selector" },
+    { "Tools", "zs", "n", "Open live-server action selector" },
+    { "Tools", "<leader>x", "n/x", "Open Xcode action selector" },
 
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>qn", "n", "Open quick notes" },

@@ -342,7 +342,7 @@ local function update_swift_package()
 
     if not root then
         notify(
-            "No Package.swift found. Use <leader>xu to resolve packages for an Xcode project.",
+            "No Package.swift found. Use <leader>x and choose Resolve packages for an Xcode project.",
             vim.log.levels.WARN
         )
         return
@@ -526,105 +526,6 @@ local function setup_once(sourcekit_client_name)
     return true
 end
 
-local function map(bufnr, mode, lhs, rhs, desc)
-    vim.keymap.set(mode, lhs, rhs, {
-        buffer = bufnr,
-        silent = true,
-        desc = desc,
-    })
-end
-
-local function add_xcodebuild_mappings(bufnr)
-    local mappings = {
-        { "<leader>xl", "<cmd>XcodebuildPicker<CR>",                 "Xcode: action picker" },
-        { "<leader>xs", "<cmd>XcodebuildSetup<CR>",                  "Xcode: setup project" },
-        { "<leader>xp", "<cmd>XcodebuildSelectScheme<CR>",           "Xcode: select scheme" },
-        { "<leader>xd", "<cmd>XcodebuildSelectDevice<CR>",           "Xcode: select device" },
-        { "<leader>xP", "<cmd>XcodebuildSelectTestPlan<CR>",         "Xcode: select test plan" },
-        { "<leader>xi", "<cmd>XcodebuildShowConfig<CR>",             "Xcode: show configuration" },
-
-        { "<leader>xb", "<cmd>XcodebuildBuild<CR>",                  "Xcode: build" },
-        { "<leader>xB", "<cmd>XcodebuildCleanBuild<CR>",             "Xcode: clean build" },
-        { "<leader>xr", "<cmd>XcodebuildBuildRun<CR>",               "Xcode: build and run" },
-        { "<leader>xR", "<cmd>XcodebuildRun<CR>",                    "Xcode: run without building" },
-        { "<leader>xf", "<cmd>XcodebuildBuildForTesting<CR>",        "Xcode: build for testing" },
-        { "<leader>xk", "<cmd>XcodebuildCancel<CR>",                 "Xcode: cancel action" },
-        { "<leader>xD", "<cmd>XcodebuildCleanDerivedData<CR>",       "Xcode: clean DerivedData" },
-
-        { "<leader>xt", "<cmd>XcodebuildTest<CR>",                   "Xcode: run all tests" },
-        { "<leader>xn", "<cmd>XcodebuildTestNearest<CR>",            "Xcode: run nearest test" },
-        { "<leader>xT", "<cmd>XcodebuildTestClass<CR>",              "Xcode: run test class" },
-        { "<leader>xF", "<cmd>XcodebuildTestFailing<CR>",            "Xcode: rerun failing tests" },
-        { "<leader>x.", "<cmd>XcodebuildTestRepeat<CR>",             "Xcode: repeat last tests" },
-        { "<leader>xe", "<cmd>XcodebuildTestExplorerToggle<CR>",     "Xcode: toggle test explorer" },
-
-        { "<leader>xg", "<cmd>XcodebuildToggleLogs<CR>",             "Xcode: toggle logs" },
-        { "<leader>xc", "<cmd>XcodebuildToggleCodeCoverage<CR>",     "Xcode: toggle coverage" },
-        { "<leader>xC", "<cmd>XcodebuildShowCodeCoverageReport<CR>", "Xcode: coverage report" },
-
-        { "<leader>xm", "<cmd>XcodebuildProjectManager<CR>",         "Xcode: project manager" },
-        { "<leader>xo", "<cmd>XcodebuildOpenInXcode<CR>",            "Xcode: open in Xcode" },
-        { "<leader>xa", "<cmd>XcodebuildCodeActions<CR>",            "Xcode: code actions" },
-        { "<leader>xM", "<cmd>XcodebuildApproveMacros<CR>",          "Xcode: approve macros" },
-
-        { "<leader>xu", "<cmd>XcodebuildResolvePackages<CR>",        "Xcode: resolve packages" },
-        { "<leader>xU", "<cmd>SwiftPackageUpdate<CR>",               "SwiftPM: update package versions" },
-    }
-
-    for _, mapping in ipairs(mappings) do
-        map(bufnr, "n", mapping[1], mapping[2], mapping[3])
-    end
-
-    map(
-        bufnr,
-        "v",
-        "<leader>xt",
-        "<cmd>XcodebuildTestSelected<CR>",
-        "Xcode: run selected tests"
-    )
-end
-
-local function add_debugger_mappings(bufnr)
-    local dap = debugger.dap
-    local dapui = debugger.dapui
-    local xdap = debugger.xcodebuild
-
-    if not dap or not xdap then
-        return
-    end
-
-    map(bufnr, "n", "zdd", xdap.build_and_debug, "Debug: build and start")
-    map(bufnr, "n", "zdr", xdap.debug_without_build, "Debug: start without build")
-    map(bufnr, "n", "zda", xdap.attach_and_debug, "Debug: attach to running app")
-    map(bufnr, "n", "zdt", xdap.debug_func_test, "Debug: nearest test")
-    map(bufnr, "n", "zdT", xdap.debug_class_tests, "Debug: test class")
-
-    map(bufnr, "n", "<leader>db", xdap.toggle_breakpoint, "Debug: toggle breakpoint")
-    map(bufnr, "n", "<leader>dB", function()
-        local condition = vim.fn.input("Breakpoint condition: ")
-        if condition ~= "" then
-            dap.set_breakpoint(condition)
-            xdap.save_breakpoints()
-        end
-    end, "Debug: conditional breakpoint")
-    map(bufnr, "n", "<leader>dm", xdap.toggle_message_breakpoint, "Debug: logpoint")
-
-    map(bufnr, "n", "<leader>dc", dap.continue, "Debug: continue")
-    map(bufnr, "n", "<leader>dn", dap.step_over, "Debug: step over")
-    map(bufnr, "n", "<leader>di", dap.step_into, "Debug: step into")
-    map(bufnr, "n", "<leader>do", dap.step_out, "Debug: step out")
-    map(bufnr, "n", "<leader>dp", dap.pause, "Debug: pause")
-    map(bufnr, "n", "<leader>dx", xdap.terminate_session, "Debug: terminate")
-
-    if dapui then
-        map(bufnr, "n", "<leader>du", dapui.toggle, "Debug: toggle UI")
-        map(bufnr, { "n", "v" }, "<leader>de", dapui.eval, "Debug: evaluate expression")
-    end
-
-    -- setup() installs a BufReadPost loader, but this buffer is already open.
-    pcall(xdap.load_breakpoints, bufnr)
-end
-
 vim.api.nvim_create_autocmd("LspAttach", {
     group = group,
     callback = function(args)
@@ -643,13 +544,10 @@ vim.api.nvim_create_autocmd("LspAttach", {
             return
         end
 
-        if vim.b[bufnr].xcodebuild_mappings_attached then
-            return
-        end
-        vim.b[bufnr].xcodebuild_mappings_attached = true
-
-        add_xcodebuild_mappings(bufnr)
-        add_debugger_mappings(bufnr)
+        -- setup() installs a BufReadPost loader, but this buffer is already
+        -- open. Actions themselves live in the searchable <leader>x and zd
+        -- selectors instead of creating dozens of buffer-local keymaps.
+        if debugger.xcodebuild then pcall(debugger.xcodebuild.load_breakpoints, bufnr) end
     end,
 })
 

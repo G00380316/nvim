@@ -233,25 +233,6 @@ vim.api.nvim_create_autocmd("User", {
     desc = "Load workspace debug configurations",
 })
 
--- Debug mappings follow the config's existing z-prefix style.
-vim.keymap.set("n", "zdb", dap.toggle_breakpoint, { desc = "Debug: Toggle breakpoint" })
-vim.keymap.set("n", "zdc", dap.continue, { desc = "Debug: Start/continue" })
-vim.keymap.set("n", "zdn", dap.step_over, { desc = "Debug: Step over" })
-vim.keymap.set("n", "zdi", dap.step_into, { desc = "Debug: Step into" })
-vim.keymap.set("n", "zdo", dap.step_out, { desc = "Debug: Step out" })
-vim.keymap.set("n", "zdr", dap.repl.open, { desc = "Debug: Open REPL" })
-vim.keymap.set("n", "zdu", dapui.open, { desc = "Debug: Open UI" })
-vim.keymap.set("n", "zdl", dap.run_last, { desc = "Debug: Run last" })
-vim.keymap.set("n", "zdx", function()
-    dap.terminate()
-    dapui.close()
-end, { desc = "Debug: Stop" })
-vim.keymap.set({ "n", "v" }, "zde", dapui.eval, { desc = "Debug: Evaluate" })
-vim.keymap.set("n", "zdv", function()
-    require("osv").launch({ port = 8086 })
-    vim.defer_fn(function() dap.run(dap.configurations.lua[1]) end, 100)
-end, { desc = "Debug: This Neovim Lua" })
-
 return {
     dap = dap,
     dapui = dapui,

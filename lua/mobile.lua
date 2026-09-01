@@ -218,9 +218,8 @@ local function render()
     local lines = {
         " Mobile Device Hub",
         " Workspace  " .. root,
-        " <Enter> boot/focus   R run project   x stop   r refresh   <C-c> close",
-        " u update packages    c reset package caches    p pin package version   a android SDK setup",
-        " s screenshot   U uninstall   e erase/wipe   o open URL   l logs   / filter",
+        " <Enter> boot/focus   R run project   x stop   r refresh   a actions   <C-c> close",
+        " / filter   <C-l> clear filter",
     }
     if state.filter then
         lines[#lines + 1] = " Filter: " .. state.filter .. "  (/ to change, <C-l> to clear)"
@@ -1416,6 +1415,24 @@ local function close()
     state.win = nil
 end
 
+local function open_hub_actions()
+    require("action_menus").pick({
+        title = "Mobile Device Actions",
+        icon = "󰀲",
+        actions = {
+            { label = "Update packages", detail = "Resolve project dependencies to current versions", run = update_packages },
+            { label = "Reset package caches", detail = "Clear package caches and resolve again", run = reset_package_caches },
+            { label = "Pin package version", detail = "Choose a package version, branch or revision", run = pick_package_version },
+            { label = "Set up Android SDK", detail = "Install or update the SDK and Pixel AVD", run = android_setup },
+            { label = "Take screenshot", detail = "Capture the selected device", run = screenshot_device },
+            { label = "Uninstall app", detail = "Remove this project's app from the device", run = uninstall_app },
+            { label = "Erase device", detail = "Wipe the selected simulator or emulator", run = erase_device },
+            { label = "Open URL", detail = "Open a deep link on the selected device", run = open_deep_link },
+            { label = "Stream logs", detail = "Open live logs for the selected device", run = stream_logs },
+        },
+    })
+end
+
 function M.open()
     if is_open() then
         vim.api.nvim_set_current_win(state.win)
@@ -1451,15 +1468,7 @@ function M.open()
     vim.keymap.set("n", "<CR>", focus_or_boot, opts)
     vim.keymap.set("n", "R", run_project, opts)
     vim.keymap.set("n", "x", stop_device, opts)
-    vim.keymap.set("n", "u", update_packages, opts)
-    vim.keymap.set("n", "c", reset_package_caches, opts)
-    vim.keymap.set("n", "p", pick_package_version, opts)
-    vim.keymap.set("n", "a", android_setup, opts)
-    vim.keymap.set("n", "s", screenshot_device, opts)
-    vim.keymap.set("n", "U", uninstall_app, opts)
-    vim.keymap.set("n", "e", erase_device, opts)
-    vim.keymap.set("n", "o", open_deep_link, opts)
-    vim.keymap.set("n", "l", stream_logs, opts)
+    vim.keymap.set("n", "a", open_hub_actions, opts)
     vim.keymap.set("n", "/", set_filter, opts)
     vim.keymap.set("n", "<C-l>", clear_filter, opts)
 

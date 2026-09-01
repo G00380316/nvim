@@ -220,6 +220,7 @@ require("plugins")
 require("debugger_bootstrap")
 require("mobile").setup()
 require("terminals").setup()
+require("action_menus").setup()
 require("autocmd")
 require("mappings")
 
