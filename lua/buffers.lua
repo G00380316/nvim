@@ -16,10 +16,24 @@ function M.is_editor(buf)
         and (vim.api.nvim_buf_get_name(buf) ~= "" or vim.bo[buf].modified)
 end
 
-function M.list()
+function M.belongs_to_workspace(buf, project)
+    if not M.is_editor(buf) then return false end
+
+    project = vim.fs.normalize(project or require("workspace").get())
+    local name = vim.api.nvim_buf_get_name(buf)
+    if name == "" then
+        return vim.b[buf].workspace_root == project
+    end
+
+    name = vim.uv.fs_realpath(name) or vim.fn.fnamemodify(name, ":p")
+    name = vim.fs.normalize(name)
+    return name == project or name:sub(1, #project + 1) == project .. "/"
+end
+
+function M.list(project)
     local buffers = {}
     for _, info in ipairs(vim.fn.getbufinfo({ buflisted = 1 })) do
-        if M.is_editor(info.bufnr) then buffers[#buffers + 1] = info.bufnr end
+        if M.belongs_to_workspace(info.bufnr, project) then buffers[#buffers + 1] = info.bufnr end
     end
     return buffers
 end
@@ -65,7 +79,7 @@ end
 
 function M.replacement(current)
     local candidates = vim.tbl_filter(function(info)
-        return info.bufnr ~= current and M.is_editor(info.bufnr)
+        return info.bufnr ~= current and M.belongs_to_workspace(info.bufnr)
     end, vim.fn.getbufinfo({ buflisted = 1 }))
     table.sort(candidates, function(a, b) return a.lastused > b.lastused end)
     return candidates[1] and candidates[1].bufnr or nil

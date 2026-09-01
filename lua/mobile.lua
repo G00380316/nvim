@@ -218,7 +218,7 @@ local function render()
     local lines = {
         " Mobile Device Hub",
         " Workspace  " .. root,
-        " <Enter> boot/focus   R run project   x stop   r refresh   q hide",
+        " <Enter> boot/focus   R run project   x stop   r refresh   <C-c> close",
         " u update packages    c reset package caches    p pin package version   a android SDK setup",
         " s screenshot   U uninstall   e erase/wipe   o open URL   l logs   / filter",
     }
@@ -814,8 +814,8 @@ local function open_hub_terminal(root, title, command, on_exit)
     vim.wo[win].winhighlight = "WinSeparator:OilWinSeparator"
     state.term_win, state.term_buf = win, buf
 
-    -- Authoritative safety net: whatever closes this window — the q keymap
-    -- below, a generic <C-w>c/:close, or open_hub_terminal replacing it with
+    -- Authoritative safety net: whatever closes this window — Ctrl-Q, an Ex
+    -- command, or open_hub_terminal replacing it with
     -- a new command — focus always lands back on the hub, never on whatever
     -- window happened to be behind it.
     vim.api.nvim_create_autocmd("WinClosed", {
@@ -867,7 +867,11 @@ local function open_hub_terminal(root, title, command, on_exit)
         vim.cmd("stopinsert")
         restore_hub_focus()
     end, { buffer = buf, silent = true })
-    vim.keymap.set("n", "q", close_hub_terminal, { buffer = buf, silent = true })
+    vim.keymap.set({ "n", "t" }, "<C-q>", close_hub_terminal, {
+        buffer = buf,
+        silent = true,
+        desc = "Close the mobile command output",
+    })
 
     vim.cmd("startinsert")
 end
@@ -1442,8 +1446,7 @@ function M.open()
     vim.wo[state.win].wrap = false
 
     local opts = { buffer = state.buf, silent = true, nowait = true }
-    vim.keymap.set("n", "q", close, opts)
-    vim.keymap.set("n", "<Esc>", close, opts)
+    vim.keymap.set("n", "<C-c>", close, opts)
     vim.keymap.set("n", "r", function() M.refresh() end, opts)
     vim.keymap.set("n", "<CR>", focus_or_boot, opts)
     vim.keymap.set("n", "R", run_project, opts)
@@ -1473,11 +1476,7 @@ function M.open()
 end
 
 function M.toggle()
-    if is_open() then
-        close()
-    else
-        M.open()
-    end
+    M.open()
 end
 
 function M.setup()
@@ -1486,10 +1485,10 @@ function M.setup()
     -- loads correctly here rather than waiting for the first hub action.
     ensure_xcodebuild_initialized()
 
-    vim.api.nvim_create_user_command("MobileDevices", M.toggle, {
-        desc = "Toggle the workspace mobile device hub",
+    vim.api.nvim_create_user_command("MobileDevices", M.open, {
+        desc = "Open or focus the workspace mobile device hub",
     })
-    vim.keymap.set("n", "zmm", M.toggle, { desc = "Mobile device hub" })
+    vim.keymap.set("n", "zmm", M.open, { desc = "Open/focus mobile device hub" })
 
     vim.api.nvim_create_user_command("XcodeUpdatePackages", update_packages, {
         desc = "Delete Package.resolved and re-resolve SPM dependencies to their latest versions",

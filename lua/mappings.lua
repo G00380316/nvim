@@ -341,21 +341,30 @@ local function close_editor_buffer(buf)
     return true
 end
 
-local function quit()
+local function close_current()
     local buf = vim.api.nvim_get_current_buf()
-    local name = vim.api.nvim_buf_get_name(buf)
-    local modified = vim.bo[buf].modified
     local buftype = vim.bo[buf].buftype
+    local filetype = vim.bo[buf].filetype
     local mode = vim.fn.mode()
 
-    -- 1. Exit terminal mode cleanly first
+    -- Leave modal editing states before changing buffers or windows.
     if mode == "t" then
         vim.cmd("stopinsert")
     elseif mode == "i" then
         vim.cmd("stopinsert")
+    elseif mode:match("[vV\22]") then
+        vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
     end
 
-    -- 2. Handle floating windows
+    -- Closing the dashboard used to call :qa. It is now a permanent safe
+    -- landing buffer, so a close key can never terminate the Neovim process.
+    if filetype == "snacks_dashboard" then
+        vim.notify("Nothing to close — use :q, :qa, or :qa! to exit Neovim", vim.log.levels.INFO)
+        return
+    end
+
+    -- Floating tool windows can always be dismissed without affecting the
+    -- application process.
     local win_config = vim.api.nvim_win_get_config(0)
     if win_config.relative ~= "" then
         if buftype == "terminal" then
@@ -375,7 +384,7 @@ local function quit()
         return
     end
 
-    -- 3. Plugin-specific exits
+    -- Plugin-specific exits restore their replaced editor buffer correctly.
     local in_diffview = false
     pcall(function()
         in_diffview = require("diffview.lib").get_current_view() ~= nil
@@ -385,40 +394,49 @@ local function quit()
         return
     end
 
-    if pcall(vim.cmd, "Leet exit") then
+    if vim.g.leetcode_active == true then
+        pcall(vim.cmd, "Leet exit")
         return
     end
 
-    -- 4. Empty starter buffer -> quit nvim
-    if name == "" and not modified and buftype == "" then
-        pcall(vim.cmd, "qa")
-        return
-    end
-
-    -- 5. Standard close logic
-    local wins = vim.fn.win_findbuf(buf)
-
-    if #wins > 1 then
+    if buftype == "terminal" then
+        local job_id = vim.b[buf].terminal_job_id
+        if job_id then pcall(vim.fn.jobstop, job_id) end
+        pcall(vim.cmd, "bd!")
+    elseif buftype == "quickfix" then
+        pcall(vim.cmd, "cclose")
+    elseif filetype == "oil" then
         pcall(vim.cmd, "close")
-    else
-        if buftype == "terminal" then
-            local job_id = vim.b[buf].terminal_job_id
-
-            if job_id then
-                pcall(vim.fn.jobstop, job_id)
-            end
-
-            pcall(vim.cmd, "bd!")
-        elseif vim.bo[buf].filetype == "oil" then
-            pcall(vim.cmd, "close")
+    elseif buftype ~= "" then
+        if #vim.api.nvim_tabpage_list_wins(0) > 1 then
+            pcall(vim.cmd, "confirm close")
         else
-            if not close_editor_buffer(buf) then
-                return
+            close_editor_buffer(buf)
+        end
+    else
+        local editor_windows = 0
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            local win_buf = vim.api.nvim_win_get_buf(win)
+            local config = vim.api.nvim_win_get_config(win)
+            if config.relative == ""
+                and vim.bo[win_buf].buftype == ""
+                and vim.bo[win_buf].filetype ~= "oil"
+            then
+                editor_windows = editor_windows + 1
             end
+        end
+
+        -- In a split, close the pane first and keep its buffer available. In
+        -- the final editor pane, close the buffer and reveal a replacement.
+        if editor_windows > 1 then
+            local ok = pcall(vim.cmd, "confirm close")
+            if not ok then return end
+        elseif not close_editor_buffer(buf) then
+            return
         end
     end
 
-    -- 6. Rebalance layout, then restore the parts `wincmd =` does not respect
+    -- Rebalance the remaining layout after a successful close.
     vim.schedule(function()
         pcall(vim.cmd, "wincmd =")
         pcall(vim.cmd, "LayoutEnforce")
@@ -633,16 +651,6 @@ end, {
 local function cycle_editor_buffer(direction)
     require("buffers").cycle(direction)
 end
-
-vim.keymap.set("n", "<C-]>", function() cycle_editor_buffer(1) end, {
-    silent = true,
-    desc = "Next editor buffer",
-})
-
-vim.keymap.set("n", "<C-[>", function() cycle_editor_buffer(-1) end, {
-    silent = true,
-    desc = "Previous editor buffer",
-})
 
 vim.keymap.set("n", "<Tab>", function() cycle_editor_buffer(1) end, {
     silent = true,
@@ -877,15 +885,34 @@ end, {
 })
 
 vim.keymap.set("n", "<leader>k", function()
+    require("workflow_keymaps").open()
+end, {
+    desc = "My Neovim workflow keymaps",
+})
+
+vim.keymap.set("n", "<leader>K", function()
     Snacks.picker.keymaps()
 end, {
-    desc = "Search keymaps",
+    desc = "Search every active keymap",
+})
+
+vim.keymap.set({ "n", "i", "x", "t" }, "<C-\\>", function()
+    require("workflow_keymaps").open()
+end, {
+    noremap = true,
+    silent = true,
+    desc = "Open my Neovim commands from any mode",
 })
 
 vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
     Snacks.picker.buffers({
         sort_mru = true,
         current = true,
+        filter = {
+            filter = function(item)
+                return require("buffers").belongs_to_workspace(item.buf)
+            end,
+        },
     })
 end, {
     desc = "Choose buffer",
@@ -895,13 +922,6 @@ vim.keymap.set("n", "/", function()
     Snacks.picker.lines({
         layout = {
             preview = false,
-        },
-        win = {
-            input = {
-                keys = {
-                    ["<C-c>"] = { "close", mode = { "n", "i" } },
-                },
-            },
         },
     })
 end, {
@@ -913,7 +933,7 @@ end, {
 -- Project / Directory Navigation
 -- ============================================================
 
-vim.keymap.set("n", "<leader>w", function()
+local function choose_workspace_folder()
     Snacks.picker.explorer({
         title = "Choose Folder as Workspace  ·  l expand  ·  Enter choose",
         cwd = vim.fn.expand("~/"),
@@ -945,7 +965,9 @@ vim.keymap.set("n", "<leader>w", function()
             },
         },
     })
-end, {
+end
+
+vim.keymap.set("n", "<leader>w", choose_workspace_folder, {
     desc = "Choose folder as workspace",
 })
 
@@ -955,46 +977,73 @@ end, {
     desc = "Find user files",
 })
 
-vim.keymap.set("n", "<C-o>", function()
-    local dev = {}
-    for _, path in ipairs({
-        "~/Documents/Github",
-        "~/Library/Mobile Documents/com~apple~CloudDocs",
-        "~/dev",
-        "~/projects",
-    }) do
-        path = vim.fn.expand(path)
-        if vim.fn.isdirectory(path) == 1 then
-            dev[#dev + 1] = path
-        end
+local function open_project_switcher()
+    local workspace = require("workspace")
+    local current = workspace.get()
+    local items = {}
+
+    for _, path in ipairs(workspace.recent(20)) do
+        local name = vim.fs.basename(path)
+        local is_current = path == current
+        local is_open = workspace.is_open(path)
+        items[#items + 1] = {
+            text = table.concat({ name, path, is_current and "current" or is_open and "open" or "" }, " "),
+            name = name,
+            file = path,
+            current = is_current,
+            open = is_open,
+        }
     end
 
-    Snacks.picker.projects({
-        title = "Open Workspace",
-        dev = dev,
-        projects = { require("workspace").get() },
-        recent = true,
-        max_depth = 3,
-        patterns = {
-            ".git",
-            ".hg",
-            ".project",
-            "package.json",
-            "pyproject.toml",
-            "Cargo.toml",
-            "go.mod",
-            "Makefile",
-        },
+    items[#items + 1] = {
+        text = "browse another folder workspace",
+        name = "Browse for another folder…",
+        browse = true,
+    }
+
+    Snacks.picker.pick({
+        title = "Switch Project  ·  live contexts stay open",
+        items = items,
+        preview = false,
+        layout = { preset = "vscode" },
+        format = function(item)
+            if item.browse then
+                return {
+                    { "󰉋  ", "Directory" },
+                    { item.name, "SnacksPickerLabel" },
+                }
+            end
+
+            local status = item.current and "CURRENT" or item.open and "OPEN   " or "       "
+            return {
+                { status, item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
+                { "  " },
+                { Snacks.picker.util.align(item.name, 24), "SnacksPickerFile" },
+                { "  " },
+                { vim.fn.fnamemodify(item.file, ":~"), "SnacksPickerDir" },
+            }
+        end,
         confirm = function(picker, item)
             picker:close()
             if not item then return end
+
             vim.schedule(function()
-                require("workspace").open(item.file, { exact = true })
+                if item.browse then
+                    choose_workspace_folder()
+                elseif not item.current then
+                    workspace.open(item.file, { exact = true })
+                end
             end)
         end,
     })
-end, {
-    desc = "Open workspace",
+end
+
+vim.keymap.set("n", "<leader>p", open_project_switcher, {
+    desc = "Switch live project context",
+})
+
+vim.keymap.set("n", "<C-o>", open_project_switcher, {
+    desc = "Switch live project context",
 })
 
 vim.keymap.set("n", "go", open_in_file_manager, {
@@ -1038,16 +1087,81 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", save_current_file, {
     desc = "Save",
 })
 
-vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", quit, {
+local function close_nonterminal()
+    if vim.bo.buftype == "terminal" then
+        vim.notify("Use Ctrl-Q to close terminals", vim.log.levels.INFO)
+        return
+    end
+    close_current()
+end
+
+local function close_terminal()
+    if vim.bo.buftype ~= "terminal" then
+        vim.notify("Ctrl-Q closes terminals; use Ctrl-C here", vim.log.levels.INFO)
+        return
+    end
+    close_current()
+end
+
+vim.keymap.set({ "n", "v", "i" }, "<C-c>", close_nonterminal, {
     noremap = true,
     silent = true,
-    desc = "Smart close / quit",
+    desc = "Close non-terminal buffer or pane (never exit Neovim)",
 })
 
-vim.keymap.set("n", "q", quit, {
+vim.keymap.set({ "n", "v", "t" }, "<C-q>", close_terminal, {
     noremap = true,
     silent = true,
-    desc = "Smart close / quit",
+    desc = "Close terminal (never exit Neovim)",
+})
+
+-- Ctrl-C owns non-terminal closing and Ctrl-Q owns terminal closing. These
+-- built-in normal-mode shortcuts can close
+-- panes or the application, so leave exiting to explicit :q/:qa/:qa! commands.
+for _, lhs in ipairs({ "<C-w>q", "<C-w>c", "ZZ", "ZQ" }) do
+    vim.keymap.set("n", lhs, "<Nop>", {
+        silent = true,
+        desc = "Disabled: use Ctrl-C (Ctrl-Q in terminals) to close",
+    })
+end
+
+-- Runtime ftplugins commonly add q/Esc/C-q shortcuts that silently run
+-- :quit, :bdelete, or a close action. Neutralize only those close-like local
+-- mappings; editing/navigation meanings are left alone, and terminal programs
+-- keep ownership of their own keys.
+local function enforce_close_key_contract(buf)
+    if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype == "terminal" then return end
+
+    vim.api.nvim_buf_call(buf, function()
+        for _, mode in ipairs({ "n", "i" }) do
+            for _, lhs in ipairs({ "q", "<Esc>", "<C-q>" }) do
+                local map = vim.fn.maparg(lhs, mode, false, true)
+                if map.buffer == 1 then
+                    local meaning = ((map.desc or "") .. " " .. (map.rhs or "")):lower()
+                    local closes = meaning:find("close", 1, true)
+                        or meaning:find("quit", 1, true)
+                        or meaning:find("cancel", 1, true)
+                        or meaning:find("bdelete", 1, true)
+                        or meaning:find("<cmd>bd", 1, true)
+                    if closes and map.rhs ~= "<Nop>" then
+                        vim.keymap.set(mode, lhs, "<Nop>", {
+                            buffer = buf,
+                            silent = true,
+                            desc = "Disabled: use Ctrl-C to close",
+                        })
+                    end
+                end
+            end
+        end
+    end)
+end
+
+vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
+    group = vim.api.nvim_create_augroup("UniversalCloseKeys", { clear = true }),
+    callback = function(args)
+        vim.schedule(function() enforce_close_key_contract(args.buf) end)
+    end,
+    desc = "Reserve Ctrl-C for buffers and panes and Ctrl-Q for terminals",
 })
 
 -- Deliberately change the workspace instead of creating a temporary cwd.
@@ -1061,7 +1175,7 @@ end, { desc = "Use current file's project as workspace" })
 
 vim.keymap.set("t", "<C-v>", "<C-\\><C-n>", {
     noremap = true,
-    desc = "Exit terminal mode",
+    desc = "Browse and yank terminal output with normal motions",
 })
 
 vim.keymap.set("c", "<CR>", function()
@@ -1127,19 +1241,11 @@ vim.keymap.set("n", "<leader>qn", function()
     end
 
     pcall(vim.cmd, "EditorFocus")
-    vim.cmd(
-        "FloatermNew"
-        .. " --height=0.85"
-        .. " --width=0.85"
-        .. " --title=QuickNotes"
-        .. " --autoclose=2"
-        .. " nvim "
-        .. vim.fn.fnameescape(notes)
-    )
+    vim.cmd("edit " .. vim.fn.fnameescape(notes))
 end, {
     noremap = true,
     silent = true,
-    desc = "Quick notes",
+    desc = "Open quick notes in this Neovim instance",
 })
 
 -- ============================================================
@@ -1147,23 +1253,11 @@ end, {
 -- ============================================================
 
 vim.keymap.set("n", "zlo", function()
-    vim.fn.jobstart({
-        "kitty",
-        "@",
-        "launch",
-        "--cwd",
-        vim.fn.getcwd(),
-        "--type",
-        "tab",
-        "nvim",
-        "+Leet",
-    }, {
-        detach = true,
-    })
+    vim.cmd("Leet")
 end, {
     noremap = true,
     silent = true,
-    desc = "Open Leet in Kitty tab",
+    desc = "Open Leet in this Neovim instance",
 })
 
 vim.keymap.set("n", "zlt", "<cmd>Leet Run<CR>", {

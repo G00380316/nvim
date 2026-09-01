@@ -167,7 +167,6 @@ require("snacks").setup({
                 },
                 { icon = " ", key = "n", desc = "New File", action = ":ene | startinsert" },
                 { icon = " ", key = "t", desc = "Terminal", action = "<C-t>" },
-                { icon = " ", key = "q", desc = "Quit", action = ":confirm qa" },
             },
         },
         sections = {
@@ -201,9 +200,28 @@ require("snacks").setup({
         win = {
             input = {
                 keys = {
-                    ["<C-d>"] = { "bufdelete", mode = { "n", "i" } },
+                    ["<C-c>"] = { "cancel", mode = { "n", "i" } },
+                    ["<C-q>"] = { function() end, mode = { "n", "i" }, desc = "Ctrl-Q closes terminals only" },
+                    ["<Esc>"] = { "focus_list", mode = { "n", "i" } },
+                    ["q"] = { function() end, mode = "n", desc = "Use Ctrl-C to close" },
                     ["<Space>l"] = { "flash", mode = { "n", "i" } },
                     ["s"] = { "flash" },
+                },
+            },
+            list = {
+                keys = {
+                    ["<C-c>"] = "cancel",
+                    ["<C-q>"] = { function() end, desc = "Ctrl-Q closes terminals only" },
+                    ["<Esc>"] = "focus_input",
+                    ["q"] = { function() end, desc = "Use Ctrl-C to close" },
+                },
+            },
+            preview = {
+                keys = {
+                    ["<C-c>"] = "cancel",
+                    ["<C-q>"] = { function() end, desc = "Ctrl-Q closes terminals only" },
+                    ["<Esc>"] = "focus_list",
+                    ["q"] = { function() end, desc = "Use Ctrl-C to close" },
                 },
             },
         },
@@ -250,24 +268,15 @@ require("snacks").setup({
     },
 })
 
--- A dashboard is the permanent empty editor zone, so closing it should quit
--- Neovim rather than let the fixed sidebar or terminal consume its space.
+-- The dashboard is the permanent empty editor zone. It is never a mapped exit
+-- point; Ctrl-C handles it as a safe no-op instead of terminating Neovim.
 vim.api.nvim_create_autocmd("User", {
     pattern = "SnacksDashboardOpened",
     callback = function()
         local buf = vim.api.nvim_get_current_buf()
         if vim.bo[buf].filetype == "snacks_dashboard" then
             require("editor_filler").keep_single(buf)
-            vim.keymap.set("n", "q", "<cmd>confirm qa<CR>", {
-                buffer = buf,
-                silent = true,
-                desc = "Quit from empty workspace dashboard",
-            })
-            vim.keymap.set("n", "<C-q>", "<cmd>confirm qa<CR>", {
-                buffer = buf,
-                silent = true,
-                desc = "Quit from empty workspace dashboard",
-            })
+            pcall(vim.keymap.del, "n", "q", { buffer = buf })
         end
     end,
     desc = "Keep the dashboard as the editor-area filler",
@@ -370,7 +379,7 @@ end
 local function focus_terminal()
     local current = vim.api.nvim_get_current_win()
     if window_filetype(current) == "floaterm" then
-        vim.cmd("FloatermToggle")
+        focus_editor()
         return
     end
 
@@ -446,25 +455,6 @@ local function close_oil_sidebar()
     if win then vim.api.nvim_win_close(win, true) end
 end
 
--- The explorer must never be fully closable, only hidden (<C-e> always brings
--- it back). q/<C-c> already route through close_oil_sidebar; this guards the
--- remaining native ways to lose the window: window-close commands and typing
--- :q/:qa while it's the focused window.
-vim.api.nvim_create_user_command("OilSidebarQuitGuard", function()
-    close_oil_sidebar()
-    vim.notify("The explorer sidebar only hides, it never quits — use <C-e> to reopen, or quit from the dashboard",
-        vim.log.levels.INFO)
-end, { desc = "Hide the persistent Oil sidebar instead of closing/quitting" })
-
-vim.cmd(
-    [[cnoreabbrev <expr> q (getcmdtype() ==# ':' && getcmdline() ==# 'q' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'q']])
-vim.cmd(
-    [[cnoreabbrev <expr> qa (getcmdtype() ==# ':' && getcmdline() ==# 'qa' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'qa']])
-vim.cmd(
-    [[cnoreabbrev <expr> q! (getcmdtype() ==# ':' && getcmdline() ==# 'q!' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'q!']])
-vim.cmd(
-    [[cnoreabbrev <expr> qa! (getcmdtype() ==# ':' && getcmdline() ==# 'qa!' && &filetype ==# 'oil') ? 'OilSidebarQuitGuard' : 'qa!']])
-
 oil.setup({
     default_file_explorer = true,
     watch_for_changes = true,
@@ -502,7 +492,6 @@ oil.setup({
         ["<C-t>"] = focus_terminal,
         ["<C-p>"] = "actions.preview",
         ["<C-c>"] = close_oil_sidebar,
-        ["q"] = close_oil_sidebar,
         ["<Space>l"] = "actions.refresh",
         ["<BS>"] = { "actions.parent", mode = "n" },
         ["gr"] = { "actions.open_cwd", mode = "n" },
@@ -663,7 +652,7 @@ end
 local function focus_tree()
     local current = vim.api.nvim_get_current_win()
     if window_filetype(current) == "oil" then
-        close_oil_sidebar()
+        focus_editor()
         return
     end
     open_oil_sidebar({ focus = true })
@@ -754,12 +743,6 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
             vim.api.nvim_win_set_width(win, explorer_width)
         end
 
-        -- <C-w>q/<C-w>c/ZZ bypass the q/<C-c> keymaps below since they close the
-        -- window directly; redirect them to the same hide-only path.
-        local guard_opts = { buffer = args.buf, silent = true, nowait = true }
-        vim.keymap.set("n", "<C-w>q", close_oil_sidebar, guard_opts)
-        vim.keymap.set("n", "<C-w>c", close_oil_sidebar, guard_opts)
-        vim.keymap.set("n", "ZZ", close_oil_sidebar, guard_opts)
     end,
     desc = "Lock the project explorer to a compact sidebar width",
 })
@@ -772,11 +755,11 @@ vim.keymap.set({ "n", "i", "v" }, "<C-e>", function()
 end, {
     noremap = true,
     silent = true,
-    desc = "Show/Hide File Explorer",
+    desc = "Open/focus File Explorer",
 })
 
 -- Keep the project explorer present like an IDE sidebar. It stays open when
--- files are selected; q, Ctrl-C, or Ctrl-E explicitly hide it.
+-- files are selected; Ctrl-C is the sole mapped way to hide it.
 vim.api.nvim_create_autocmd("VimEnter", {
     callback = function()
         vim.defer_fn(function()
@@ -903,7 +886,10 @@ vim.g.floaterm_position = "belowright"
 local terminal_height = 12
 vim.g.floaterm_height = terminal_height
 vim.g.floaterm_autoclose = 0
-vim.g.floaterm_autohide = 1
+-- Project contexts keep their own live terminal rows in separate tabpages.
+-- Hiding an existing bottom-position terminal when another project opens one
+-- would destroy the first project's pane layout, even though its job survives.
+vim.g.floaterm_autohide = 0
 vim.g.floaterm_title = "terminal $1/$2"
 
 -- Use the same slim separator language for the bottom panel and sidebar.
@@ -1016,6 +1002,7 @@ end
 vim.api.nvim_create_autocmd("FileType", {
     pattern = "floaterm",
     callback = function()
+        vim.b.floaterm_workspace = vim.b.floaterm_workspace or require("workspace").get()
         local opts = {
             noremap = true,
             silent = true,
@@ -1034,6 +1021,14 @@ vim.api.nvim_create_autocmd("FileType", {
 
         vim.keymap.set({ "n", "t" }, "<C-Up>", function() resize_terminal(3) end, opts)
         vim.keymap.set({ "n", "t" }, "<C-Down>", function() resize_terminal(-3) end, opts)
+        vim.keymap.set("n", "i", function()
+            require("terminals").edit({
+                cursor = vim.api.nvim_win_get_cursor(0),
+                startinsert = true,
+            })
+        end, vim.tbl_extend("force", opts, {
+            desc = "Edit terminal output from the cursor",
+        }))
         vim.keymap.set("n", "<leader>e", function() require("terminals").edit() end,
             vim.tbl_extend("force", opts, { desc = "Edit this terminal's output" }))
     end,
@@ -1065,7 +1060,7 @@ vim.keymap.set({ "n", "t" }, "<C-Right>", cycle_terminal(1),
 vim.keymap.set({ "n", "v", "i" }, "<C-t>", focus_terminal, {
     noremap = true,
     silent = true,
-    desc = "Focus/toggle bottom terminal",
+    desc = "Open/focus bottom terminal",
 })
 
 vim.keymap.set("n", "<Space>t", new_terminal, {
@@ -1103,12 +1098,10 @@ end
 -- shell -- the same trade this config already makes for <C-w>/<C-h>.
 vim.keymap.set("t", "<C-s>", from_terminal(split_terminal),
     { noremap = true, silent = true, desc = "Split the bottom terminal panel in half" })
-vim.keymap.set("t", "<C-\\>", from_terminal(terminal_picker),
-    { noremap = true, silent = true, desc = "List and jump to an open terminal" })
-
 -- Terminal buffers are read-only, so "edit this output" means editing a copy.
--- <C-g> from terminal mode, and <leader>e once <C-v> has dropped you into
--- terminal-normal mode (letters are safe there -- the shell never sees them).
+-- <C-g> works directly from terminal mode. Once <C-v> has entered
+-- terminal-normal mode, jumping to text and pressing i opens an editable copy
+-- at that exact cursor position; a still returns to the live shell.
 vim.keymap.set("t", "<C-g>", from_terminal(function() require("terminals").edit() end),
     { noremap = true, silent = true, desc = "Edit terminal output in a scratch buffer" })
 
@@ -1139,7 +1132,7 @@ vim.keymap.set("t", "<C-a>", from_terminal(new_terminal),
 vim.keymap.set("t", "<C-t>", function()
     vim.cmd("stopinsert")
     focus_terminal()
-end, { silent = true, desc = "Hide bottom terminal" })
+end, { silent = true, desc = "Return to the editor from the terminal" })
 
 vim.keymap.set("t", "<C-e>", function()
     vim.cmd("stopinsert")
@@ -1180,8 +1173,8 @@ vim.api.nvim_create_user_command("FocusEditor", focus_editor_or_last_panel, {
 vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
     desc = "Focus the center editor without toggling back to a panel",
 })
-vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Focus or toggle the file explorer" })
-vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Focus or toggle the terminal" })
+vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Open or focus the file explorer" })
+vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Open or focus the terminal" })
 vim.api.nvim_create_user_command("TerminalNew", new_terminal, { desc = "Open another bottom terminal" })
 vim.api.nvim_create_user_command("TerminalSplit", split_terminal,
     { desc = "Split the bottom terminal panel in half" })
@@ -1211,7 +1204,7 @@ require("diffview").setup({
     },
 })
 
-local lazygit_buf = nil
+local lazygit_buffers = {}
 
 local function close_diffviews()
     pcall(function()
@@ -1261,27 +1254,36 @@ local function restore_editor_after_lazygit(buf)
     end
 end
 
-local function close_lazygit()
-    local buf = lazygit_buf
+local function close_lazygit(buf)
+    buf = buf or lazygit_buffers[require("workspace").get()]
     if not buf or not vim.api.nvim_buf_is_valid(buf) then return end
+    local project = vim.b[buf].lazygit_workspace
     restore_editor_after_lazygit(buf)
     local job = vim.b[buf].terminal_job_id
     if job then pcall(vim.fn.jobstop, job) end
     if vim.api.nvim_buf_is_valid(buf) then
         pcall(vim.api.nvim_buf_delete, buf, { force = true })
     end
-    lazygit_buf = nil
+    if project and lazygit_buffers[project] == buf then lazygit_buffers[project] = nil end
 end
 
-local function toggle_lazygit()
+local function open_lazygit()
     if vim.fn.executable("lazygit") ~= 1 then
         vim.notify("lazygit is not installed", vim.log.levels.ERROR)
         return
     end
 
-    if lazygit_buf and vim.api.nvim_buf_is_valid(lazygit_buf) then
+    local workspace = require("workspace")
+    local project = workspace.get()
+    local lazygit_buf = lazygit_buffers[project]
+    if lazygit_buf and not vim.api.nvim_buf_is_valid(lazygit_buf) then
+        lazygit_buffers[project] = nil
+        lazygit_buf = nil
+    end
+
+    if lazygit_buf then
         if vim.api.nvim_get_current_buf() == lazygit_buf then
-            restore_editor_after_lazygit(lazygit_buf)
+            return
         else
             local win = lazygit_editor_window()
             local current = vim.api.nvim_get_current_buf()
@@ -1292,7 +1294,6 @@ local function toggle_lazygit()
         return
     end
 
-    local workspace = require("workspace")
     local root = workspace.git_root()
     if not root then
         vim.notify("Workspace is not a Git repository: " .. workspace.get(), vim.log.levels.WARN)
@@ -1302,13 +1303,14 @@ local function toggle_lazygit()
     local editor_win = lazygit_editor_window()
     remember_editor_before_lazygit(editor_win, vim.api.nvim_get_current_buf())
     lazygit_buf = vim.api.nvim_create_buf(true, false)
+    lazygit_buffers[project] = lazygit_buf
     vim.api.nvim_win_set_buf(editor_win, lazygit_buf)
     local job = vim.fn.jobstart({ "lazygit" }, { term = true, cwd = root })
     if job <= 0 then
         local failed_buf = lazygit_buf
         restore_editor_after_lazygit(failed_buf)
         pcall(vim.api.nvim_buf_delete, failed_buf, { force = true })
-        lazygit_buf = nil
+        lazygit_buffers[project] = nil
         vim.notify("Could not start lazygit", vim.log.levels.ERROR)
         return
     end
@@ -1316,14 +1318,11 @@ local function toggle_lazygit()
     vim.bo[lazygit_buf].buflisted = true
     vim.bo[lazygit_buf].bufhidden = "hide"
     vim.b[lazygit_buf].lazygit_editor = true
+    vim.b[lazygit_buf].lazygit_workspace = project
     pcall(vim.api.nvim_buf_set_name, lazygit_buf, "lazygit://" .. root)
 
-    vim.keymap.set("n", "q", close_lazygit, {
-        buffer = lazygit_buf,
-        silent = true,
-        desc = "Close LazyGit editor buffer",
-    })
-    vim.keymap.set({ "n", "t" }, "<C-q>", close_lazygit, {
+    local created_buf = lazygit_buf
+    vim.keymap.set({ "n", "t" }, "<C-q>", function() close_lazygit(created_buf) end, {
         buffer = lazygit_buf,
         silent = true,
         desc = "Close LazyGit editor buffer",
@@ -1338,7 +1337,7 @@ local function toggle_lazygit()
                     restore_editor_after_lazygit(args.buf)
                     pcall(vim.api.nvim_buf_delete, args.buf, { force = true })
                 end
-                if lazygit_buf == args.buf then lazygit_buf = nil end
+                if lazygit_buffers[project] == args.buf then lazygit_buffers[project] = nil end
             end)
         end,
         desc = "Restore the editor after LazyGit exits",
@@ -1361,24 +1360,24 @@ end
 
 local function close_all_git_windows()
     close_diffviews()
-    close_lazygit()
+    close_lazygit(lazygit_buffers[require("workspace").get()])
 end
 
 vim.api.nvim_create_user_command("GitCloseAll", close_all_git_windows, {
     desc = "Close LazyGit and every Diffview window",
 })
 
-vim.api.nvim_create_user_command("GitPanel", toggle_lazygit, {
-    desc = "Toggle the LazyGit editor buffer",
+vim.api.nvim_create_user_command("GitPanel", open_lazygit, {
+    desc = "Open or focus the LazyGit editor buffer",
 })
 
 vim.keymap.set({ "n", "t" }, "zg", function()
     if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
-    toggle_lazygit()
+    open_lazygit()
 end, {
     noremap = true,
     silent = true,
-    desc = "Focus/toggle LazyGit editor buffer",
+    desc = "Open/focus LazyGit editor buffer",
 })
 vim.keymap.set("n", "zgd", function()
     vim.cmd("DiffviewOpen")
@@ -1448,9 +1447,26 @@ require("rip-substitute").setup({
         title = " Replace ",
         position = "bottom",
     },
+    keymaps = {
+        abort = "<C-c>",
+    },
 })
 
 local quicker = require("quicker")
+
+local function close_quicker_results()
+    if not quicker.is_open() then return end
+
+    -- Quickfix can temporarily become the last window during startup. Create
+    -- a safe editor landing pane before closing it so Ctrl-C never triggers
+    -- E444 and never falls through to quitting Neovim.
+    if #vim.api.nvim_tabpage_list_wins(0) == 1 then
+        vim.cmd("aboveleft new")
+        require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+    end
+    quicker.close()
+end
+
 quicker.setup({
     edit = {
         enabled = true,
@@ -1471,12 +1487,12 @@ quicker.setup({
         },
     },
     on_qf = function(buf)
-        vim.keymap.set("n", "q", quicker.toggle, {
+        vim.keymap.set("n", "q", "<Nop>", {
             buffer = buf,
             silent = true,
-            desc = "Close editable results",
+            desc = "Disabled: use Ctrl-C to close",
         })
-        vim.keymap.set("n", "<C-c>", quicker.toggle, {
+        vim.keymap.set("n", "<C-c>", close_quicker_results, {
             buffer = buf,
             silent = true,
             desc = "Close editable results",
@@ -1549,9 +1565,16 @@ vim.keymap.set("n", "<leader>sq", "<cmd>ProjectResults<CR>", {
     desc = "Search project into editable results",
 })
 
-vim.keymap.set("n", "<leader>st", quicker.toggle, {
+vim.keymap.set("n", "<leader>st", function()
+    if quicker.is_open() then
+        local results_win = find_window("qf")
+        if results_win then vim.api.nvim_set_current_win(results_win) end
+    else
+        quicker.open({ focus = true })
+    end
+end, {
     silent = true,
-    desc = "Toggle editable results",
+    desc = "Open/focus editable results",
 })
 
 

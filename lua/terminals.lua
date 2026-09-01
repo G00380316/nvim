@@ -13,11 +13,33 @@ local function terminal_pid(bufnr)
     return pid_ok and pid or nil
 end
 
----Terminal buffers in floaterm's own order, so cycling matches its numbering.
-function M.list()
+local function terminal_workspace(bufnr)
+    local assigned = vim.b[bufnr].floaterm_workspace
+    if type(assigned) == "string" and assigned ~= "" then
+        return vim.fs.normalize(assigned)
+    end
+
+    -- Backfill terminals created before project contexts were enabled. Their
+    -- launch cwd is stable even if the shell has since changed directory.
+    local launched = vim.fn.getbufvar(bufnr, "floaterm_cwd")
+    if type(launched) == "string" and launched ~= "" then
+        assigned = require("workspace").find(launched)
+    end
+    assigned = assigned or require("workspace").get()
+    vim.b[bufnr].floaterm_workspace = assigned
+    return vim.fs.normalize(assigned)
+end
+
+---Terminal buffers for one project in floaterm's own order, so cycling
+---matches its numbering without leaking shells from another project context.
+function M.list(project)
     local ok, bufnrs = pcall(vim.fn["floaterm#buflist#gather"])
     if not ok or type(bufnrs) ~= "table" then return {} end
-    return vim.tbl_filter(vim.api.nvim_buf_is_valid, bufnrs)
+    project = vim.fs.normalize(project or require("workspace").get())
+    return vim.tbl_filter(function(bufnr)
+        return vim.api.nvim_buf_is_valid(bufnr)
+            and terminal_workspace(bufnr) == project
+    end, bufnrs)
 end
 
 local function sample_cwd(bufnr)
@@ -60,7 +82,7 @@ function M.name(bufnr)
 end
 
 local function terminal_window(bufnr)
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
         if vim.api.nvim_win_get_buf(win) == bufnr then return win end
     end
 end
@@ -181,7 +203,10 @@ local function replace_closed(bufnr, win)
     -- visible in the other half would just show the same shell twice, so a
     -- split half whose sibling survives is simply allowed to collapse.
     local successor
-    for _, candidate in ipairs(M.list()) do
+    local project = vim.api.nvim_buf_is_valid(bufnr)
+        and terminal_workspace(bufnr)
+        or require("workspace").get()
+    for _, candidate in ipairs(M.list(project)) do
         if candidate ~= bufnr
             and vim.api.nvim_buf_is_valid(candidate)
             and not terminal_window(candidate)
@@ -220,7 +245,8 @@ end
 ---the keys to the shell and snaps the cursor to its prompt. That is Neovim's
 ---design, not something a mapping can change -- so to actually edit output,
 ---take a copy of it somewhere editing works.
-function M.edit()
+function M.edit(opts)
+    opts = opts or {}
     local buf = vim.api.nvim_get_current_buf()
     if vim.bo[buf].buftype ~= "terminal" then
         vim.notify("Not a terminal", vim.log.levels.WARN)
@@ -247,7 +273,12 @@ function M.edit()
     -- Land it in the editor zone, never over the explorer or the panel itself.
     pcall(vim.cmd, "EditorFocus")
     vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(), scratch)
-    vim.api.nvim_win_set_cursor(0, { #lines, 0 })
+    local cursor = opts.cursor or { #lines, 0 }
+    local row = math.max(1, math.min(cursor[1], #lines))
+    local col = math.max(0, math.min(cursor[2], #(lines[row] or "")))
+    vim.api.nvim_win_set_cursor(0, { row, col })
+
+    if opts.startinsert then vim.cmd("startinsert") end
 end
 
 function M.setup()

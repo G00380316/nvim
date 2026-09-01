@@ -13,6 +13,8 @@ local markers = {
 
 local root
 local setting_cwd = false
+local switching_context = false
+local context_tabs = {}
 local history_file = vim.fn.stdpath("state") .. "/workspace-history.json"
 local history = {}
 local excluded_history_roots = {
@@ -26,6 +28,7 @@ local function normalize(path)
     if vim.fn.isdirectory(path) ~= 1 then
         path = vim.fs.dirname(path)
     end
+    path = vim.uv.fs_realpath(path) or path
     return path and vim.fs.normalize(path) or nil
 end
 
@@ -81,6 +84,37 @@ local function set_current_directory(path)
     if not ok then error(err) end
 end
 
+local function tab_workspace(tab)
+    local ok, value = pcall(vim.api.nvim_tabpage_get_var, tab, "workspace_root")
+    return ok and type(value) == "string" and value ~= "" and value or nil
+end
+
+local function assign_tab_workspace(tab, path)
+    local previous = tab_workspace(tab)
+    if previous and previous ~= path and context_tabs[previous] == tab then
+        context_tabs[previous] = nil
+    end
+    pcall(vim.api.nvim_tabpage_set_var, tab, "workspace_root", path)
+    context_tabs[path] = tab
+end
+
+local function context_tab(path)
+    local remembered = context_tabs[path]
+    if remembered
+        and vim.api.nvim_tabpage_is_valid(remembered)
+        and tab_workspace(remembered) == path
+    then
+        return remembered
+    end
+
+    for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+        if tab_workspace(tab) == path then
+            context_tabs[path] = tab
+            return tab
+        end
+    end
+end
+
 function M.find(path)
     local dir = normalize(path)
     if not dir then return nil end
@@ -89,6 +123,15 @@ end
 
 function M.get()
     return root or vim.fn.getcwd()
+end
+
+function M.context_tab(path)
+    local directory = normalize(path)
+    return directory and context_tab(directory) or nil
+end
+
+function M.is_open(path)
+    return M.context_tab(path) ~= nil
 end
 
 function M.name()
@@ -132,14 +175,18 @@ function M.set(path, opts)
 
     root = next_root
     vim.g.workspace_root = root
+    assign_tab_workspace(vim.api.nvim_get_current_tabpage(), root)
+    if not vim.b.workspace_root then vim.b.workspace_root = root end
     set_current_directory(root)
     remember(root)
 
-    for _, oil_win in ipairs(vim.api.nvim_list_wins()) do
-        if vim.bo[vim.api.nvim_win_get_buf(oil_win)].filetype == "oil" then
-            vim.api.nvim_win_call(oil_win, function()
-                require("oil").open(root)
-            end)
+    if not opts.preserve_oil then
+        for _, oil_win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+            if vim.bo[vim.api.nvim_win_get_buf(oil_win)].filetype == "oil" then
+                vim.api.nvim_win_call(oil_win, function()
+                    require("oil").open(root)
+                end)
+            end
         end
     end
 
@@ -154,8 +201,9 @@ function M.set(path, opts)
     return true
 end
 
--- Open a directory as the complete editor context. Unlike set(), this does
--- not keep showing a file from the previous workspace in the editor area.
+-- Open a directory as a live project context. Each project owns a Neovim tab,
+-- so its buffers, splits, sidebar directory and running terminal windows stay
+-- exactly where they were while another project is active.
 function M.open(path, opts)
     opts = opts or {}
 
@@ -165,21 +213,45 @@ function M.open(path, opts)
         return false
     end
 
-    if vim.fn.exists(":GitCloseAll") == 2 then
-        pcall(vim.cmd, "GitCloseAll")
+    if directory == root then return true end
+
+    local current_tab = vim.api.nvim_get_current_tabpage()
+    if root then
+        assign_tab_workspace(current_tab, root)
     end
 
-    if not M.set(path, {
+    local target_tab = context_tab(directory)
+    local restoring = target_tab ~= nil
+
+    switching_context = true
+    local switched, switch_error
+    if target_tab then
+        switched, switch_error = pcall(vim.api.nvim_set_current_tabpage, target_tab)
+    else
+        switched, switch_error = pcall(vim.cmd, "tabnew")
+    end
+    switching_context = false
+
+    if not switched then
+        vim.notify("Could not open project context: " .. tostring(switch_error), vim.log.levels.ERROR)
+        return false
+    end
+
+    if not M.set(directory, {
         exact = opts.exact ~= false,
         silent = opts.silent,
+        preserve_oil = restoring,
     }) then
         return false
     end
 
-    pcall(vim.cmd, "EditorFocus")
-    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+    if restoring then
+        -- A tabpage remembers its focused window, so do not force the editor:
+        -- returning to a terminal or sidebar is part of the saved context.
+        return true
+    end
 
-    if vim.fn.exists(":OilSidebarOpen") == 2 then pcall(vim.cmd, "OilSidebarOpen") end
+    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
 
     return true
 end
@@ -210,7 +282,7 @@ function M.setup()
             M.set(startup_workspace(target), { silent = true })
         end,
         once = true,
-        desc = "Lock this Neovim instance to one workspace root",
+        desc = "Initialize the first live project context",
     })
 
     vim.api.nvim_create_autocmd("DirChanged", {
@@ -225,6 +297,52 @@ function M.setup()
             end)
         end,
         desc = "Treat every cwd API change as a workspace selection",
+    })
+
+    vim.api.nvim_create_autocmd("BufAdd", {
+        group = workspace_group,
+        callback = function(args)
+            if root and vim.api.nvim_buf_is_valid(args.buf) and not vim.b[args.buf].workspace_root then
+                vim.b[args.buf].workspace_root = root
+            end
+        end,
+        desc = "Associate new unnamed buffers with their project context",
+    })
+
+    vim.api.nvim_create_autocmd("TabEnter", {
+        group = workspace_group,
+        callback = function()
+            if switching_context then return end
+
+            local tab = vim.api.nvim_get_current_tabpage()
+            local project = tab_workspace(tab)
+            if not project then
+                if root then assign_tab_workspace(tab, root) end
+                return
+            end
+
+            context_tabs[project] = tab
+            if project ~= root or vim.fs.normalize(vim.fn.getcwd()) ~= project then
+                M.set(project, {
+                    exact = true,
+                    silent = true,
+                    preserve_oil = true,
+                })
+            end
+        end,
+        desc = "Activate the project context owned by this tab",
+    })
+
+    vim.api.nvim_create_autocmd("TabClosed", {
+        group = workspace_group,
+        callback = function()
+            vim.schedule(function()
+                for project, tab in pairs(context_tabs) do
+                    if not vim.api.nvim_tabpage_is_valid(tab) then context_tabs[project] = nil end
+                end
+            end)
+        end,
+        desc = "Forget project contexts whose tabs were closed",
     })
 
     vim.api.nvim_create_user_command("WorkspaceSet", function(args)
