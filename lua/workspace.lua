@@ -251,7 +251,7 @@ function M.open(path, opts)
         return true
     end
 
-    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+    require("ide_layout").open_filler({ win = vim.api.nvim_get_current_win() })
 
     return true
 end

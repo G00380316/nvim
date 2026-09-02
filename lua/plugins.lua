@@ -137,7 +137,9 @@ require("nvim-treesitter").setup({
 require("snacks").setup({
     bigfile = { enabled = true },
     dashboard = {
-        enabled = true,
+        -- The IDE frame opens this explicitly after Oil. Snacks' UIEnter
+        -- auto-open happens too early and centers against the full screen.
+        enabled = false,
         width = 48,
         preset = {
             header = [[
@@ -288,9 +290,11 @@ vim.api.nvim_create_autocmd("User", {
 -- ============================================================
 
 local oil = require("oil")
+local ide_layout = require("ide_layout")
 local explorer_width = 30
 local last_editor_win = nil
 local last_panel_win = nil
+local oil_focus_generation = 0
 
 local function leetcode_active()
     return vim.g.leetcode_active == true
@@ -319,10 +323,7 @@ local function has_foreign_terminal()
 end
 
 local function is_panel(win)
-    local filetype = window_filetype(win)
-    return filetype == "oil"
-        or filetype == "floaterm"
-        or filetype == "qf"
+    return ide_layout.is_panel_window(win)
 end
 
 local function find_window(filetype)
@@ -340,12 +341,7 @@ local function find_editor_window()
     then
         return last_editor_win
     end
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        local config = vim.api.nvim_win_get_config(win)
-        if not is_panel(win) and config.relative == "" then
-            return win
-        end
-    end
+    return ide_layout.find_editor_window()
 end
 
 local function focus_editor()
@@ -377,6 +373,8 @@ local function switch_editor_buffer(direction)
 end
 
 local function focus_terminal()
+    oil_focus_generation = oil_focus_generation + 1
+    ide_layout.note_explicit_focus()
     local current = vim.api.nvim_get_current_win()
     if window_filetype(current) == "floaterm" then
         focus_editor()
@@ -437,14 +435,7 @@ end
 -- Prefer the window explicitly marked as the sidebar; a stray oil buffer that
 -- landed in an editor window must never be mistaken for the real explorer.
 local function find_oil_sidebar()
-    local fallback
-    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-        if window_filetype(win) == "oil" and vim.api.nvim_win_get_config(win).relative == "" then
-            if vim.w[win].oil_sidebar then return win end
-            fallback = fallback or win
-        end
-    end
-    return fallback
+    return ide_layout.find_sidebar()
 end
 
 local function close_oil_sidebar()
@@ -598,6 +589,11 @@ end
 
 local function open_oil_sidebar(opts)
     opts = opts or {}
+    if opts.focus then
+        oil_focus_generation = oil_focus_generation + 1
+        ide_layout.note_explicit_focus()
+    end
+    local return_focus_generation = oil_focus_generation
     if leetcode_active() then
         close_oil_sidebar()
         if opts.focus then vim.notify("Oil is disabled in LeetCode", vim.log.levels.INFO) end
@@ -607,47 +603,62 @@ local function open_oil_sidebar(opts)
     local current = vim.api.nvim_get_current_win()
     local existing = find_oil_sidebar()
     if existing then
-        vim.w[existing].oil_sidebar = true
+        ide_layout.claim_panel("oil", existing)
         if opts.focus then
             last_editor_win = not is_panel(current) and current or last_editor_win
             last_panel_win = existing
             vim.api.nvim_set_current_win(existing)
         end
+        if opts.after_open then opts.after_open(existing) end
         return existing
     end
 
-    focus_editor()
+    if not focus_editor() then
+        local editor = ide_layout.ensure_editor_window()
+        if editor then vim.api.nvim_set_current_win(editor) end
+    end
     local editor_buf = vim.api.nvim_get_current_buf()
     if vim.api.nvim_buf_get_name(editor_buf) == ""
         and vim.bo[editor_buf].buftype == ""
         and not vim.bo[editor_buf].modified
     then
-        -- Give the editor side a durable filler before splitting. The generic
-        -- empty-buffer cleanup would otherwise wipe it and collapse the split.
-        require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+        -- Keep the editor side alive without opening the dashboard before Oil.
+        ide_layout.placeholder(vim.api.nvim_get_current_win())
     end
     vim.cmd("topleft " .. explorer_width .. "vsplit")
     local sidebar = vim.api.nvim_get_current_win()
     -- Marked before oil.open so the singleton guard below can tell this
     -- window apart from a stray oil buffer the moment BufWinEnter fires;
     -- oil's callback runs too late to claim ownership in time.
-    vim.w[sidebar].oil_sidebar = true
+    ide_layout.claim_panel("oil", sidebar)
     oil.open(require("workspace").get(), nil, function()
         if not window_is_valid(sidebar) then return end
-        vim.w[sidebar].oil_sidebar = true
+        ide_layout.mark_panel("oil", sidebar, vim.api.nvim_win_get_buf(sidebar))
         vim.wo[sidebar].winfixwidth = true
         vim.api.nvim_win_set_width(sidebar, explorer_width)
         local editor = find_editor_window()
         if editor then
             reveal_editor_file_in_oil(vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(editor)))
         end
+        vim.api.nvim_exec_autocmds("User", {
+            pattern = "IdeOilSidebarReady",
+            modeline = false,
+            data = { win = sidebar },
+        })
         -- Oil finalizes its own window setup after this callback returns, so
         -- reclaiming focus has to happen on the next tick to actually stick.
-        if not opts.focus then vim.schedule(focus_editor) end
+        if not opts.focus then
+            vim.schedule(function()
+                if return_focus_generation == oil_focus_generation then focus_editor() end
+            end)
+        end
+        if opts.after_open then opts.after_open(sidebar) end
     end)
     last_panel_win = sidebar
     return sidebar
 end
+
+ide_layout.register_sidebar_opener(open_oil_sidebar)
 
 local function focus_tree()
     local current = vim.api.nvim_get_current_win()
@@ -700,7 +711,7 @@ local function enforce_single_oil()
         then
             vim.api.nvim_win_set_buf(win, previous)
         else
-            require("editor_filler").open({ win = win })
+            ide_layout.placeholder(win)
         end
     end
     oil_guard_busy = false
@@ -738,6 +749,9 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
             return
         end
 
+        if vim.w[win].oil_sidebar then
+            ide_layout.mark_panel("oil", win, args.buf)
+        end
         vim.wo[win].winfixwidth = true
         if vim.w[win].oil_sidebar and vim.api.nvim_win_get_width(win) ~= explorer_width then
             vim.api.nvim_win_set_width(win, explorer_width)
@@ -758,13 +772,39 @@ end, {
     desc = "Open/focus File Explorer",
 })
 
--- Keep the project explorer present like an IDE sidebar. It stays open when
--- files are selected; Ctrl-C is the sole mapped way to hide it.
+local function fill_empty_editor_after_oil(focus)
+    local editor = find_editor_window()
+    if not editor then return end
+    local buf = vim.api.nvim_win_get_buf(editor)
+    if vim.b[buf].ide_layout_placeholder
+        or (vim.api.nvim_buf_get_name(buf) == ""
+            and vim.bo[buf].buftype == ""
+            and not vim.bo[buf].modified)
+    then
+        ide_layout.open_filler({ win = editor, ensure_sidebar = false, focus = focus })
+    end
+end
+
+local function open_ide_frame()
+    local focus_token = ide_layout.focus_token()
+    local focus_editor = not ide_layout.is_protected_window(vim.api.nvim_get_current_win())
+    open_oil_sidebar({
+        focus = false,
+        after_open = function()
+            vim.schedule(function()
+                fill_empty_editor_after_oil(
+                    focus_editor and ide_layout.focus_unchanged(focus_token)
+                )
+            end)
+        end,
+    })
+end
+
+-- Keep the project explorer present like an IDE sidebar. Oil is created first;
+-- only then may the dashboard occupy the editor zone beside it.
 vim.api.nvim_create_autocmd("VimEnter", {
     callback = function()
-        vim.defer_fn(function()
-            open_oil_sidebar({ focus = false })
-        end, 50)
+        vim.defer_fn(open_ide_frame, 10)
     end,
     desc = "Open the persistent project explorer sidebar",
 })
@@ -775,7 +815,7 @@ vim.api.nvim_create_autocmd("TabNewEntered", {
         vim.schedule(function()
             -- A tab opened for someone else's terminal session is theirs.
             if has_foreign_terminal() then return end
-            open_oil_sidebar({ focus = false })
+            open_ide_frame()
         end)
     end,
     desc = "Keep the Oil sidebar present in new tabs",
@@ -784,6 +824,10 @@ vim.api.nvim_create_autocmd("TabNewEntered", {
 vim.api.nvim_create_user_command("OilSidebarOpen", function()
     open_oil_sidebar({ focus = false })
 end, { desc = "Open the persistent Oil sidebar" })
+
+vim.api.nvim_create_user_command("LayoutDashboard", function()
+    ide_layout.open_filler({ win = find_editor_window() })
+end, { desc = "Open Oil first, then the dashboard in the editor zone" })
 
 vim.api.nvim_create_autocmd("BufEnter", {
     callback = function(args)
@@ -917,6 +961,8 @@ local function resize_terminal(delta)
 end
 
 local function new_terminal()
+    oil_focus_generation = oil_focus_generation + 1
+    ide_layout.note_explicit_focus()
     focus_editor()
     vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("workspace").get()))
 end
@@ -1002,6 +1048,7 @@ end
 vim.api.nvim_create_autocmd("FileType", {
     pattern = "floaterm",
     callback = function()
+        ide_layout.mark_panel("terminal", vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf())
         vim.b.floaterm_workspace = vim.b.floaterm_workspace or require("workspace").get()
         local opts = {
             noremap = true,
@@ -1210,11 +1257,7 @@ local function lazygit_editor_window()
 
     -- Oil and the other panels are protected: LazyGit may only replace an
     -- editor buffer. Recreate the editor zone if this tab has only panels.
-    if is_panel(vim.api.nvim_get_current_win()) then
-        vim.cmd("rightbelow vsplit")
-        require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
-    end
-    return vim.api.nvim_get_current_win()
+    return ide_layout.ensure_editor_window()
 end
 
 local function restore_editor_after_lazygit(buf)
@@ -1228,7 +1271,7 @@ local function restore_editor_after_lazygit(buf)
                 vim.api.nvim_win_set_buf(win, previous)
                 vim.bo[previous].bufhidden = vim.w[win].lazygit_previous_bufhidden or ""
             else
-                require("editor_filler").open({ win = win })
+                ide_layout.open_filler({ win = win })
             end
             vim.w[win].lazygit_previous_buf = nil
             vim.w[win].lazygit_previous_bufhidden = nil
@@ -1429,8 +1472,8 @@ local function close_quicker_results()
     -- a safe editor landing pane before closing it so Ctrl-C never triggers
     -- E444 and never falls through to quitting Neovim.
     if #vim.api.nvim_tabpage_list_wins(0) == 1 then
-        vim.cmd("aboveleft new")
-        require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+        local editor = ide_layout.ensure_editor_window()
+        ide_layout.open_filler({ win = editor })
     end
     quicker.close()
 end
@@ -1580,12 +1623,9 @@ local function enforce_layout()
         -- An editor zone must exist for the sidebar to sit beside. Without one
         -- the sidebar is the only window and inherits the full width.
         if not find_editor_window() then
-            if sidebar and vim.api.nvim_win_is_valid(sidebar) then
-                vim.api.nvim_win_call(sidebar, function()
-                    vim.cmd("rightbelow vsplit")
-                    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
-                end)
-            end
+            local editor = ide_layout.ensure_editor_window()
+            ide_layout.open_filler({ win = editor })
+            sidebar = find_oil_sidebar()
         end
 
         if sidebar and vim.api.nvim_win_is_valid(sidebar) then
@@ -1611,4 +1651,13 @@ vim.api.nvim_create_autocmd({ "WinClosed", "WinNew", "BufWinEnter", "VimResized"
     group = vim.api.nvim_create_augroup("LayoutInvariant", { clear = true }),
     callback = function() vim.schedule(enforce_layout) end,
     desc = "Hold the IDE layout invariant",
+})
+
+vim.api.nvim_create_autocmd("BufWinEnter", {
+    group = vim.api.nvim_create_augroup("EditorZoneRouting", { clear = true }),
+    callback = function(args)
+        ide_layout.remember_visible_panel_buffer(args.buf)
+        ide_layout.route_editor_buffer(args.buf)
+    end,
+    desc = "Route normal buffers out of the Oil and terminal panels",
 })

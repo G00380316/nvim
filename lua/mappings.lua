@@ -328,7 +328,7 @@ local function close_editor_buffer(buf)
     if replacement then
         vim.api.nvim_win_set_buf(win, replacement)
     else
-        require("editor_filler").open({ win = win })
+        require("ide_layout").open_filler({ win = win })
     end
 
     local success = pcall(vim.cmd, "confirm bdelete " .. buf)
@@ -354,8 +354,8 @@ local function protect_terminal_tab_before_close()
     -- If that is the tab's sole window, Neovim closes the whole tab (and the
     -- last tab can look like, or become, an application quit). Give it an
     -- editor landing window first so Ctrl-Q can only remove the terminal.
-    vim.cmd("aboveleft new")
-    require("editor_filler").open({ win = vim.api.nvim_get_current_win() })
+    local editor = require("ide_layout").ensure_editor_window()
+    require("ide_layout").open_filler({ win = editor })
 end
 
 local function close_current()
@@ -421,6 +421,8 @@ local function close_current()
         local job_id = vim.b[buf].terminal_job_id
         if job_id then pcall(vim.fn.jobstop, job_id) end
         pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        local editor = require("ide_layout").find_editor_window()
+        if editor then vim.api.nvim_set_current_win(editor) end
     elseif buftype == "quickfix" then
         pcall(vim.cmd, "cclose")
     elseif filetype == "oil" then
@@ -434,12 +436,8 @@ local function close_current()
     else
         local editor_windows = 0
         for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-            local win_buf = vim.api.nvim_win_get_buf(win)
             local config = vim.api.nvim_win_get_config(win)
-            if config.relative == ""
-                and vim.bo[win_buf].buftype == ""
-                and vim.bo[win_buf].filetype ~= "oil"
-            then
+            if config.relative == "" and require("ide_layout").is_editor_window(win) then
                 editor_windows = editor_windows + 1
             end
         end
