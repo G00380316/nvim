@@ -319,9 +319,15 @@ local function next_editor_buffer(current)
     return require("buffers").replacement(current)
 end
 
-local function close_editor_buffer(buf)
+local function close_editor_buffer(buf, preferred_replacement)
     local win = vim.api.nvim_get_current_win()
-    local replacement = next_editor_buffer(buf)
+    local replacement = preferred_replacement
+    if not (replacement
+        and replacement ~= buf
+        and vim.api.nvim_buf_is_valid(replacement))
+    then
+        replacement = next_editor_buffer(buf)
+    end
 
     -- Keep the editor zone alive between the fixed tree and terminal panels.
     -- :bdelete on the displayed buffer would otherwise remove its window.
@@ -427,6 +433,13 @@ local function close_current()
         pcall(vim.cmd, "cclose")
     elseif filetype == "oil" then
         pcall(vim.cmd, "close")
+    elseif vim.b[buf].terminal_edit then
+        -- An editable terminal copy temporarily occupies the editor pane. Put
+        -- its prior buffer back before deleting the copy so the pane -- and
+        -- therefore the bottom terminal boundary -- never disappears.
+        if not close_editor_buffer(buf, vim.b[buf].terminal_edit_previous_buf) then
+            return
+        end
     elseif buftype ~= "" then
         if #vim.api.nvim_tabpage_list_wins(0) > 1 then
             pcall(vim.cmd, "confirm close")
@@ -1103,54 +1116,36 @@ vim.keymap.set({ "n", "i", "v" }, "<C-s>", save_current_file, {
     desc = "Save",
 })
 
-local function close_nonterminal()
-    if vim.bo.buftype == "terminal" then
-        vim.notify("Use Ctrl-Q to close terminals", vim.log.levels.INFO)
-        return
-    end
+local function close_with_ctrl_q()
     close_current()
 end
 
-local function close_terminal()
-    if vim.bo.buftype ~= "terminal" then
-        vim.notify("Ctrl-Q closes terminals; use Ctrl-C here", vim.log.levels.INFO)
-        return
-    end
-    close_current()
-end
-
-vim.keymap.set({ "n", "v", "i" }, "<C-c>", close_nonterminal, {
+vim.keymap.set({ "n", "v", "i", "t" }, "<C-q>", close_with_ctrl_q, {
     noremap = true,
     silent = true,
-    desc = "Close non-terminal buffer or pane (never exit Neovim)",
+    desc = "Close current buffer, pane, panel, or terminal (never exit Neovim)",
 })
 
-vim.keymap.set({ "n", "v", "t" }, "<C-q>", close_terminal, {
-    noremap = true,
-    silent = true,
-    desc = "Close terminal (never exit Neovim)",
-})
-
--- Ctrl-C owns non-terminal closing and Ctrl-Q owns terminal closing. These
--- built-in normal-mode shortcuts can close
--- panes or the application, so leave exiting to explicit :q/:qa/:qa! commands.
+-- Ctrl-Q is the universal close key. Ctrl-C is deliberately left available
+-- for plugin-local cancel/close actions and its normal interrupt behaviour.
+-- These built-in shortcuts can close panes or the application, so leave
+-- exiting Neovim to explicit :q/:qa/:qa! commands.
 for _, lhs in ipairs({ "<C-w>q", "<C-w>c", "ZZ", "ZQ" }) do
     vim.keymap.set("n", lhs, "<Nop>", {
         silent = true,
-        desc = "Disabled: use Ctrl-C (Ctrl-Q in terminals) to close",
+        desc = "Disabled: use Ctrl-Q to close",
     })
 end
 
--- Runtime ftplugins commonly add q/Esc/C-q shortcuts that silently run
--- :quit, :bdelete, or a close action. Neutralize only those close-like local
--- mappings; editing/navigation meanings are left alone, and terminal programs
--- keep ownership of their own keys.
+-- Runtime ftplugins commonly add q/Esc shortcuts that silently run :quit,
+-- :bdelete, or a close action. Neutralize only those close-like local mappings;
+-- editing/navigation meanings and plugin-local Ctrl-C actions are left alone.
 local function enforce_close_key_contract(buf)
     if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype == "terminal" then return end
 
     vim.api.nvim_buf_call(buf, function()
         for _, mode in ipairs({ "n", "i" }) do
-            for _, lhs in ipairs({ "q", "<Esc>", "<C-q>" }) do
+            for _, lhs in ipairs({ "q", "<Esc>" }) do
                 local map = vim.fn.maparg(lhs, mode, false, true)
                 if map.buffer == 1 then
                     local meaning = ((map.desc or "") .. " " .. (map.rhs or "")):lower()
@@ -1163,7 +1158,7 @@ local function enforce_close_key_contract(buf)
                         vim.keymap.set(mode, lhs, "<Nop>", {
                             buffer = buf,
                             silent = true,
-                            desc = "Disabled: use Ctrl-C to close",
+                            desc = "Disabled: use Ctrl-Q to close",
                         })
                     end
                 end
@@ -1177,7 +1172,7 @@ vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
     callback = function(args)
         vim.schedule(function() enforce_close_key_contract(args.buf) end)
     end,
-    desc = "Reserve Ctrl-C for buffers and panes and Ctrl-Q for terminals",
+    desc = "Reserve Ctrl-Q as the universal close key",
 })
 
 -- Deliberately change the workspace instead of creating a temporary cwd.

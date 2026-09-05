@@ -19,7 +19,7 @@ local entries = {
     { "Buffers", "<C-b>", "n/i/x", "Choose an open editor buffer" },
     { "Buffers", "<Tab>", "n", "Next editor buffer" },
     { "Buffers", "<S-Tab>", "n", "Previous editor buffer" },
-    { "Buffers", "<C-c>", "n/i/x", "Close a non-terminal buffer or pane", "close_nonterminal" },
+    { "Buffers", "<C-q>", "n/i/x/t", "Close the current buffer, pane, panel, or terminal", "close_current" },
 
     { "Panes", "zv", "n", "Split the editor vertically" },
     { "Panes", "zh", "n", "Split the editor horizontally" },
@@ -40,7 +40,6 @@ local entries = {
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
     { "Terminal", "<C-v> → i", "t", "Jump through output, then edit at the cursor", "terminal_normal" },
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable buffer", "terminal_edit" },
-    { "Terminal", "<C-q>", "n/t", "Close the current terminal", "close_terminal" },
     { "Terminal", "<leader>t", "n", "Open terminal action selector" },
 
     { "Git", "zg", "n", "Open Git action selector" },
@@ -96,7 +95,7 @@ end
 local function open_picker(context)
     local Snacks = require("snacks")
     Snacks.picker.pick({
-        title = "My Neovim Commands  ·  Ctrl-C closes  ·  terminals Ctrl-Q",
+        title = "My Neovim Commands  ·  Ctrl-Q closes",
         items = M.items(),
         preview = false,
         layout = { preset = "vscode" },
@@ -145,21 +144,7 @@ local function open_picker(context)
                     return
                 end
 
-                if item.action == "close_nonterminal" then
-                    if from_terminal then
-                        vim.notify("Use Ctrl-Q to close terminals", vim.log.levels.INFO)
-                        return
-                    end
-                    return_to_origin(context)
-                    vim.api.nvim_feedkeys(vim.keycode("<C-c>"), "m", false)
-                    return
-                end
-
-                if item.action == "close_terminal" then
-                    if not from_terminal then
-                        vim.notify("Open the command guide from a terminal to close it", vim.log.levels.INFO)
-                        return
-                    end
+                if item.action == "close_current" then
                     return_to_origin(context)
                     vim.api.nvim_feedkeys(vim.keycode("<C-q>"), "m", false)
                     return

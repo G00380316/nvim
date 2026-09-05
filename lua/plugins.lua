@@ -203,9 +203,9 @@ require("snacks").setup({
             input = {
                 keys = {
                     ["<C-c>"] = { "cancel", mode = { "n", "i" } },
-                    ["<C-q>"] = { function() end, mode = { "n", "i" }, desc = "Ctrl-Q closes terminals only" },
+                    ["<C-q>"] = { "cancel", mode = { "n", "i" }, desc = "Close picker" },
                     ["<Esc>"] = { "focus_list", mode = { "n", "i" } },
-                    ["q"] = { function() end, mode = "n", desc = "Use Ctrl-C to close" },
+                    ["q"] = { function() end, mode = "n", desc = "Use Ctrl-Q to close" },
                     ["<Space>l"] = { "flash", mode = { "n", "i" } },
                     ["s"] = { "flash" },
                 },
@@ -213,17 +213,17 @@ require("snacks").setup({
             list = {
                 keys = {
                     ["<C-c>"] = "cancel",
-                    ["<C-q>"] = { function() end, desc = "Ctrl-Q closes terminals only" },
+                    ["<C-q>"] = { "cancel", desc = "Close picker" },
                     ["<Esc>"] = "focus_input",
-                    ["q"] = { function() end, desc = "Use Ctrl-C to close" },
+                    ["q"] = { function() end, desc = "Use Ctrl-Q to close" },
                 },
             },
             preview = {
                 keys = {
                     ["<C-c>"] = "cancel",
-                    ["<C-q>"] = { function() end, desc = "Ctrl-Q closes terminals only" },
+                    ["<C-q>"] = { "cancel", desc = "Close picker" },
                     ["<Esc>"] = "focus_list",
-                    ["q"] = { function() end, desc = "Use Ctrl-C to close" },
+                    ["q"] = { function() end, desc = "Use Ctrl-Q to close" },
                 },
             },
         },
@@ -271,7 +271,7 @@ require("snacks").setup({
 })
 
 -- The dashboard is the permanent empty editor zone. It is never a mapped exit
--- point; Ctrl-C handles it as a safe no-op instead of terminating Neovim.
+-- point; Ctrl-Q handles it as a safe no-op instead of terminating Neovim.
 vim.api.nvim_create_autocmd("User", {
     pattern = "SnacksDashboardOpened",
     callback = function()
@@ -483,6 +483,7 @@ oil.setup({
         ["<C-t>"] = focus_terminal,
         ["<C-p>"] = "actions.preview",
         ["<C-c>"] = close_oil_sidebar,
+        ["<C-q>"] = close_oil_sidebar,
         ["<Space>l"] = "actions.refresh",
         ["<BS>"] = { "actions.parent", mode = "n" },
         ["gr"] = { "actions.open_cwd", mode = "n" },
@@ -985,6 +986,66 @@ local function terminal_row_windows()
     return wins
 end
 
+-- A terminal row is only in its fixed panel position when every terminal has
+-- the same top edge and every other normal window ends above it.
+-- Checking geometry keeps the guard independent of whatever split tree a
+-- plugin or an editor command happened to create.
+local function terminal_row_is_bottom(wins)
+    if #wins == 0 then return true end
+
+    local terminal_set = {}
+    local top
+    local bottom
+    for _, win in ipairs(wins) do
+        terminal_set[win] = true
+        local position = vim.api.nvim_win_get_position(win)
+        local edge = position[1] + vim.api.nvim_win_get_height(win)
+        if top and (position[1] ~= top or edge ~= bottom) then return false end
+        top = position[1]
+        bottom = edge
+    end
+
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        if not terminal_set[win]
+            and vim.api.nvim_win_get_config(win).relative == ""
+        then
+            local position = vim.api.nvim_win_get_position(win)
+            if position[1] + vim.api.nvim_win_get_height(win) > top then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
+-- Rebuild only the terminal portion of the frame. Moving one terminal to the
+-- bottom establishes the horizontal boundary; the remaining terminals are
+-- then moved beside it to recover the shared row without disturbing editor
+-- splits above it.
+local function move_terminal_row_to_bottom(wins)
+    if #wins == 0 then return end
+
+    local focused = vim.api.nvim_get_current_win()
+    for _, win in ipairs(wins) do
+        vim.wo[win].winfixheight = false
+    end
+
+    vim.api.nvim_win_call(wins[1], function() vim.cmd("wincmd J") end)
+    local previous = wins[1]
+    for index = 2, #wins do
+        vim.fn.win_splitmove(wins[index], previous, {
+            vertical = true,
+            rightbelow = true,
+        })
+        previous = wins[index]
+    end
+
+    if vim.api.nvim_win_is_valid(focused) then
+        vim.api.nvim_set_current_win(focused)
+    end
+end
+
 -- floaterm sizes a vsplit from g:floaterm_width, which leaves lopsided halves;
 -- share the panel's width evenly instead.
 local function balance_terminal_row()
@@ -999,7 +1060,9 @@ local function balance_terminal_row()
 
     local share = math.floor(total / #wins)
     for index = 1, #wins - 1 do
-        pcall(vim.api.nvim_win_set_width, wins[index], share)
+        if vim.api.nvim_win_get_width(wins[index]) ~= share then
+            pcall(vim.api.nvim_win_set_width, wins[index], share)
+        end
     end
 end
 
@@ -1469,7 +1532,7 @@ local function close_quicker_results()
     if not quicker.is_open() then return end
 
     -- Quickfix can temporarily become the last window during startup. Create
-    -- a safe editor landing pane before closing it so Ctrl-C never triggers
+    -- a safe editor landing pane before closing it so Ctrl-Q never triggers
     -- E444 and never falls through to quitting Neovim.
     if #vim.api.nvim_tabpage_list_wins(0) == 1 then
         local editor = ide_layout.ensure_editor_window()
@@ -1501,9 +1564,14 @@ quicker.setup({
         vim.keymap.set("n", "q", "<Nop>", {
             buffer = buf,
             silent = true,
-            desc = "Disabled: use Ctrl-C to close",
+            desc = "Disabled: use Ctrl-Q to close",
         })
         vim.keymap.set("n", "<C-c>", close_quicker_results, {
+            buffer = buf,
+            silent = true,
+            desc = "Close editable results",
+        })
+        vim.keymap.set("n", "<C-q>", close_quicker_results, {
             buffer = buf,
             silent = true,
             desc = "Close editable results",
@@ -1602,13 +1670,12 @@ require("live_server").setup({})
 -- ============================================================
 -- Layout Invariant
 --
--- The IDE frame has two rules that must hold no matter how a window was
--- closed: the explorer is the leftmost window at its fixed width, and there is
--- always at least one editor window. `wincmd =` (run from several places, and
--- on every WinClosed/WinNew/BufWinEnter) is happy to violate the first, and
--- closing the last editor buffer violates the second -- which then lets the
--- sidebar stretch across the whole frame. This re-asserts both instead of
--- trying to catch every individual path that can break them.
+-- The IDE frame has three rules that must hold no matter how a window was
+-- closed: the explorer is the leftmost window at its fixed width, there is
+-- always at least one editor window, and all visible terminals occupy one
+-- fixed-height row beneath the editor zone. `wincmd =` and window/buffer close
+-- paths can violate any of them, so this re-asserts the complete frame instead
+-- of trying to catch every individual path that can break it.
 -- ============================================================
 
 local layout_guard_busy = false
@@ -1628,6 +1695,11 @@ local function enforce_layout()
             sidebar = find_oil_sidebar()
         end
 
+        local terminals = terminal_row_windows()
+        if not terminal_row_is_bottom(terminals) then
+            move_terminal_row_to_bottom(terminals)
+        end
+
         if sidebar and vim.api.nvim_win_is_valid(sidebar) then
             -- Leftmost: anything that ended up left of it gets moved aside.
             if vim.api.nvim_win_get_position(sidebar)[2] ~= 0 then
@@ -1638,6 +1710,21 @@ local function enforce_layout()
             end
             vim.wo[sidebar].winfixwidth = true
         end
+
+        -- Moving the sidebar or equalizing another split can resize the panel
+        -- even when its topology is still correct. Re-pin its dimensions on
+        -- every guard pass, then balance only the terminal row's width.
+        local height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
+        for _, win in ipairs(terminals) do
+            if vim.api.nvim_win_is_valid(win) then
+                if vim.api.nvim_win_get_height(win) ~= height then
+                    vim.api.nvim_win_set_height(win, height)
+                end
+                vim.wo[win].winfixheight = true
+                vim.wo[win].winfixwidth = false
+            end
+        end
+        balance_terminal_row()
     end)
 
     layout_guard_busy = false
@@ -1645,9 +1732,9 @@ local function enforce_layout()
 end
 
 vim.api.nvim_create_user_command("LayoutEnforce", enforce_layout,
-    { desc = "Re-assert the explorer width and the presence of an editor zone" })
+    { desc = "Re-assert the explorer, editor, and bottom terminal layout" })
 
-vim.api.nvim_create_autocmd({ "WinClosed", "WinNew", "BufWinEnter", "VimResized" }, {
+vim.api.nvim_create_autocmd({ "WinClosed", "WinNew", "WinResized", "BufWinEnter", "TabEnter", "VimResized" }, {
     group = vim.api.nvim_create_augroup("LayoutInvariant", { clear = true }),
     callback = function() vim.schedule(enforce_layout) end,
     desc = "Hold the IDE layout invariant",
@@ -1659,5 +1746,5 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
         ide_layout.remember_visible_panel_buffer(args.buf)
         ide_layout.route_editor_buffer(args.buf)
     end,
-    desc = "Route normal buffers out of the Oil and terminal panels",
+    desc = "Route non-panel buffers out of the Oil and terminal panels",
 })

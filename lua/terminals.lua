@@ -271,8 +271,20 @@ function M.edit(opts)
     pcall(vim.api.nvim_buf_set_name, scratch, "terminal://" .. M.name(buf) .. " (scratch)")
 
     -- Land it in the editor zone, never over the explorer or the panel itself.
-    pcall(vim.cmd, "EditorFocus")
-    vim.api.nvim_win_set_buf(vim.api.nvim_get_current_win(), scratch)
+    -- Remember what it replaced so closing the editable copy restores that
+    -- buffer in-place instead of closing the editor window and allowing the
+    -- terminal panel to expand into its space.
+    local layout = require("ide_layout")
+    local editor = layout.find_editor_window() or layout.ensure_editor_window()
+    if not editor then
+        vim.api.nvim_buf_delete(scratch, { force = true })
+        vim.notify("No editor window available", vim.log.levels.ERROR)
+        return
+    end
+    vim.b[scratch].terminal_edit = true
+    vim.b[scratch].terminal_edit_previous_buf = vim.api.nvim_win_get_buf(editor)
+    vim.api.nvim_set_current_win(editor)
+    vim.api.nvim_win_set_buf(editor, scratch)
     local cursor = opts.cursor or { #lines, 0 }
     local row = math.max(1, math.min(cursor[1], #lines))
     local col = math.max(0, math.min(cursor[2], #(lines[row] or "")))

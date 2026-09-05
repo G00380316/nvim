@@ -218,7 +218,7 @@ local function render()
     local lines = {
         " Mobile Device Hub",
         " Workspace  " .. root,
-        " <Enter> boot/focus   R run project   x stop   r refresh   a actions   <C-c> close",
+        " <Enter> boot/focus   R run project   x stop   r refresh   a actions   <C-q> close",
         " / filter   <C-l> clear filter",
     }
     if state.filter then
@@ -1464,6 +1464,7 @@ function M.open()
 
     local opts = { buffer = state.buf, silent = true, nowait = true }
     vim.keymap.set("n", "<C-c>", close, opts)
+    vim.keymap.set("n", "<C-q>", close, opts)
     vim.keymap.set("n", "r", function() M.refresh() end, opts)
     vim.keymap.set("n", "<CR>", focus_or_boot, opts)
     vim.keymap.set("n", "R", run_project, opts)

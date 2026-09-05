@@ -153,7 +153,7 @@ function M.pick(menu)
     end
 
     require("snacks").picker.pick({
-        title = menu.title .. "  ·  type to filter  ·  Ctrl-C closes",
+        title = menu.title .. "  ·  type to filter  ·  Ctrl-Q closes",
         items = items,
         preview = false,
         layout = { preset = "vscode" },

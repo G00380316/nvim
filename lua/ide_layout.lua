@@ -230,14 +230,21 @@ local function ordinary_editor_buffer(buf)
     return filetype ~= "oil" and filetype ~= "snacks_dashboard"
 end
 
--- A protected window keeps its identity even while :edit temporarily replaces
--- its buffer. Move that editor buffer to the center and restore the panel.
+-- A protected window keeps its identity even while another command replaces
+-- its buffer. Oil's transient scratch buffers are part of its own lifecycle,
+-- but anything replacing a terminal panel belongs in the editor zone. Move
+-- that buffer to the center and restore the panel's saved buffer.
 function M.route_editor_buffer(buf)
-    if routing_buffer or not ordinary_editor_buffer(buf) then return false end
+    if routing_buffer or not vim.api.nvim_buf_is_valid(buf) then return false end
 
     local protected = {}
     for _, win in ipairs(vim.fn.win_findbuf(buf)) do
-        if M.is_protected_window(win) then protected[#protected + 1] = win end
+        local kind = M.panel_kind(win)
+        if (kind == "oil" and ordinary_editor_buffer(buf))
+            or (kind == "terminal" and window_filetype(win) ~= "floaterm")
+        then
+            protected[#protected + 1] = win
+        end
     end
     if #protected == 0 then return false end
 
