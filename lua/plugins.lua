@@ -965,7 +965,7 @@ local function new_terminal()
     oil_focus_generation = oil_focus_generation + 1
     ide_layout.note_explicit_focus()
     focus_editor()
-    vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("workspace").get()))
+    vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("terminals").launch_cwd()))
 end
 
 -- Splits the bottom panel itself in half rather than carving a full-height
@@ -1094,7 +1094,7 @@ local function split_terminal()
     vim.cmd(string.format(
         "FloatermNew --wintype=vsplit --position=rightbelow --width=%d --cwd=%s",
         half,
-        vim.fn.fnameescape(require("workspace").get())
+        vim.fn.fnameescape(require("terminals").launch_cwd())
     ))
     vim.schedule(function()
         balance_terminal_row()
@@ -1131,16 +1131,27 @@ vim.api.nvim_create_autocmd("FileType", {
 
         vim.keymap.set({ "n", "t" }, "<C-Up>", function() resize_terminal(3) end, opts)
         vim.keymap.set({ "n", "t" }, "<C-Down>", function() resize_terminal(-3) end, opts)
-        vim.keymap.set("n", "i", function()
-            require("terminals").edit({
-                cursor = vim.api.nvim_win_get_cursor(0),
-                startinsert = true,
-            })
+        -- `i` is deliberately left alone. In a terminal it means "go back to
+        -- the shell", and a key that types somewhere else instead is the kind
+        -- of surprise no description can undo. Copying output out is its own
+        -- explicit action, on the same Ctrl-G that terminal mode uses.
+        vim.keymap.set("n", "<C-g>", function()
+            require("terminals").edit({ cursor = vim.api.nvim_win_get_cursor(0) })
         end, vim.tbl_extend("force", opts, {
-            desc = "Edit terminal output from the cursor",
+            desc = "Copy terminal output from the cursor into an editable buffer",
+        }))
+        -- Select the lines you care about and copy just those, rather than
+        -- taking the whole scrollback and deleting the rest by hand.
+        vim.keymap.set("x", "<C-g>", function()
+            local first, last = vim.fn.line("v"), vim.fn.line(".")
+            if first > last then first, last = last, first end
+            vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
+            require("terminals").edit({ first = first, last = last })
+        end, vim.tbl_extend("force", opts, {
+            desc = "Copy the selected terminal output into an editable buffer",
         }))
         vim.keymap.set("n", "<leader>e", function() require("terminals").edit() end,
-            vim.tbl_extend("force", opts, { desc = "Edit this terminal's output" }))
+            vim.tbl_extend("force", opts, { desc = "Copy this terminal's output" }))
     end,
 })
 
@@ -1191,11 +1202,11 @@ end
 vim.keymap.set("t", "<C-s>", from_terminal(split_terminal),
     { noremap = true, silent = true, desc = "Split the bottom terminal panel in half" })
 -- Terminal buffers are read-only, so "edit this output" means editing a copy.
--- <C-g> works directly from terminal mode. Once <C-v> has entered
--- terminal-normal mode, jumping to text and pressing i opens an editable copy
--- at that exact cursor position; a still returns to the live shell.
+-- <C-g> works directly from terminal mode, and again after <C-v> has entered
+-- terminal-normal mode -- there it copies from the cursor, or from the visual
+-- selection, so you can take just the lines you want.
 vim.keymap.set("t", "<C-g>", from_terminal(function() require("terminals").edit() end),
-    { noremap = true, silent = true, desc = "Edit terminal output in a scratch buffer" })
+    { noremap = true, silent = true, desc = "Copy terminal output into an editable buffer" })
 
 -- One "make me a new thing" key: whatever you are looking at decides what gets
 -- created. In a terminal it is another terminal; anywhere else it is a new

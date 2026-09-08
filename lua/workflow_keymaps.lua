@@ -38,8 +38,8 @@ local entries = {
     { "Code", "<leader>dw", "n", "Show diagnostics for the project" },
 
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
-    { "Terminal", "<C-v> → i", "t", "Jump through output, then edit at the cursor", "terminal_normal" },
-    { "Terminal", "<C-g>", "t", "Copy terminal output into an editable buffer", "terminal_edit" },
+    { "Terminal", "<C-v> → <C-g>", "t", "Jump through output, then copy from the cursor", "terminal_normal" },
+    { "Terminal", "<C-g>", "t", "Copy terminal output into an editable, saveable buffer", "terminal_edit" },
     { "Terminal", "<leader>t", "n", "Open terminal action selector" },
 
     { "Git", "zg", "n", "Open Git action selector" },
@@ -129,11 +129,10 @@ local function open_picker(context)
                     return
                 end
 
+                -- No longer refused away from a terminal: edit() falls back
+                -- to the terminal on screen. Returning to the origin first
+                -- still matters, so a split panel copies the half you were in.
                 if item.action == "terminal_edit" then
-                    if not from_terminal then
-                        vim.notify("Open the command guide from a terminal to edit its output", vim.log.levels.INFO)
-                        return
-                    end
                     return_to_origin(context)
                     require("terminals").edit()
                     return

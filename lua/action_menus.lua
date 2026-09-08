@@ -4,6 +4,25 @@ local function command(value)
     return function() vim.cmd(value) end
 end
 
+-- The picker restores focus to its own idea of a "main" window on close, and
+-- that never includes a terminal (Snacks skips every buftype but ""). An
+-- action that has to run where the menu was opened has to be put back there
+-- itself; the rest are better off acting on the editor, as they already do.
+local function capture_origin()
+    local win = vim.api.nvim_get_current_win()
+    return { win = win, buf = vim.api.nvim_win_get_buf(win) }
+end
+
+local function return_to_origin(origin)
+    if not origin
+        or not vim.api.nvim_win_is_valid(origin.win)
+        or vim.api.nvim_win_get_buf(origin.win) ~= origin.buf
+    then
+        return
+    end
+    pcall(vim.api.nvim_set_current_win, origin.win)
+end
+
 local function debugger()
     return require("debugger")
 end
@@ -30,7 +49,7 @@ local menus = {
             { label = "New terminal", detail = "Create another project terminal", run = command("TerminalNew") },
             { label = "Split terminal panel", detail = "Add a side-by-side shell in the bottom row", run = command("TerminalSplit") },
             { label = "Choose terminal", detail = "Search the current project's live shells", run = command("TerminalList") },
-            { label = "Edit terminal output", detail = "Copy scrollback into an editable buffer", run = command("TerminalEdit") },
+            { label = "Edit terminal output", detail = "Copy output into an editable, saveable buffer", run = command("TerminalEdit"), at_origin = true },
         },
     },
     git = {
@@ -152,6 +171,8 @@ function M.pick(menu)
         }
     end
 
+    local origin = capture_origin()
+
     require("snacks").picker.pick({
         title = menu.title .. "  ·  type to filter  ·  Ctrl-Q closes",
         items = items,
@@ -169,6 +190,7 @@ function M.pick(menu)
             picker:close()
             if not item then return end
             vim.schedule(function()
+                if item.action.at_origin then return_to_origin(origin) end
                 local ok, err = pcall(item.action.run)
                 if not ok then vim.notify(tostring(err), vim.log.levels.ERROR, { title = menu.title }) end
             end)
