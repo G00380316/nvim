@@ -10,25 +10,46 @@
 
 local autoclose_group = vim.api.nvim_create_augroup("AutoCloseFloats", { clear = true })
 
--- Remove empty unnamed buffers after leaving them.
-vim.api.nvim_create_autocmd("BufLeave", {
-    group = autoclose_group,
-    callback = function()
-        local bufnr = vim.api.nvim_get_current_buf()
-        local name = vim.api.nvim_buf_get_name(bufnr)
+-- Reaping is deferred so it never runs inside the autocmd that noticed the
+-- buffer -- which means the buffer is free to change in the meantime. An empty
+-- unnamed buffer is exactly what `:edit some/new/file` reuses, and what a
+-- dashboard shortcut turns into a real document, so a delete queued while it
+-- was still scratch would land on a named buffer full of unsaved work.
+--
+-- Checking that the buffer still exists is not enough. The reason for deleting
+-- it has to hold at the moment of deleting, or the delay is just a window in
+-- which work gets destroyed.
+local function reap_if_still_disposable(bufnr, disposable)
+    vim.schedule(function()
+        if not vim.api.nvim_buf_is_valid(bufnr) then return end
+        if vim.api.nvim_get_current_buf() == bufnr then return end
+        -- Displayed somewhere else: deleting it would blank that window.
+        if #vim.fn.win_findbuf(bufnr) > 0 then return end
+        if not disposable(bufnr) then return end
+        vim.api.nvim_buf_delete(bufnr, { force = true })
+    end)
+end
 
-        if name == ""
-            and not vim.bo[bufnr].modified
-            and vim.bo[bufnr].buflisted
-            and vim.bo[bufnr].buftype == ""
-        then
-            vim.schedule(function()
-                if vim.api.nvim_buf_is_valid(bufnr)
-                    and vim.api.nvim_get_current_buf() ~= bufnr
-                then
-                    vim.api.nvim_buf_delete(bufnr, { force = true })
-                end
-            end)
+local function empty_unnamed(bufnr)
+    return vim.api.nvim_buf_get_name(bufnr) == ""
+        and not vim.bo[bufnr].modified
+        and vim.bo[bufnr].buflisted
+        and vim.bo[bufnr].buftype == ""
+end
+
+local function directory_buffer(bufnr)
+    return vim.fn.isdirectory(vim.api.nvim_buf_get_name(bufnr)) == 1
+        and not vim.bo[bufnr].modified
+        and vim.bo[bufnr].buftype == ""
+end
+
+-- Remove empty unnamed buffers after leaving them; BufEnter repeats the pass
+-- for one that has been sitting there since startup without being left.
+vim.api.nvim_create_autocmd({ "BufLeave", "BufEnter" }, {
+    group = autoclose_group,
+    callback = function(args)
+        if empty_unnamed(args.buf) then
+            reap_if_still_disposable(args.buf, empty_unnamed)
         end
     end,
 })
@@ -36,48 +57,21 @@ vim.api.nvim_create_autocmd("BufLeave", {
 -- Remove directory buffers after leaving them.
 vim.api.nvim_create_autocmd("BufLeave", {
     group = autoclose_group,
-    callback = function()
-        local bufnr = vim.api.nvim_get_current_buf()
-        local name = vim.api.nvim_buf_get_name(bufnr)
-
-        if vim.fn.isdirectory(name) == 1
-            and not vim.bo[bufnr].modified
-            and vim.bo[bufnr].buftype == ""
-        then
-            vim.schedule(function()
-                if vim.api.nvim_buf_is_valid(bufnr)
-                    and vim.api.nvim_get_current_buf() ~= bufnr
-                then
-                    vim.api.nvim_buf_delete(bufnr, { force = true })
-                end
-            end)
+    callback = function(args)
+        if directory_buffer(args.buf) then
+            reap_if_still_disposable(args.buf, directory_buffer)
         end
     end,
 })
 
--- Extra safety pass for unnamed buffers.
-vim.api.nvim_create_autocmd("BufEnter", {
-    group = autoclose_group,
-    callback = function()
-        local bufnr = vim.api.nvim_get_current_buf()
-        local name = vim.api.nvim_buf_get_name(bufnr)
-
-        if name == ""
-            and not vim.bo[bufnr].modified
-            and vim.bo[bufnr].buflisted
-            and vim.bo[bufnr].buftype == ""
-        then
-            vim.schedule(function()
-                if vim.api.nvim_buf_is_valid(bufnr)
-                    and vim.api.nvim_get_current_buf() ~= bufnr
-                then
-                    vim.api.nvim_buf_delete(bufnr, { force = true })
-                end
-            end)
-        end
-    end,
-})
-
+-- Drops buffers left pointing at files that no longer exist -- renamed or
+-- deleted outside Neovim, or checked out from under the editor.
+--
+-- "The file is not on disk" is also true of a file that has never been saved
+-- *yet*, and this used to delete those too, forcibly: `:e notes.md`, type a
+-- paragraph, switch buffers, and the paragraph was gone. Two things are
+-- therefore never reaped, no matter what the disk says -- a buffer with
+-- unsaved changes, and a buffer somebody is currently looking at.
 local function clean_dead_buffers()
     for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
         if not vim.api.nvim_buf_is_valid(bufnr)
@@ -91,6 +85,14 @@ local function clean_dead_buffers()
         end
 
         if vim.bo[bufnr].buflisted == false then
+            goto continue
+        end
+
+        if vim.bo[bufnr].modified then
+            goto continue
+        end
+
+        if #vim.fn.win_findbuf(bufnr) > 0 then
             goto continue
         end
 
