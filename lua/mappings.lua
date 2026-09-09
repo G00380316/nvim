@@ -933,15 +933,28 @@ end, {
     desc = "Open my Neovim commands from any mode",
 })
 
+-- Every open buffer, not just this project's. Hiding the rest only made them
+-- unreachable, so they are listed and tagged with the project they belong to
+-- instead -- dimmed for the current one, highlighted when it is somewhere
+-- else, so a buffer from another project is obvious rather than absent.
 vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
     Snacks.picker.buffers({
         sort_mru = true,
         current = true,
-        filter = {
-            filter = function(item)
-                return require("buffers").belongs_to_workspace(item.buf)
-            end,
-        },
+        format = function(item, picker)
+            local parts = Snacks.picker.format.buffer(item, picker)
+            local label, is_current = require("buffers").workspace_label(item.buf)
+            if label then
+                parts[#parts + 1] = { "  " }
+                -- Standard groups on purpose: the SnacksPicker* ones are not
+                -- defined in this setup and would render as plain text.
+                parts[#parts + 1] = {
+                    Snacks.picker.util.align(label, 18),
+                    is_current and "Comment" or "Special",
+                }
+            end
+            return parts
+        end,
     })
 end, {
     desc = "Choose buffer",

@@ -487,6 +487,14 @@ require("bufferline").setup({
         show_close_icon = false,
         persist_buffer_sort = true,
         always_show_bufferline = false,
+
+        -- What is drawn here is exactly what <Tab>/<S-Tab>/<C-b> cycle
+        -- through: every editor buffer, from any project. The two lists have
+        -- to agree -- a tab no key can reach, or a key landing somewhere with
+        -- no tab, is the same confusion either way round.
+        custom_filter = function(bufnr)
+            return require("buffers").is_editor(bufnr)
+        end,
         name_formatter = function(buf)
             if vim.bo[buf.bufnr].filetype == "lazygit" then return " LazyGit" end
             return buf.name

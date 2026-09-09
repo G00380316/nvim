@@ -30,11 +30,15 @@ local function reap_if_still_disposable(bufnr, disposable)
     end)
 end
 
+-- "Unnamed and not modified" used to stand in for "empty", and it is not the
+-- same thing: clearing a buffer out leaves it modified forever, so those
+-- survived every pass and collected in the bufferline. buffers.is_blank looks
+-- at the text instead, which is both stricter about what gets deleted and
+-- willing to delete the ones that actually were junk.
 local function empty_unnamed(bufnr)
-    return vim.api.nvim_buf_get_name(bufnr) == ""
-        and not vim.bo[bufnr].modified
-        and vim.bo[bufnr].buflisted
+    return vim.bo[bufnr].buflisted
         and vim.bo[bufnr].buftype == ""
+        and require("buffers").is_blank(bufnr)
 end
 
 local function directory_buffer(bufnr)
@@ -115,9 +119,31 @@ vim.api.nvim_create_autocmd({
     "FocusGained",
 }, {
     callback = function()
-        vim.schedule(clean_dead_buffers)
+        vim.schedule(function()
+            clean_dead_buffers()
+            -- The BufLeave/BufEnter hooks only ever see buffers you visit.
+            -- Anything a session restore or a plugin left behind needs a pass
+            -- over the whole list, or it stays in the bufferline for good.
+            require("buffers").sweep()
+        end)
     end,
 })
+
+-- A cached path resolution outlives a rename unless something drops it.
+vim.api.nvim_create_autocmd({ "BufFilePost", "BufWritePost" }, {
+    group = autoclose_group,
+    callback = function() require("buffers").forget() end,
+    desc = "Drop cached path resolutions when a buffer's file changes",
+})
+
+vim.api.nvim_create_user_command("BufferCleanup", function()
+    local removed = require("buffers").sweep()
+    vim.notify(
+        removed == 0 and "No empty buffers to clean up"
+            or string.format("Closed %d empty buffer%s", removed, removed == 1 and "" or "s"),
+        vim.log.levels.INFO
+    )
+end, { desc = "Close every empty unnamed buffer" })
 
 -- ============================================================
 -- Floating Window Auto-Close
