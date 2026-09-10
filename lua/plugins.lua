@@ -1184,9 +1184,9 @@ local function cycle_terminal(direction)
     end
 end
 
-vim.keymap.set({ "n", "v" }, "zp", cycle_terminal(-1),
+vim.keymap.set({ "n", "x" }, "zp", cycle_terminal(-1),
     { noremap = true, silent = true, desc = "Focus the previous terminal" })
-vim.keymap.set({ "n", "v" }, "zn", cycle_terminal(1),
+vim.keymap.set({ "n", "x" }, "zn", cycle_terminal(1),
     { noremap = true, silent = true, desc = "Focus the next terminal" })
 
 vim.keymap.set({ "n", "t" }, "<C-Left>", cycle_terminal(-1),

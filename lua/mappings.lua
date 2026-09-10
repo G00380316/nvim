@@ -557,13 +557,13 @@ vim.keymap.set("n", "<BS>", "ge", {
     desc = "Go to previous end of word",
 })
 
-vim.keymap.set({ "v", "x" }, "<", "<gv", {
+vim.keymap.set("x", "<", "<gv", {
     noremap = true,
     silent = true,
     desc = "Outdent and keep selection",
 })
 
-vim.keymap.set({ "v", "x" }, ">", ">gv", {
+vim.keymap.set("x", ">", ">gv", {
     noremap = true,
     silent = true,
     desc = "Indent and keep selection",
@@ -586,7 +586,11 @@ vim.keymap.set("x", "K", ":move '<-2<CR>gv=gv", {
 -- Clipboard / Delete / Paste
 -- ============================================================
 
-vim.keymap.set({ "n", "v" }, "y", '"+y', {
+-- "x", never "v", for anything whose key is a character you might type: "v"
+-- is visual *and* select, and select mode is where a snippet leaves you with
+-- a placeholder highlighted, waiting to be typed over. Mapped through "v",
+-- "c" changed the placeholder instead of replacing it with the letter c.
+vim.keymap.set({ "n", "x" }, "y", '"+y', {
     noremap = true,
     silent = true,
     desc = "Yank to system clipboard",
@@ -598,7 +602,7 @@ vim.keymap.set("n", "Y", '"+Y', {
     desc = "Yank line to system clipboard",
 })
 
-vim.keymap.set({ "n", "v" }, "d", '"_d', {
+vim.keymap.set({ "n", "x" }, "d", '"_d', {
     noremap = true,
     silent = true,
     desc = "Delete without clipboard",
@@ -610,7 +614,7 @@ vim.keymap.set("n", "D", '"_D', {
     desc = "Delete line without clipboard",
 })
 
-vim.keymap.set({ "n", "v" }, "c", '"_c', {
+vim.keymap.set({ "n", "x" }, "c", '"_c', {
     noremap = true,
     silent = true,
     desc = "Change without clipboard",
