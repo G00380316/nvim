@@ -198,6 +198,7 @@ function M.set_alias(path, alias)
     end
 
     alias = alias and vim.trim(alias) or ""
+    local previous = M.label(directory)
 
     -- Merge what other Neovim instances have named before writing, the same
     -- way the history does.
@@ -207,9 +208,9 @@ function M.set_alias(path, alias)
     labels = {}
 
     if alias ~= "" then
-        vim.notify(vim.fn.fnamemodify(directory, ":~") .. " is now " .. alias)
+        vim.notify(previous .. " is now " .. alias)
     else
-        vim.notify(vim.fn.fnamemodify(directory, ":~") .. " goes back to its own name")
+        vim.notify(previous .. " goes back to " .. vim.fs.basename(directory))
     end
     return true
 end
@@ -237,7 +238,7 @@ function M.forget(path)
     load_history()
     local kept = vim.tbl_filter(function(item) return item ~= directory end, history)
     if #kept == #history then
-        vim.notify("Not in the project list: " .. vim.fn.fnamemodify(directory, ":~"), vim.log.levels.WARN)
+        vim.notify("Not in the project list: " .. M.label(directory), vim.log.levels.WARN)
         return false
     end
 
@@ -322,7 +323,7 @@ function M.set(path, opts)
     })
 
     if not opts.silent then
-        vim.notify("Workspace: " .. root)
+        vim.notify("Workspace: " .. M.label(root))
     end
     return true
 end
@@ -508,7 +509,7 @@ function M.setup()
         end
 
         vim.ui.input({
-            prompt = "Name for " .. vim.fn.fnamemodify(M.get(), ":~") .. " (empty to clear): ",
+            prompt = "Name for " .. M.label() .. " (empty to clear): ",
             default = M.alias() or "",
         }, function(value)
             if value then M.set_alias(nil, value) end

@@ -1096,7 +1096,7 @@ local function open_project_switcher()
             name_project = function(picker, item)
                 if not item or item.browse then return end
                 vim.ui.input({
-                    prompt = "Name for " .. vim.fn.fnamemodify(item.file, ":~") .. " (empty to clear): ",
+                    prompt = "Name for " .. item.name .. " (empty to clear): ",
                     default = workspace.alias(item.file) or "",
                 }, function(value)
                     if not value then return end

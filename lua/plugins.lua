@@ -179,21 +179,20 @@ require("snacks").setup({
                 title = "Recent Workspaces",
                 padding = 1,
                 -- Snacks' own "projects" section prints each directory's
-                -- path, which would go on calling a named project by its
-                -- folder. The rows are built here so a name wins where
-                -- there is one, and the path still stands in where there
-                -- is not. A bare function is how the dashboard takes rows
-                -- that are not one of its own named sections.
+                -- path, shortened to fit -- ~/D/G/p/thing, which is not a
+                -- name and barely a path. These are the projects you pick by
+                -- recognising, so they are listed by what they are called:
+                -- the name you gave one, or its own folder. A bare function
+                -- is how the dashboard takes rows that are not one of its
+                -- own named sections.
                 function()
                     local workspace = require("workspace")
                     local rows = {}
 
                     for _, dir in ipairs(workspace.recent(5)) do
-                        local alias = workspace.alias(dir)
                         rows[#rows + 1] = {
                             icon = "directory",
-                            desc = alias,
-                            file = not alias and dir or nil,
+                            desc = workspace.label(dir),
                             autokey = true,
                             action = function()
                                 workspace.open(dir, { exact = true })
