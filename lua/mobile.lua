@@ -940,20 +940,18 @@ local function android_setup()
     terminal_command(vim.fn.expand("~"), "android-emulator-setup", { script }, M.refresh)
 end
 
--- Called eagerly from M.setup() (Neovim startup), not just lazily on first
--- hub action: xcodebuild.setup() wires up its oil.nvim integration, which
--- auto-registers new/renamed/moved files in project.pbxproj as you create
--- them through Oil. If setup() only ran on first hub interaction, any file
--- created via Oil earlier in the session would silently miss that tracking
--- and later break with "File not found in the project" the moment you
--- opened it (exactly what happened with VODPlaybackLoadingView.swift).
+-- Configured in one place, lua/lsp.lua, and asked for here. Setting it up a
+-- second time from this file did not add to the first: xcodebuild.setup()
+-- rebuilds the plugin's entire option table, so the two calls took turns
+-- deciding things only one of them knew about -- the per-project settings
+-- Xcodebuild reloads on a directory change most of all.
+--
+-- The bang forces it, because reaching a hub action is itself the statement
+-- that this project is an Xcode one, whatever the detection thinks.
 local function ensure_xcodebuild_initialized()
     if _G.xcodebuild_initialized then return end
-    require("xcodebuild").setup({
-        show_build_progress_bar = true,
-        logs = { auto_open_on_success = false, auto_open_on_error = true },
-    })
-    _G.xcodebuild_initialized = true
+    pcall(vim.cmd, "SwiftProjectActivate!")
+    _G.xcodebuild_initialized = vim.fn.exists(":XcodebuildBuild") == 2
 end
 
 local function ensure_configured_project(prompt)
@@ -1490,10 +1488,21 @@ function M.toggle()
 end
 
 function M.setup()
-    -- workspace.setup() (called before this, in init.lua) already set the
-    -- real cwd synchronously, so xcodebuild's per-project settings.json
-    -- loads correctly here rather than waiting for the first hub action.
-    ensure_xcodebuild_initialized()
+    -- Eagerly, rather than lazily on the first hub action, but only where it
+    -- means something: xcodebuild.setup() wires up its oil.nvim integration,
+    -- which auto-registers new/renamed/moved files in project.pbxproj as you
+    -- create them through Oil. Left until first hub interaction, any file
+    -- created via Oil earlier in the session would silently miss that
+    -- tracking and later break with "File not found in the project" the
+    -- moment you opened it (exactly what happened with
+    -- VODPlaybackLoadingView.swift).
+    --
+    -- No bang: a project with no Swift in it has no pbxproj to fall out of
+    -- sync, and should not pay for the setup. workspace.setup() (called
+    -- before this, in init.lua) already set the real cwd synchronously, so
+    -- the per-project settings.json loads correctly here.
+    pcall(vim.cmd, "SwiftProjectActivate")
+    _G.xcodebuild_initialized = vim.fn.exists(":XcodebuildBuild") == 2
 
     vim.api.nvim_create_user_command("MobileDevices", M.open, {
         desc = "Open or focus the workspace mobile device hub",

@@ -31,7 +31,7 @@ local function xcode_debug(method)
     return function()
         local ok, integration = pcall(require, "xcodebuild.integrations.dap")
         if not ok or type(integration[method]) ~= "function" then
-            error("Xcode debugging is available after SourceKit attaches to a Swift file")
+            error("Xcode debugging needs a Swift or Xcode project open")
         end
         integration[method]()
     end
@@ -95,6 +95,10 @@ local menus = {
         mode = { "n", "x" },
         title = "Xcode Actions",
         icon = "",
+        -- The Xcodebuild commands only exist once the project has been set up,
+        -- and that no longer waits for a Swift buffer to be focused. Opening
+        -- this menu is itself a statement that the project is a Swift one.
+        prepare = function() pcall(vim.cmd, "SwiftProjectActivate") end,
         actions = {
             { label = "Open Xcode action picker", detail = "Plugin's complete native action list", run = command("XcodebuildPicker") },
             { label = "Set up project", detail = "Choose or refresh the Xcode project", run = command("XcodebuildSetup") },
@@ -204,6 +208,7 @@ function M.open(name)
         vim.notify("Unknown action menu: " .. tostring(name), vim.log.levels.ERROR)
         return
     end
+    if menu.prepare then menu.prepare() end
     M.pick(menu)
 end
 

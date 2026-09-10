@@ -159,6 +159,44 @@ function M.focus(bufnr)
     end
 end
 
+---Run a command line in this project's terminal panel, opening one if there
+---is none.
+---
+---The shell down there is the same interactive zsh you would type into, so
+---everything defined in ~/.zshrc -- functions, aliases -- is available.
+---jobstart can never reach those: it execs a program, and a shell function is
+---not one. Output also lands where output belongs instead of being discarded
+---by a detached job, and a program that reads stdin still works.
+---@param command string
+---@param opts? { focus?: boolean }
+---@return boolean sent
+function M.send(command, opts)
+    opts = opts or {}
+
+    -- Prefer the terminal being looked at, so a split panel runs where you are
+    -- rather than jumping to whichever shell happens to be first.
+    local bufnr = vim.api.nvim_get_current_buf()
+    if vim.bo[bufnr].filetype ~= "floaterm" then
+        bufnr = M.list()[1]
+    end
+
+    if not bufnr then
+        vim.cmd("TerminalNew")
+        bufnr = vim.api.nvim_get_current_buf()
+        if vim.bo[bufnr].filetype ~= "floaterm" then bufnr = M.list()[1] end
+    end
+
+    local job = bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.b[bufnr].terminal_job_id
+    if not job then
+        vim.notify("No terminal available to run this in", vim.log.levels.ERROR)
+        return false
+    end
+
+    if opts.focus ~= false then M.focus(bufnr) end
+    vim.fn.chansend(job, command .. "\n")
+    return true
+end
+
 function M.cycle(direction)
     local bufnrs = M.list()
     if #bufnrs == 0 then

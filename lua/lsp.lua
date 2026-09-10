@@ -422,7 +422,12 @@ local function setup_debugger()
     debugger.xcodebuild = xdap
 end
 
-local function setup_once(sourcekit_client_name)
+-- Which SourceKit client the test search should ask about. The name is only
+-- known once one attaches, and the project is now set up before that happens,
+-- so this is the name this config enables it under until proven otherwise.
+local sourcekit_client = "sourcekit"
+
+local function setup_once()
     if initialized then
         return true
     end
@@ -442,7 +447,7 @@ local function setup_once(sourcekit_client_name)
             test_search = {
                 file_matching = "filename_lsp",
                 target_matching = true,
-                lsp_client = sourcekit_client_name,
+                lsp_client = sourcekit_client,
                 lsp_timeout = 400,
             },
 
@@ -526,6 +531,211 @@ local function setup_once(sourcekit_client_name)
     return true
 end
 
+-- ============================================================
+-- Swift / Xcode project activation
+--
+-- The Xcode actions used to appear only once SourceKit had attached to a
+-- Swift buffer, which left build, run and test unreachable from every other
+-- file in the same project -- a README, an asset catalogue, the explorer.
+-- They belong to the project, not to whichever buffer is focused, so the
+-- project is what turns them on.
+-- ============================================================
+
+local ignored_directories = {
+    [".build"] = true,
+    [".git"] = true,
+    [".swiftpm"] = true,
+    ["DerivedData"] = true,
+    ["Pods"] = true,
+    ["build"] = true,
+    ["node_modules"] = true,
+}
+
+local function is_project_marker(name)
+    return name == "Package.swift"
+        or name == "buildServer.json"
+        or name == ".bsp"
+        or name:match("%.xcodeproj$") ~= nil
+        or name:match("%.xcworkspace$") ~= nil
+end
+
+---The nearest directory at or above `path` that owns a Swift or Xcode project.
+local function swift_project_root(path)
+    if not path or path == "" then return nil end
+
+    local start = vim.fn.isdirectory(path) == 1 and path or vim.fs.dirname(path)
+    local marker = vim.fs.find(is_project_marker, {
+        path = start,
+        upward = true,
+        limit = 1,
+    })[1]
+
+    return marker and vim.fs.normalize(vim.fs.dirname(marker)) or nil
+end
+
+-- Answered once per directory. A project does not stop being a Swift one
+-- between workspace switches, and the walk below is the only expensive thing
+-- here -- tens of milliseconds on a large tree that holds no Swift at all,
+-- because proving the absence means reading the whole thing.
+local swift_directories = {}
+
+---Whether a directory is somewhere the Xcode actions have anything to act on.
+---
+---A project marker settles it. Failing that, a bounded scan for Swift sources:
+---"a directory with a Swift file in it" is exactly the case this is meant to
+---cover, and it is also how a package looks before anything has configured it.
+local function holds_swift_sources(root)
+    if not root or vim.fn.isdirectory(root) ~= 1 then return false end
+
+    local cached = swift_directories[root]
+    if cached ~= nil then return cached end
+
+    local found = false
+    -- Deep enough for the layout Swift actually uses, Sources/App/Views and
+    -- the like, and no deeper: every extra level roughly doubles the cost of
+    -- the case that has to read everything.
+    local ok, entries = pcall(vim.fs.dir, root, {
+        depth = 4,
+        -- Returning false stops the walk descending, not the entry itself
+        -- being reported, so a .bsp or .xcodeproj still counts as a marker
+        -- without its contents being read.
+        skip = function(name)
+            return not (ignored_directories[name]
+                or name:sub(1, 1) == "."
+                or name:match("%.xcodeproj$")
+                or name:match("%.xcworkspace$"))
+        end,
+    })
+
+    if ok then
+        for name in entries do
+            local base = vim.fs.basename(name)
+            if base:match("%.swift$") or is_project_marker(base) then
+                found = true
+                break
+            end
+        end
+    end
+
+    swift_directories[root] = found
+    return found
+end
+
+---The Swift project the current situation is about: the file being edited
+---first, the workspace otherwise.
+local function active_swift_root()
+    local workspace = vim.fs.normalize(require("workspace").get())
+
+    -- An open Swift file is the whole question already answered, so it does
+    -- not go through the scan -- a project laid out more deeply than the walk
+    -- reaches still counts while you are editing it.
+    local name = vim.api.nvim_buf_get_name(0)
+    if name ~= "" and vim.bo.filetype == "swift" then
+        return swift_project_root(name) or workspace
+    end
+
+    return swift_project_root(workspace)
+        or (holds_swift_sources(workspace) and workspace or nil)
+end
+
+local configured_root
+
+---Xcodebuild reads the project it acts on from the working directory, so
+---switching projects means telling it that directory moved. This config keeps
+---the working directory on the workspace root, which makes "the project the
+---file is in" and "the project Xcodebuild builds" the same answer.
+local function reload_project(root)
+    if configured_root == root then return end
+    configured_root = root
+
+    local ok, xcodebuild = pcall(require, "xcodebuild")
+    if ok then pcall(xcodebuild.update_cwd) end
+end
+
+---Make the Xcode actions available for whatever project is in play.
+---@param opts? { force?: boolean }
+local function activate(opts)
+    opts = opts or {}
+
+    local root = active_swift_root()
+    if not root and not opts.force then return false end
+    if not setup_once() then return false end
+
+    reload_project(root or vim.fs.normalize(vim.fn.getcwd()))
+    return true
+end
+
+-- The single place Xcodebuild is configured. Calling xcodebuild.setup() twice
+-- is not additive -- each call rebuilds the plugin's whole option table -- so
+-- whichever ran last would silently decide things the other cared about.
+-- Everything that wants the Xcode actions comes through here instead.
+--
+-- Plain: set up only if this really is a Swift or Xcode project. With a bang:
+-- set up regardless, for the places where asking for the actions is itself
+-- the statement that it is one.
+vim.api.nvim_create_user_command("SwiftProjectActivate", function(args)
+    if not activate({ force = args.bang }) and args.bang then
+        notify("Could not set up the Xcode actions for this project", vim.log.levels.ERROR)
+    end
+end, {
+    bang = true,
+    desc = "Set up Xcode build, run and test actions for the current project",
+})
+
+vim.api.nvim_create_autocmd("User", {
+    group = group,
+    pattern = "WorkspaceChanged",
+    callback = function()
+        vim.schedule(function() activate() end)
+    end,
+    desc = "Give a Swift project its Xcode actions as soon as it is opened",
+})
+
+-- Deferred rather than run at require time: the scan costs nothing worth
+-- paying for during startup, and the first workspace is only settled on
+-- VimEnter.
+vim.api.nvim_create_autocmd("VimEnter", {
+    group = group,
+    once = true,
+    callback = function()
+        vim.defer_fn(function() activate() end, 200)
+    end,
+    desc = "Set up the Xcode actions for a Swift project opened at startup",
+})
+
+-- A Swift file belonging to another project moves the workspace to it, so
+-- build, run and test act on the project the file is actually part of rather
+-- than whichever one happened to be open. A file inside the current workspace
+-- never moves it, even when a nested package below the root would match.
+vim.api.nvim_create_autocmd("BufEnter", {
+    group = group,
+    pattern = "*.swift",
+    callback = function(args)
+        local name = vim.api.nvim_buf_get_name(args.buf)
+        if name == "" then return end
+
+        local root = swift_project_root(name)
+        if not root then return end
+
+        local workspace = require("workspace")
+        local current = vim.fs.normalize(workspace.get())
+        local path = vim.fs.normalize(vim.fn.fnamemodify(name, ":p"))
+        local inside = root == current
+            or path == current
+            or path:sub(1, #current + 1) == current .. "/"
+
+        vim.schedule(function()
+            -- Not silent: a project changing under you because of which file
+            -- you opened should say so, the same as choosing one by hand.
+            if not inside then
+                workspace.set(root, { exact = true })
+            end
+            activate()
+        end)
+    end,
+    desc = "Follow a Swift file to the project it belongs to",
+})
+
 vim.api.nvim_create_autocmd("LspAttach", {
     group = group,
     callback = function(args)
@@ -536,11 +746,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
             return
         end
 
-        if vim.bo[bufnr].filetype ~= "swift" then
-            return
-        end
+        sourcekit_client = client.name
 
-        if not setup_once(client.name) then
+        -- Swift is the case worth forcing: SourceKit also serves C and
+        -- Objective-C, where an Xcode project may not be involved at all.
+        if not activate({ force = vim.bo[bufnr].filetype == "swift" }) then
             return
         end
 

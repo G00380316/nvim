@@ -323,8 +323,8 @@ local function close_editor_buffer(buf, preferred_replacement)
     local win = vim.api.nvim_get_current_win()
     local replacement = preferred_replacement
     if not (replacement
-        and replacement ~= buf
-        and vim.api.nvim_buf_is_valid(replacement))
+            and replacement ~= buf
+            and vim.api.nvim_buf_is_valid(replacement))
     then
         replacement = next_editor_buffer(buf)
     end
@@ -691,6 +691,31 @@ vim.keymap.set("n", "<S-Tab>", function() cycle_editor_buffer(-1) end, {
     desc = "Previous editor buffer",
 })
 
+-- Jump back and forward through cursor positions.
+--
+-- Both default keys are already spoken for: <C-o> opens the project switcher,
+-- and <C-i> is the same keycode as the <Tab> above. `normal!` reaches the
+-- jumplist underneath both mappings. The cost is that [ and ] stop being
+-- prefixes for the built-in section, method and paragraph motions.
+local function jump(key)
+    local keys = vim.keycode(key)
+    return function()
+        -- Quietly at either end of the list: beeping on every further press
+        -- is noise rather than information.
+        pcall(vim.cmd.normal, { vim.v.count1 .. keys, bang = true })
+    end
+end
+
+vim.keymap.set("n", "[", jump("<C-o>"), {
+    silent = true,
+    desc = "Jump back to the previous cursor position",
+})
+
+vim.keymap.set("n", "]", jump("<C-i>"), {
+    silent = true,
+    desc = "Jump forward to the next cursor position",
+})
+
 -- ============================================================
 -- Editor Splits / Pane Sizing
 -- ============================================================
@@ -938,9 +963,20 @@ end, {
 -- instead -- dimmed for the current one, highlighted when it is somewhere
 -- else, so a buffer from another project is obvious rather than absent.
 vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
+    -- The buffer you are already in is the one result that can never be the
+    -- answer. `current = false` alone does not remove it: the picker's own
+    -- input buffer is the current one by the time its finder runs, so which
+    -- buffer to drop has to be decided here, before the picker opens.
+    local origin = vim.api.nvim_get_current_buf()
+    if not require("buffers").is_editor(origin) then
+        local win = require("ide_layout").find_editor_window()
+        origin = win and vim.api.nvim_win_get_buf(win) or origin
+    end
+
     Snacks.picker.buffers({
         sort_mru = true,
-        current = true,
+        current = false,
+        transform = function(item) return item.buf ~= origin end,
         format = function(item, picker)
             local parts = Snacks.picker.format.buffer(item, picker)
             local label, is_current = require("buffers").workspace_label(item.buf)
@@ -1058,11 +1094,11 @@ local function open_project_switcher()
 
             local status = item.current and "CURRENT" or item.open and "OPEN   " or "       "
             return {
-                { status, item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
+                { status,                                  item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
                 { "  " },
                 { Snacks.picker.util.align(item.name, 24), "SnacksPickerFile" },
                 { "  " },
-                { vim.fn.fnamemodify(item.file, ":~"), "SnacksPickerDir" },
+                { vim.fn.fnamemodify(item.file, ":~"),     "SnacksPickerDir" },
             }
         end,
         confirm = function(picker, item)
@@ -1330,3 +1366,76 @@ vim.keymap.set({ "n", "x", "o" }, "s", function() require("flash").jump() end, {
 --         jump = { pos = "range" },
 --     })
 -- end, { desc = "Flash select any word" })
+
+
+-- ============================================================
+-- Run Programs
+-- ============================================================
+
+
+-- Extensions run() in ~/.zshrc knows about. Checking here only saves opening
+-- a terminal for a file nothing can run; the function itself stays the
+-- authority and says so in the panel when this list has drifted.
+local runnable_extensions = {
+    c = true,
+    cpp = true,
+    go = true,
+    java = true,
+    js = true,
+    py = true,
+    sh = true,
+    tex = true,
+}
+
+---Run the file in the editor through the `run` shell function.
+---
+---This goes through the terminal panel rather than jobstart. `run` is a zsh
+---function, not a program on PATH, so jobstart cannot execute it at all --
+---that is the "'run' is not executable" error. It also compiles with
+---`./"$base"`, which only resolves for a name relative to the shell's cwd, so
+---the file is handed over by basename from its own directory.
+local function run_current_file()
+    -- The key is reachable from the sidebar too, where the current buffer says
+    -- nothing about which file is open.
+    local buf = vim.api.nvim_get_current_buf()
+    if not require("buffers").is_editor(buf) then
+        local win = require("ide_layout").find_editor_window()
+        buf = win and vim.api.nvim_win_get_buf(win) or buf
+    end
+
+    local path = vim.api.nvim_buf_get_name(buf)
+    if path == "" then
+        vim.notify("No file to run", vim.log.levels.WARN, { title = "run" })
+        return
+    end
+
+    local extension = vim.fn.fnamemodify(path, ":e"):lower()
+    if not runnable_extensions[extension] then
+        vim.notify(
+            "run: nothing is defined for ." .. extension .. " files",
+            vim.log.levels.WARN,
+            { title = "run" }
+        )
+        return
+    end
+
+    if vim.bo[buf].modified then
+        vim.api.nvim_buf_call(buf, function() vim.cmd("silent! write") end)
+    end
+
+    -- A subshell, so a build artefact lands beside its source without the
+    -- terminal you were using changing directory underneath you.
+    require("terminals").send(("(cd %s && run %s)"):format(
+        vim.fn.shellescape(vim.fn.fnamemodify(path, ":p:h")),
+        vim.fn.shellescape(vim.fn.fnamemodify(path, ":t"))
+    ))
+end
+
+vim.keymap.set("n", "<leader>b", run_current_file, {
+    silent = true,
+    desc = "Run current file",
+})
+
+vim.api.nvim_create_user_command("Run", run_current_file, {
+    desc = "Run the current file through the zsh run function",
+})
