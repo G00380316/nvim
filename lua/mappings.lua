@@ -1073,6 +1073,9 @@ local function open_project_switcher()
             local is_current = path == current
             local is_open = workspace.is_open(path)
             items[#items + 1] = {
+                -- The path is gone from the row but still read by the filter,
+                -- so two projects sharing a folder name can be told apart by
+                -- typing where one of them lives.
                 text = table.concat({ name, path, is_current and "current" or is_open and "open" or "" }, " "),
                 name = name,
                 file = path,
@@ -1133,11 +1136,9 @@ local function open_project_switcher()
 
             local status = item.current and "CURRENT" or item.open and "OPEN   " or "       "
             return {
-                { status,                                  item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
+                { status,       item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
                 { "  " },
-                { Snacks.picker.util.align(item.name, 24), "SnacksPickerFile" },
-                { "  " },
-                { vim.fn.fnamemodify(item.file, ":~"),     "SnacksPickerDir" },
+                { item.name,    "SnacksPickerFile" },
             }
         end,
         confirm = function(picker, item)
