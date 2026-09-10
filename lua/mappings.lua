@@ -1057,33 +1057,68 @@ end, {
 
 local function open_project_switcher()
     local workspace = require("workspace")
-    local current = workspace.get()
-    local items = {}
 
-    for _, path in ipairs(workspace.recent(20)) do
-        local name = vim.fs.basename(path)
-        local is_current = path == current
-        local is_open = workspace.is_open(path)
+    -- A finder rather than a fixed list: naming and forgetting act on the list
+    -- you are looking at, so it has to be able to answer again.
+    local function projects()
+        local current = workspace.get()
+        local items = {}
+
+        for _, path in ipairs(workspace.recent(20)) do
+            local name = workspace.label(path)
+            local is_current = path == current
+            local is_open = workspace.is_open(path)
+            items[#items + 1] = {
+                text = table.concat({ name, path, is_current and "current" or is_open and "open" or "" }, " "),
+                name = name,
+                file = path,
+                current = is_current,
+                open = is_open,
+            }
+        end
+
         items[#items + 1] = {
-            text = table.concat({ name, path, is_current and "current" or is_open and "open" or "" }, " "),
-            name = name,
-            file = path,
-            current = is_current,
-            open = is_open,
+            text = "browse another folder workspace",
+            name = "Browse for another folder…",
+            browse = true,
         }
+        return items
     end
 
-    items[#items + 1] = {
-        text = "browse another folder workspace",
-        name = "Browse for another folder…",
-        browse = true,
-    }
-
     Snacks.picker.pick({
-        title = "Switch Project  ·  live contexts stay open",
-        items = items,
+        title = "Switch Project  ·  Ctrl-E name  ·  Ctrl-X forget",
+        finder = projects,
         preview = false,
         layout = { preset = "vscode" },
+        actions = {
+            -- Named, not renamed: the directory is untouched, so a project
+            -- called something friendlier is still found where it always was.
+            name_project = function(picker, item)
+                if not item or item.browse then return end
+                vim.ui.input({
+                    prompt = "Name for " .. vim.fn.fnamemodify(item.file, ":~") .. " (empty to clear): ",
+                    default = workspace.alias(item.file) or "",
+                }, function(value)
+                    if not value then return end
+                    workspace.set_alias(item.file, value)
+                    picker:find({ refresh = true })
+                end)
+            end,
+            forget_project = function(picker, item)
+                if not item or item.browse then return end
+                if workspace.forget(item.file) then
+                    picker:find({ refresh = true })
+                end
+            end,
+        },
+        win = {
+            input = {
+                keys = {
+                    ["<C-e>"] = { "name_project", mode = { "n", "i" } },
+                    ["<C-x>"] = { "forget_project", mode = { "n", "i" } },
+                },
+            },
+        },
         format = function(item)
             if item.browse then
                 return {

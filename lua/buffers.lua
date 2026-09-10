@@ -95,7 +95,8 @@ end
 function M.workspace_label(buf)
     local root = M.workspace_of(buf)
     if not root then return nil, false end
-    return vim.fs.basename(root), root == vim.fs.normalize(require("workspace").get())
+    local workspace = require("workspace")
+    return workspace.label(root), root == vim.fs.normalize(workspace.get())
 end
 
 function M.belongs_to_workspace(buf, project)

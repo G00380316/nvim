@@ -69,6 +69,39 @@ end
 
 load_history()
 
+-- Aliases sit beside the history and mean exactly one thing: what a project is
+-- called on screen. The directory keeps its own name, so nothing on disk moves
+-- and a renamed project is still the same path in every list.
+local alias_file = vim.fn.stdpath("state") .. "/workspace-aliases.json"
+local aliases = {}
+local labels = {}
+
+local function load_aliases()
+    labels = {}
+    aliases = {}
+    if vim.fn.filereadable(alias_file) ~= 1 then return end
+
+    local ok, decoded = pcall(vim.json.decode, table.concat(vim.fn.readfile(alias_file), "\n"))
+    if not ok or type(decoded) ~= "table" then return end
+
+    for path, alias in pairs(decoded) do
+        if type(path) == "string" and type(alias) == "string" and alias ~= "" then
+            local directory = normalize(path)
+            if directory then aliases[directory] = alias end
+        end
+    end
+end
+
+local function save_aliases()
+    vim.fn.mkdir(vim.fn.fnamemodify(alias_file, ":h"), "p")
+    -- An empty Lua table encodes as a JSON array, which would not read back as
+    -- the map this is, so the object form is written out explicitly.
+    local encoded = next(aliases) and vim.json.encode(aliases) or "{}"
+    pcall(vim.fn.writefile, { encoded }, alias_file)
+end
+
+load_aliases()
+
 local function startup_workspace(path)
     local directory = normalize(path)
     if directory and excluded_history_roots[directory] and history[1] then
@@ -134,8 +167,98 @@ function M.is_open(path)
     return M.context_tab(path) ~= nil
 end
 
+---What a project is called on screen: the alias you gave it, otherwise the
+---directory's own name.
+---
+---Memoised, because this is asked once per row of every buffer and project
+---list, and answering it properly means resolving the path.
+function M.label(path)
+    path = path or M.get()
+
+    local cached = labels[path]
+    if cached then return cached end
+
+    local directory = normalize(path)
+    local label = (directory and aliases[directory]) or vim.fs.basename(directory or path)
+    labels[path] = label
+    return label
+end
+
+function M.alias(path)
+    local directory = normalize(path or M.get())
+    return directory and aliases[directory] or nil
+end
+
+---Name a project, or clear its name by passing nothing.
+function M.set_alias(path, alias)
+    local directory = normalize(path or M.get())
+    if not directory then
+        vim.notify("No such directory: " .. tostring(path), vim.log.levels.ERROR)
+        return false
+    end
+
+    alias = alias and vim.trim(alias) or ""
+
+    -- Merge what other Neovim instances have named before writing, the same
+    -- way the history does.
+    load_aliases()
+    aliases[directory] = alias ~= "" and alias or nil
+    save_aliases()
+    labels = {}
+
+    if alias ~= "" then
+        vim.notify(vim.fn.fnamemodify(directory, ":~") .. " is now " .. alias)
+    else
+        vim.notify(vim.fn.fnamemodify(directory, ":~") .. " goes back to its own name")
+    end
+    return true
+end
+
+---Drop a project from the list you switch between.
+---
+---The directory is not touched -- this is the list forgetting it, not a
+---delete. A project with a live tab is refused: every tab re-asserts its own
+---workspace when you enter it, so forgetting one would silently undo itself.
+function M.forget(path)
+    local directory = normalize(path)
+    if not directory then
+        vim.notify("No such directory: " .. tostring(path), vim.log.levels.ERROR)
+        return false
+    end
+
+    if context_tab(directory) then
+        vim.notify(
+            "Close this project's tab before forgetting it: " .. M.label(directory),
+            vim.log.levels.WARN
+        )
+        return false
+    end
+
+    load_history()
+    local kept = vim.tbl_filter(function(item) return item ~= directory end, history)
+    if #kept == #history then
+        vim.notify("Not in the project list: " .. vim.fn.fnamemodify(directory, ":~"), vim.log.levels.WARN)
+        return false
+    end
+
+    local name = M.label(directory)
+    history = kept
+    vim.fn.mkdir(vim.fn.fnamemodify(history_file, ":h"), "p")
+    pcall(vim.fn.writefile, { vim.json.encode(history) }, history_file)
+
+    load_aliases()
+    if aliases[directory] then
+        aliases[directory] = nil
+        save_aliases()
+        labels = {}
+    end
+
+    vim.notify("Forgot project: " .. name)
+    return true
+end
+
 function M.name()
-    return vim.fs.basename(M.get())
+    return M.label(M.get())
 end
 
 function M.git_root()
@@ -160,7 +283,10 @@ function M.git_root()
 end
 
 function M.recent(limit)
+    -- Both files are re-read here, so a project list drawn now reflects what
+    -- other Neovim instances have opened and named since this one started.
     load_history()
+    load_aliases()
     local items = vim.list_slice(history, 1, math.min(limit or #history, #history))
     return vim.deepcopy(items)
 end
@@ -373,6 +499,31 @@ function M.setup()
         nargs = 1,
         complete = "dir",
         desc = "Open a directory as the complete workspace",
+    })
+
+    vim.api.nvim_create_user_command("WorkspaceAlias", function(args)
+        if args.args ~= "" then
+            M.set_alias(nil, args.args)
+            return
+        end
+
+        vim.ui.input({
+            prompt = "Name for " .. vim.fn.fnamemodify(M.get(), ":~") .. " (empty to clear): ",
+            default = M.alias() or "",
+        }, function(value)
+            if value then M.set_alias(nil, value) end
+        end)
+    end, {
+        nargs = "?",
+        desc = "Name the current project, or clear its name",
+    })
+
+    vim.api.nvim_create_user_command("WorkspaceForget", function(args)
+        M.forget(args.args ~= "" and args.args or M.get())
+    end, {
+        nargs = "?",
+        complete = "dir",
+        desc = "Drop a project from the list you switch between",
     })
 end
 

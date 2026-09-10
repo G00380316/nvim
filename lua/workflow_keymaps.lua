@@ -4,6 +4,8 @@ local M = {}
 -- every mapping when something uncommon needs to be looked up.
 local entries = {
     { "Project", "<leader>p", "n", "Switch project and preserve its open panes" },
+    { "Project", "<C-e>", "switcher", "Name the project under the cursor, or clear its name" },
+    { "Project", "<C-x>", "switcher", "Forget the project under the cursor" },
     { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
     { "Project", "<C-e>", "n/i/x", "Open or focus the Oil project tree" },
     { "Project", "<C-f>", "n/i/x", "Find a file in the current project" },
