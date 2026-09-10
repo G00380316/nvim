@@ -1140,9 +1140,9 @@ local function open_project_switcher()
 
             local status = item.current and "CURRENT" or item.open and "OPEN   " or "       "
             return {
-                { status,       item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
+                { status,    item.current and "DiagnosticOk" or item.open and "DiagnosticInfo" or "Comment" },
                 { "  " },
-                { item.name,    "SnacksPickerFile" },
+                { item.name, "SnacksPickerFile" },
             }
         end,
         confirm = function(picker, item)
@@ -1417,69 +1417,113 @@ vim.keymap.set({ "n", "x", "o" }, "s", function() require("flash").jump() end, {
 -- ============================================================
 
 
--- Extensions run() in ~/.zshrc knows about. Checking here only saves opening
--- a terminal for a file nothing can run; the function itself stays the
--- authority and says so in the panel when this list has drifted.
-local runnable_extensions = {
-    c = true,
-    cpp = true,
-    go = true,
-    java = true,
-    js = true,
-    py = true,
-    sh = true,
-    tex = true,
+-- What run() and runtest() in ~/.zshrc know how to handle. Checking here only
+-- saves opening a terminal for a file nothing can be done with; the shell
+-- functions stay the authority and say so in the panel when these have
+-- drifted. Names as well as extensions, because a Dockerfile has no extension
+-- and a Makefile is not a .make.
+local shell_runners = {
+    run = {
+        label = "run",
+        extensions = {
+            bash = true, c = true, cc = true, cjs = true, cpp = true, cts = true,
+            cxx = true, go = true, htm = true, html = true, java = true,
+            js = true, jsx = true, lua = true, m = true, markdown = true,
+            md = true, mjs = true, mm = true, mts = true, php = true, py = true,
+            rb = true, rs = true, sh = true, sql = true, swift = true,
+            tex = true, ts = true, tsx = true, typ = true, zsh = true,
+        },
+        names = {
+            Containerfile = true,
+            Dockerfile = true,
+            GNUmakefile = true,
+            Makefile = true,
+            makefile = true,
+        },
+    },
+    runtest = {
+        label = "test",
+        extensions = {
+            bash = true, cjs = true, cts = true, go = true, java = true,
+            js = true, jsx = true, lua = true, mjs = true, mts = true,
+            php = true, py = true, rs = true, sh = true, swift = true,
+            ts = true, tsx = true, zsh = true,
+        },
+        names = {},
+    },
 }
 
----Run the file in the editor through the `run` shell function.
+---Put the file in the editor through one of those shell functions.
 ---
----This goes through the terminal panel rather than jobstart. `run` is a zsh
----function, not a program on PATH, so jobstart cannot execute it at all --
----that is the "'run' is not executable" error. It also compiles with
+---This goes through the terminal panel rather than jobstart. They are zsh
+---functions, not programs on PATH, so jobstart cannot execute them at all --
+---that is the "'run' is not executable" error. run also compiles with
 ---`./"$base"`, which only resolves for a name relative to the shell's cwd, so
 ---the file is handed over by basename from its own directory.
-local function run_current_file()
-    -- The key is reachable from the sidebar too, where the current buffer says
-    -- nothing about which file is open.
-    local buf = vim.api.nvim_get_current_buf()
-    if not require("buffers").is_editor(buf) then
-        local win = require("ide_layout").find_editor_window()
-        buf = win and vim.api.nvim_win_get_buf(win) or buf
-    end
+local function send_to_runner(name)
+    local runner = shell_runners[name]
 
-    local path = vim.api.nvim_buf_get_name(buf)
-    if path == "" then
-        vim.notify("No file to run", vim.log.levels.WARN, { title = "run" })
-        return
-    end
+    return function()
+        -- The key is reachable from the sidebar too, where the current buffer
+        -- says nothing about which file is open.
+        local buf = vim.api.nvim_get_current_buf()
+        if not require("buffers").is_editor(buf) then
+            local win = require("ide_layout").find_editor_window()
+            buf = win and vim.api.nvim_win_get_buf(win) or buf
+        end
 
-    local extension = vim.fn.fnamemodify(path, ":e"):lower()
-    if not runnable_extensions[extension] then
-        vim.notify(
-            "run: nothing is defined for ." .. extension .. " files",
-            vim.log.levels.WARN,
-            { title = "run" }
-        )
-        return
-    end
+        local path = vim.api.nvim_buf_get_name(buf)
+        if path == "" then
+            vim.notify("No file to " .. runner.label, vim.log.levels.WARN, { title = name })
+            return
+        end
 
-    if vim.bo[buf].modified then
-        vim.api.nvim_buf_call(buf, function() vim.cmd("silent! write") end)
-    end
+        local basename = vim.fn.fnamemodify(path, ":t")
+        local extension = vim.fn.fnamemodify(path, ":e"):lower()
 
-    -- A subshell, so a build artefact lands beside its source without the
-    -- terminal you were using changing directory underneath you.
-    require("terminals").send(("(cd %s && run %s)"):format(
-        vim.fn.shellescape(vim.fn.fnamemodify(path, ":p:h")),
-        vim.fn.shellescape(vim.fn.fnamemodify(path, ":t"))
-    ))
+        if not (runner.names[basename] or runner.extensions[extension]) then
+            local kind = extension ~= "" and ("." .. extension) or basename
+            vim.notify(
+                ("%s: nothing is defined for %s files"):format(name, kind),
+                vim.log.levels.WARN,
+                { title = name }
+            )
+            return
+        end
+
+        if vim.bo[buf].modified then
+            vim.api.nvim_buf_call(buf, function() vim.cmd("silent! write") end)
+        end
+
+        -- A subshell, so a build artefact lands beside its source without the
+        -- terminal you were using changing directory underneath you.
+        require("terminals").send(("(cd %s && %s %s)"):format(
+            vim.fn.shellescape(vim.fn.fnamemodify(path, ":p:h")),
+            name,
+            vim.fn.shellescape(basename)
+        ))
+    end
 end
 
-vim.keymap.set("n", "<leader>b", run_current_file, {
+local run_current_file = send_to_runner("run")
+local test_current_file = send_to_runner("runtest")
+
+vim.keymap.set("n", "<leader>e", run_current_file, {
     silent = true,
     desc = "Run current file",
 })
 
+-- Note this makes <leader>x a prefix: the Xcode selector now waits out
+-- 'timeoutlen' before opening, in case an r is coming.
+vim.keymap.set("n", "<leader>xr", test_current_file, {
+    silent = true,
+    desc = "Test current file",
+})
+
 vim.api.nvim_create_user_command("Run", run_current_file, {
     desc = "Run the current file through the zsh run function",
+})
+
+vim.api.nvim_create_user_command("RunTest", test_current_file, {
+    desc = "Test the current file through the zsh runtest function",
 })

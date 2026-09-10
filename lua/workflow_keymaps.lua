@@ -57,6 +57,9 @@ local entries = {
     { "Tools", "zs", "n", "Open live-server action selector" },
     { "Tools", "<leader>x", "n/x", "Open Xcode action selector" },
 
+    { "Run", "<leader>e", "n", "Run the current file through the zsh run function" },
+    { "Run", "<leader>xr", "n", "Test the current file through the zsh runtest function" },
+
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>qn", "n", "Open quick notes" },
     { "Daily", "zmm", "n", "Open or focus the mobile device hub" },
