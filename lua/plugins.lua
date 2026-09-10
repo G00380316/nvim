@@ -177,14 +177,31 @@ require("snacks").setup({
             {
                 icon = " ",
                 title = "Recent Workspaces",
-                section = "projects",
-                dirs = function() return require("workspace").recent(5) end,
-                session = false,
-                pick = false,
-                limit = 5,
                 padding = 1,
-                action = function(dir)
-                    require("workspace").open(dir, { exact = true })
+                -- Snacks' own "projects" section prints each directory's
+                -- path, which would go on calling a named project by its
+                -- folder. The rows are built here so a name wins where
+                -- there is one, and the path still stands in where there
+                -- is not. A bare function is how the dashboard takes rows
+                -- that are not one of its own named sections.
+                function()
+                    local workspace = require("workspace")
+                    local rows = {}
+
+                    for _, dir in ipairs(workspace.recent(5)) do
+                        local alias = workspace.alias(dir)
+                        rows[#rows + 1] = {
+                            icon = "directory",
+                            desc = alias,
+                            file = not alias and dir or nil,
+                            autokey = true,
+                            action = function()
+                                workspace.open(dir, { exact = true })
+                            end,
+                        }
+                    end
+
+                    return rows
                 end,
             },
         },
