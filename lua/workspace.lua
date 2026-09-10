@@ -9,7 +9,20 @@ local markers = {
     "Cargo.toml",
     "go.mod",
     "Makefile",
+    "Package.swift",
 }
+
+local marker_names = {}
+for _, name in ipairs(markers) do marker_names[name] = true end
+
+-- An Xcode project or workspace is a bundle named after the project itself, so
+-- it cannot be listed by name with the rest. Without it a Swift file's root
+-- came out as whichever Sources/ subdirectory it happened to sit in.
+local function is_marker(name)
+    return marker_names[name] == true
+        or name:match("%.xcodeproj$") ~= nil
+        or name:match("%.xcworkspace$") ~= nil
+end
 
 local root
 local setting_cwd = false
@@ -151,7 +164,7 @@ end
 function M.find(path)
     local dir = normalize(path)
     if not dir then return nil end
-    return vim.fs.root(dir, markers) or dir
+    return vim.fs.root(dir, is_marker) or dir
 end
 
 function M.get()
@@ -182,6 +195,72 @@ function M.label(path)
     local label = (directory and aliases[directory]) or vim.fs.basename(directory or path)
     labels[path] = label
     return label
+end
+
+-- Answered per buffer and only re-answered when that buffer's file, or the
+-- workspace itself, has actually moved. This is read on every statusline
+-- redraw, and resolving a path properly costs a few syscalls.
+local contexts = {}
+
+---The buffer a project-scoped question is really about.
+---
+---Asked from the terminal or the sidebar, the current buffer is a shell or a
+---directory listing and says nothing about what is being worked on.
+local function subject_buffer()
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "" then
+        return buf
+    end
+
+    local ok, layout = pcall(require, "ide_layout")
+    local win = ok and layout.find_editor_window() or nil
+    buf = win and vim.api.nvim_win_get_buf(win) or nil
+    if buf and vim.bo[buf].buftype == "" then return buf end
+end
+
+---Where a project-scoped action should look right now.
+---
+---The workspace, normally. But a file opened from outside it -- a dependency's
+---source, a note, another checkout -- has no relationship to that root, and a
+---search scoped there cannot see the file on screen, never mind its
+---neighbours. For those the file's own project answers instead.
+---
+---Nothing is switched. This is read per action, so it follows the buffer you
+---are in and lets go the moment you return to one of the project's own files:
+---no state to restore, and the workspace, its tab, its terminals and its
+---sidebar all stay where they were.
+function M.context(bufnr)
+    local root = vim.fs.normalize(M.get())
+    local buf = bufnr or subject_buffer()
+    if not buf then return root end
+
+    local name = vim.api.nvim_buf_get_name(buf)
+    if name == "" then return root end
+
+    local cached = contexts[buf]
+    if cached and cached.name == name and cached.root == root then
+        return cached.context
+    end
+
+    local context = root
+    local directory = normalize(name)
+
+    if directory and directory ~= root and directory:sub(1, #root + 1) ~= root .. "/" then
+        local found = M.find(directory)
+        -- A file under a marker-less directory below $HOME would otherwise
+        -- resolve to $HOME itself, and searching there is not a search.
+        context = (found and not excluded_history_roots[found]) and found or directory
+    end
+
+    contexts[buf] = { name = name, root = root, context = context }
+    return context
+end
+
+---Whether the workspace is what a project-scoped action would act on, or
+---whether the buffer you are in has taken the scope somewhere else.
+function M.visiting()
+    local context = M.context()
+    return context ~= vim.fs.normalize(M.get()) and context or nil
 end
 
 function M.alias(path)
@@ -458,6 +537,12 @@ function M.setup()
             end
         end,
         desc = "Activate the project context owned by this tab",
+    })
+
+    vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
+        group = workspace_group,
+        callback = function(args) contexts[args.buf] = nil end,
+        desc = "Forget the search context of a buffer that is gone",
     })
 
     vim.api.nvim_create_autocmd("TabClosed", {

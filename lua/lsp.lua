@@ -703,37 +703,23 @@ vim.api.nvim_create_autocmd("VimEnter", {
     desc = "Set up the Xcode actions for a Swift project opened at startup",
 })
 
--- A Swift file belonging to another project moves the workspace to it, so
--- build, run and test act on the project the file is actually part of rather
--- than whichever one happened to be open. A file inside the current workspace
--- never moves it, even when a nested package below the root would match.
+-- Opening a Swift file is enough to want the Xcode actions, whatever the
+-- workspace looked like when it was scanned.
+--
+-- It used to move the workspace as well, when the file belonged to a project
+-- of its own. That was the wrong tool: a workspace here owns a tab, its
+-- terminals and its sidebar, and pushing all of that sideways because a buffer
+-- came into view is not something you can undo by looking away. Reading a file
+-- from elsewhere takes the *search* with it instead -- see workspace.context()
+-- -- and choosing to work in another project stays a thing you ask for.
 vim.api.nvim_create_autocmd("BufEnter", {
     group = group,
     pattern = "*.swift",
     callback = function(args)
-        local name = vim.api.nvim_buf_get_name(args.buf)
-        if name == "" then return end
-
-        local root = swift_project_root(name)
-        if not root then return end
-
-        local workspace = require("workspace")
-        local current = vim.fs.normalize(workspace.get())
-        local path = vim.fs.normalize(vim.fn.fnamemodify(name, ":p"))
-        local inside = root == current
-            or path == current
-            or path:sub(1, #current + 1) == current .. "/"
-
-        vim.schedule(function()
-            -- Not silent: a project changing under you because of which file
-            -- you opened should say so, the same as choosing one by hand.
-            if not inside then
-                workspace.set(root, { exact = true })
-            end
-            activate()
-        end)
+        if vim.api.nvim_buf_get_name(args.buf) == "" then return end
+        vim.schedule(function() activate({ force = true }) end)
     end,
-    desc = "Follow a Swift file to the project it belongs to",
+    desc = "Give a Swift file the Xcode actions wherever it was opened from",
 })
 
 vim.api.nvim_create_autocmd("LspAttach", {

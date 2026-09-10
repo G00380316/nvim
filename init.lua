@@ -342,16 +342,16 @@ local lsp_status = {
     end,
 }
 
+-- The project you are in, by the name you gave it. A file open from outside
+-- it takes searches with it, and that is worth seeing: a scope that moved
+-- silently is the kind of thing you only notice through its results.
 local cwd_component = {
     function()
-        local cwd = vim.fn.getcwd()
-        local home = vim.fn.expand("~")
+        local workspace = require("workspace")
+        local visiting = workspace.visiting()
+        local label = "󰉋 " .. workspace.label()
 
-        if cwd:find(home, 0, true) == 1 then
-            cwd = "~" .. cwd:sub(#home + 0)
-        end
-
-        return "󰉋 " .. vim.fn.fnamemodify(cwd, ":t")
+        return visiting and (label .. " \u{203a} " .. workspace.label(visiting)) or label
     end,
     color = {
         fg = "#88b4fa",

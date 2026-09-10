@@ -902,7 +902,7 @@ end, {
 })
 
 vim.keymap.set("n", "<leader>dw", function()
-    Snacks.picker.diagnostics({ cwd = require("workspace").get() })
+    Snacks.picker.diagnostics({ cwd = require("workspace").context() })
 end, {
     desc = "Diagnostics workspace",
 })
@@ -912,14 +912,18 @@ end, {
 -- Snacks Pickers
 -- ============================================================
 
+-- context(), not get(): a file open from outside the project takes the search
+-- with it, so you can look through where it actually lives instead of
+-- searching a root that cannot even see it. Returning to one of the project's
+-- own files brings the scope back on its own.
 vim.keymap.set({ "n", "v", "i" }, "<C-f>", function()
-    Snacks.picker.files({ cwd = require("workspace").get() })
+    Snacks.picker.files({ cwd = require("workspace").context() })
 end, {
     desc = "Find files",
 })
 
 vim.keymap.set({ "n", "v", "i" }, "<C-g>", function()
-    Snacks.picker.grep({ cwd = require("workspace").get() })
+    Snacks.picker.grep({ cwd = require("workspace").context() })
 end, {
     desc = "Grep",
 })
@@ -937,7 +941,7 @@ end, {
 })
 
 vim.keymap.set({ "n", "x" }, "<leader>l", function()
-    Snacks.picker.grep_word({ cwd = require("workspace").get() })
+    Snacks.picker.grep_word({ cwd = require("workspace").context() })
 end, {
     desc = "Grep word or visual selection",
 })
