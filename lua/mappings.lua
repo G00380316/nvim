@@ -1073,10 +1073,10 @@ local function open_project_switcher()
             local is_current = path == current
             local is_open = workspace.is_open(path)
             items[#items + 1] = {
-                -- The path is gone from the row but still read by the filter,
-                -- so two projects sharing a folder name can be told apart by
-                -- typing where one of them lives.
-                text = table.concat({ name, path, is_current and "current" or is_open and "open" or "" }, " "),
+                -- What you can see is what you can type: the filter reads the
+                -- name and nothing else, so a row never matches on a path or
+                -- a status word that is nowhere on it.
+                text = name,
                 name = name,
                 file = path,
                 current = is_current,
@@ -1085,7 +1085,7 @@ local function open_project_switcher()
         end
 
         items[#items + 1] = {
-            text = "browse another folder workspace",
+            text = "Browse for another folder…",
             name = "Browse for another folder…",
             browse = true,
         }
