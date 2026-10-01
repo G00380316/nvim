@@ -1277,18 +1277,34 @@ vim.keymap.set("t", "<C-e>", function()
     focus_tree()
 end, { silent = true, desc = "Focus file explorer" })
 
+-- The explorer is reached with <C-e> and by nothing else. It stands down the
+-- whole left edge, so every <C-h> out of the editor or the terminal landed in
+-- it, and getting back to the file you were in cost a <C-l> that only existed
+-- to undo the first key. Directional movement passes over it instead: it is a
+-- panel you summon, not a window you wander into.
+---@param origin integer the window the move started from
+local function avoid_explorer(origin)
+    if window_filetype(vim.api.nvim_get_current_win()) ~= "oil" then return end
+
+    -- The editor, not simply back where we came from. The terminal row spans
+    -- the full width under both the explorer and the editor, so moving up out
+    -- of it lands in whichever of the two shares the cursor's column -- and
+    -- when that is the explorer, the editor is what was meant.
+    local editor = find_editor_window()
+    vim.api.nvim_set_current_win(window_is_valid(editor) and editor or origin)
+end
+
 local function navigate_window(direction, tmux_flag)
     if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
 
     local current = vim.api.nvim_get_current_win()
     vim.cmd("wincmd " .. direction)
+    avoid_explorer(current)
 
     -- At a Neovim edge, continue into the adjacent tmux pane when available.
     if vim.api.nvim_get_current_win() == current and vim.env.TMUX and vim.env.TMUX ~= "" then
         vim.system({ "tmux", "select-pane", tmux_flag }, { detach = true })
-        return
     end
-
 end
 
 local function map_window_navigation(lhs, direction, tmux_flag, label)
