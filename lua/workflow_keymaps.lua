@@ -66,6 +66,7 @@ local entries = {
     { "Daily", "<C-\\>", "any", "Open this command guide from any mode" },
     { "Daily", "<leader>k", "n", "Show this workflow guide" },
     { "Daily", "<leader>K", "n", "Search every active keymap" },
+    { "Daily", "<leader>v", "n", "Search Vim's own keys, and what this config took" },
 }
 
 function M.items()

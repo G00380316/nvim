@@ -217,7 +217,7 @@ function M.setup()
     -- switching from per-action shortcuts to selectors.
     local legacy = {
         n = {
-            "<leader>v", "zt", "zgd", "zgh",
+            "zt", "zgd", "zgh",
             "zdb", "zdc", "zdn", "zdi", "zdo", "zdr", "zdu", "zdl", "zdx", "zde", "zdv",
             "zlo", "zlt", "zls", "zll", "zlr",
             "zss", "zsm", "zso", "zsl", "zsr",

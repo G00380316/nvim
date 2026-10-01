@@ -958,6 +958,16 @@ end, {
     desc = "Search every active keymap",
 })
 
+-- Vim's own keys are not mappings, so neither <leader>k nor <leader>K can find
+-- them: nothing in the keymap tables knows that `caw` changes a word. They get
+-- their own searchable list, which also says which of them this config has
+-- taken for something else.
+vim.keymap.set("n", "<leader>v", function()
+    require("vim_keymaps").open()
+end, {
+    desc = "Search Vim's own keys",
+})
+
 vim.keymap.set({ "n", "i", "x", "t" }, "<C-\\>", function()
     require("workflow_keymaps").open()
 end, {
