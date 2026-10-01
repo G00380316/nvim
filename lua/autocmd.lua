@@ -252,23 +252,12 @@ vim.api.nvim_create_autocmd("BufEnter", {
     callback = open_external_file,
 })
 
--- ============================================================
--- Terminal Behaviour
--- Starts insert mode automatically for zsh terminal buffers.
--- ============================================================
-
-local function enter_insert_if_zsh()
-    local bufname = vim.fn.expand("%:p")
-
-    if bufname:match("zsh") then
-        vim.cmd("startinsert")
-    end
-end
-
-vim.api.nvim_create_autocmd("BufEnter", {
-    pattern = "term://*",
-    callback = enter_insert_if_zsh,
-})
+-- Nothing starts insert mode on entering a terminal any more. Every way into
+-- one -- a window move, the focus key, picking one from the list -- went
+-- through here or through floaterm's own BufEnter hook, so arriving anywhere
+-- near a terminal meant typing in it, and reading the output meant leaving
+-- terminal mode again first. Insert is asked for where it is actually meant:
+-- creating a terminal, and sending one a command. See g:floaterm_autoinsert.
 
 
 -- ============================================================

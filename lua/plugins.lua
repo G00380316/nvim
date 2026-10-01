@@ -402,7 +402,6 @@ local function focus_terminal()
         last_editor_win = not is_panel(current) and current or last_editor_win
         last_panel_win = terminal
         vim.api.nvim_set_current_win(terminal)
-        vim.cmd("startinsert")
     else
         focus_editor()
         vim.cmd("FloatermToggle")
@@ -951,6 +950,11 @@ vim.g.floaterm_autoclose = 0
 -- Hiding an existing bottom-position terminal when another project opens one
 -- would destroy the first project's pane layout, even though its job survives.
 vim.g.floaterm_autohide = 0
+-- Entering a terminal is navigation, not a decision to type: you go down there
+-- to read what came out, scroll it, copy a line. floaterm inserts on every
+-- BufEnter into a terminal buffer otherwise, and the insert is asked for by
+-- hand in the one place it belongs -- creating a terminal.
+vim.g.floaterm_autoinsert = "never"
 vim.g.floaterm_title = "terminal $1/$2"
 
 -- Use the same slim separator language for the bottom panel and sidebar.
@@ -977,11 +981,25 @@ local function resize_terminal(delta)
     vim.notify("Terminal panel is hidden", vim.log.levels.INFO)
 end
 
+-- Fed as a key rather than called as startinsert. With autoinsert off, floaterm
+-- answers its own open event by feeding <C-\><C-n> to leave terminal mode, and
+-- a startinsert from here loses to it; `i` queued behind it wins by arriving
+-- after. In a terminal buffer `i` is the way in, and it is left unmapped there
+-- on purpose.
+local function enter_terminal_insert()
+    vim.schedule(function()
+        if window_filetype(vim.api.nvim_get_current_win()) == "floaterm" then
+            vim.api.nvim_feedkeys("i", "n", false)
+        end
+    end)
+end
+
 local function new_terminal()
     oil_focus_generation = oil_focus_generation + 1
     ide_layout.note_explicit_focus()
     focus_editor()
     vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("terminals").launch_cwd()))
+    enter_terminal_insert()
 end
 
 -- Splits the bottom panel itself in half rather than carving a full-height
@@ -1116,6 +1134,7 @@ local function split_terminal()
         balance_terminal_row()
         restore_sidebar_width()
     end)
+    enter_terminal_insert()
 end
 
 local function terminal_picker()
@@ -1270,9 +1289,6 @@ local function navigate_window(direction, tmux_flag)
         return
     end
 
-    if window_filetype(vim.api.nvim_get_current_win()) == "floaterm" then
-        vim.cmd("startinsert")
-    end
 end
 
 local function map_window_navigation(lhs, direction, tmux_flag, label)

@@ -139,7 +139,13 @@ end
 
 ---Focus a terminal. Already-visible terminals are focused in place rather than
 ---being re-displayed somewhere else, so a split panel keeps its layout.
-function M.focus(bufnr)
+---
+---Normal mode, not terminal mode. Arriving at a terminal is usually about
+---reading what it said; `opts.insert` is for the callers that know you are
+---about to type, which is sending it a command.
+---@param bufnr integer
+---@param opts? { insert?: boolean }
+function M.focus(bufnr, opts)
     if not vim.api.nvim_buf_is_valid(bufnr) then return end
 
     local win = terminal_window(bufnr)
@@ -155,7 +161,11 @@ function M.focus(bufnr)
 
     if win and vim.api.nvim_win_is_valid(win) then
         vim.api.nvim_set_current_win(win)
-        vim.cmd("startinsert")
+        if opts and opts.insert then
+            vim.schedule(function()
+                if vim.bo.filetype == "floaterm" then vim.cmd("startinsert") end
+            end)
+        end
     end
 end
 
@@ -192,7 +202,9 @@ function M.send(command, opts)
         return false
     end
 
-    if opts.focus ~= false then M.focus(bufnr) end
+    -- Insert mode: a program that stops to ask something -- a prompt, a
+    -- password, input() -- has to be answerable without pressing i first.
+    if opts.focus ~= false then M.focus(bufnr, { insert = true }) end
     vim.fn.chansend(job, command .. "\n")
     return true
 end
