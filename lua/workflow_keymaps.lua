@@ -7,6 +7,9 @@ local entries = {
     { "Project", "<C-e>", "switcher", "Name the project under the cursor, or clear its name" },
     { "Project", "<C-x>", "switcher", "Forget the project under the cursor" },
     { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
+    { "Project", "zcd", "n", "Use the current file's project as the workspace" },
+    { "Project", "zcf", "n", "Find a file in this Neovim config" },
+    { "Project", "<leader>f", "n", "Find a file anywhere under home" },
     { "Project", "<C-e>", "n/i/x", "Open or focus the Oil project tree" },
     { "Project", "<C-f>", "n/i/x", "Find a file in the current project" },
     { "Project", "<C-g>", "n/i/x", "Search text across the current project" },
@@ -17,6 +20,7 @@ local entries = {
     { "Search", "<leader>sq", "n", "Search into editable project results" },
     { "Search", "<leader>st", "n", "Open or focus editable project results" },
     { "Search", "<leader>c", "n", "Clear the active search" },
+    { "Search", "<leader>r", "n", "Replace the word under the cursor, interactively" },
 
     { "Buffers", "<C-b>", "n/i/x", "Choose an open editor buffer" },
     { "Buffers", "<Tab>", "n", "Next editor buffer" },
@@ -43,6 +47,7 @@ local entries = {
     { "Terminal", "<C-v> → <C-g>", "t", "Jump through output, then copy from the cursor", "terminal_normal" },
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable, saveable buffer", "terminal_edit" },
     { "Terminal", "<leader>t", "n", "Open terminal action selector" },
+    { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
     { "Git", "zg", "n", "Open Git action selector" },
 
@@ -56,12 +61,16 @@ local entries = {
     { "Tools", "zl", "n", "Open LeetCode action selector" },
     { "Tools", "zs", "n", "Open live-server action selector" },
     { "Tools", "<leader>x", "n/x", "Open Xcode action selector" },
+    { "Tools", "zS", "n", "Open SSH action selector" },
+    { "Tools", "zT", "n", "Open Typst preview action selector" },
 
     { "Run", "<leader>e", "n", "Run the current file through the zsh run function" },
     { "Run", "<leader>xr", "n", "Test the current file through the zsh runtest function" },
 
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>qn", "n", "Open quick notes" },
+    { "Daily", "<leader>o", "n", "Save this file and source it" },
+    { "Daily", "<leader>h", "n", "Search Neovim's help" },
     { "Daily", "zmm", "n", "Open or focus the mobile device hub" },
     { "Daily", "<C-\\>", "any", "Open this command guide from any mode" },
     { "Daily", "<leader>k", "n", "Show this workflow guide" },

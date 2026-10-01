@@ -148,6 +148,35 @@ local menus = {
             { label = "Reset solution", detail = "Reset the current problem buffer", run = command("Leet Reset") },
         },
     },
+    ssh = {
+        -- zS and zT: capitals because zr and zy are Vim's own fold commands,
+        -- and this config has shadowed enough of those already.
+        lhs = "zS",
+        title = "SSH Actions",
+        icon = "",
+        actions = {
+            { label = "Open SSH launcher", detail = "Browse and manage saved hosts", run = command("SshLauncher") },
+            { label = "Connect to a host", detail = "Open a session on a saved host", run = command("SshConnect") },
+            { label = "Show live sessions", detail = "List the connections that are open", run = command("SshSessions") },
+            { label = "Start the agent", detail = "Run ssh-agent and load your keys", run = command("SshAgent") },
+            { label = "Add a key", detail = "Register another key with the agent", run = command("SshAddKey") },
+            { label = "Edit a key", detail = "Open a key file for editing", run = command("SshEditKey") },
+            { label = "Diagnose", detail = "Check the SSH setup for problems", run = command("SshDiagnose") },
+        },
+    },
+    typst = {
+        lhs = "zT",
+        title = "Typst Actions",
+        icon = "",
+        actions = {
+            { label = "Toggle the preview", detail = "Open or close the rendered document", run = command("TypstPreviewToggle") },
+            { label = "Start the preview", detail = "Render this document in the browser", run = command("TypstPreview") },
+            { label = "Stop the preview", detail = "Close the renderer", run = command("TypstPreviewStop") },
+            { label = "Follow the cursor", detail = "Scroll the preview as you move", run = command("TypstPreviewFollowCursorToggle") },
+            { label = "Jump to the cursor", detail = "Scroll the preview here, once", run = command("TypstPreviewSyncCursor") },
+            { label = "Update the preview", detail = "Re-render without restarting", run = command("TypstPreviewUpdate") },
+        },
+    },
     server = {
         lhs = "zs",
         title = "Live Server Actions",
