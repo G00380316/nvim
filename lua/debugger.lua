@@ -104,8 +104,27 @@ local native_configurations = {
     },
 }
 
+-- Added to, never assigned over. xcodebuild.nvim owns dap.configurations.swift
+-- while an Xcode project is open, and replacing the table threw its iOS
+-- configuration away the first time anything required this module -- which is
+-- the moment you press F5. So F5 on a Swift file destroyed the one thing that
+-- would have debugged it, and asked for an executable path instead.
+local function register_configurations(filetype, configurations)
+    local existing = dap.configurations[filetype] or {}
+    local present = {}
+    for _, configuration in ipairs(existing) do present[configuration.name] = true end
+
+    for _, configuration in ipairs(configurations) do
+        if not present[configuration.name] then
+            existing[#existing + 1] = configuration
+        end
+    end
+
+    dap.configurations[filetype] = existing
+end
+
 for _, filetype in ipairs({ "c", "cpp", "objc", "objcpp", "swift" }) do
-    dap.configurations[filetype] = native_configurations
+    register_configurations(filetype, native_configurations)
 end
 
 local function python_path()

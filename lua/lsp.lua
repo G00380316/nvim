@@ -351,66 +351,37 @@ local function update_swift_package()
     run_in_terminal({ "swift", "package", "update" }, root, "Swift package update", refresh_after_package_change)
 end
 
+-- Only the Xcode half of it. dap, dap-ui, the signs and the listeners that open
+-- and close the UI all belong to lua/debugger.lua, which sets them up once.
+-- This used to call dapui.setup() a second time with a different layout --
+-- panels on the left and along the bottom, directly over the explorer and the
+-- terminal row -- and register a second copy of every listener. Which layout
+-- you got depended on whether SourceKit had attached before you first pressed
+-- F5, which is no way to decide anything.
 local function setup_debugger()
-    local dap_ok, dap = pcall(require, "dap")
-    if not dap_ok then
-        notify("nvim-dap is not installed; debugger mappings were skipped", vim.log.levels.WARN)
+    local ok, configured = pcall(require, "debugger")
+    if not ok then
+        notify("Debugger setup failed: " .. tostring(configured), vim.log.levels.ERROR)
         return
     end
 
+    local dap = configured.dap
     debugger.dap = dap
-
-    local dapui_ok, dapui = pcall(require, "dapui")
-    if dapui_ok then
-        local ui_setup_ok, ui_setup_err = pcall(dapui.setup, {
-            layouts = {
-                {
-                    elements = {
-                        { id = "scopes",      size = 0.35 },
-                        { id = "stacks",      size = 0.35 },
-                        { id = "breakpoints", size = 0.15 },
-                        { id = "watches",     size = 0.15 },
-                    },
-                    position = "left",
-                    size = 44,
-                },
-                {
-                    elements = {
-                        { id = "repl",    size = 0.45 },
-                        { id = "console", size = 0.55 },
-                    },
-                    position = "bottom",
-                    size = 14,
-                },
-            },
-        })
-
-        if ui_setup_ok then
-            debugger.dapui = dapui
-
-            dap.listeners.before.attach.xcodebuild_dapui = function()
-                dapui.open()
-            end
-            dap.listeners.before.launch.xcodebuild_dapui = function()
-                dapui.open()
-            end
-            dap.listeners.before.event_terminated.xcodebuild_dapui = function()
-                dapui.close()
-            end
-            dap.listeners.before.event_exited.xcodebuild_dapui = function()
-                dapui.close()
-            end
-        else
-            notify("dap-ui setup failed: " .. tostring(ui_setup_err), vim.log.levels.WARN)
-        end
-    else
-        notify("nvim-dap-ui is not installed; debugging will use DAP without the UI", vim.log.levels.WARN)
-    end
+    debugger.dapui = configured.dapui
 
     local xdap_ok, xdap = pcall(require, "xcodebuild.integrations.dap")
     if not xdap_ok then
-        notify("Could not load xcodebuild DAP integration", vim.log.levels.ERROR)
+        notify("Could not load the Xcode debugger integration", vim.log.levels.ERROR)
         return
+    end
+
+    -- xcodebuild assigns dap.configurations.swift outright, so the native
+    -- configurations are held back and returned behind its iOS one: F5 in an
+    -- app project debugs the app without asking anything, and a plain Swift
+    -- binary is still there in the list under it.
+    local native_swift = {}
+    for _, configuration in ipairs(dap.configurations.swift or {}) do
+        native_swift[#native_swift + 1] = configuration
     end
 
     local setup_ok, setup_err = pcall(xdap.setup)
@@ -419,13 +390,16 @@ local function setup_debugger()
         return
     end
 
+    local swift = dap.configurations.swift or {}
+    local present = {}
+    for _, configuration in ipairs(swift) do present[configuration.name] = true end
+    for _, configuration in ipairs(native_swift) do
+        if not present[configuration.name] then swift[#swift + 1] = configuration end
+    end
+    dap.configurations.swift = swift
+
     debugger.xcodebuild = xdap
 end
-
--- Which SourceKit client the test search should ask about. The name is only
--- known once one attaches, and the project is now set up before that happens,
--- so this is the name this config enables it under until proven otherwise.
-local sourcekit_client = "sourcekit"
 
 local function setup_once()
     if initialized then
