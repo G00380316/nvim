@@ -337,6 +337,54 @@ function M.forget(path)
     return true
 end
 
+---Close a project's live context: the tab that holds its windows, its splits
+---and its terminals.
+---
+---It stays in the list -- this is putting it away, not forgetting it. Its
+---buffers stay loaded too, and reachable, which is how everything else in this
+---config treats a buffer; closing a project is about the layout it owns.
+---
+---Refused while any of its buffers has unsaved changes, and refused for the
+---last tab standing, which Vim will not close anyway.
+function M.close(path)
+    local directory = normalize(path or M.get())
+    local tab = directory and context_tab(directory)
+    if not tab then
+        vim.notify("That project has nothing open: " .. M.label(directory), vim.log.levels.WARN)
+        return false
+    end
+
+    if #vim.api.nvim_list_tabpages() == 1 then
+        vim.notify(
+            "This is the only project open. Open another before closing " .. M.label(directory) .. ".",
+            vim.log.levels.WARN
+        )
+        return false
+    end
+
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].modified then
+            vim.notify(
+                "Unsaved changes in " .. vim.fs.basename(vim.api.nvim_buf_get_name(buf)),
+                vim.log.levels.WARN
+            )
+            return false
+        end
+    end
+
+    local name = M.label(directory)
+    local ok, err = pcall(vim.cmd, vim.api.nvim_tabpage_get_number(tab) .. "tabclose")
+    if not ok then
+        vim.notify("Could not close " .. name .. ": " .. tostring(err), vim.log.levels.ERROR)
+        return false
+    end
+
+    context_tabs[directory] = nil
+    vim.notify("Closed project: " .. name)
+    return true
+end
+
 function M.name()
     return M.label(M.get())
 end
@@ -602,6 +650,14 @@ function M.setup()
     end, {
         nargs = "?",
         desc = "Name the current project, or clear its name",
+    })
+
+    vim.api.nvim_create_user_command("WorkspaceClose", function(args)
+        M.close(args.args ~= "" and args.args or M.get())
+    end, {
+        nargs = "?",
+        complete = "dir",
+        desc = "Close a project's tab, keeping it in the list",
     })
 
     vim.api.nvim_create_user_command("WorkspaceForget", function(args)

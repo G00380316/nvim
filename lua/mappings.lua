@@ -1107,7 +1107,7 @@ local function open_project_switcher()
     end
 
     Snacks.picker.pick({
-        title = "Switch Project  ·  Ctrl-E name  ·  Ctrl-X forget",
+        title = "Switch Project  ·  Ctrl-E name  ·  Ctrl-D close  ·  Ctrl-X forget",
         finder = projects,
         preview = false,
         layout = { preset = "vscode" },
@@ -1125,6 +1125,15 @@ local function open_project_switcher()
                     picker:find({ refresh = true })
                 end)
             end,
+            -- Close puts a project away: its tab, splits and terminals go, and
+            -- it stays in the list. Forget takes it out of the list and leaves
+            -- the directory alone. They are different enough to be two keys.
+            close_project = function(picker, item)
+                if not item or item.browse then return end
+                if workspace.close(item.file) then
+                    picker:find({ refresh = true })
+                end
+            end,
             forget_project = function(picker, item)
                 if not item or item.browse then return end
                 if workspace.forget(item.file) then
@@ -1136,6 +1145,7 @@ local function open_project_switcher()
             input = {
                 keys = {
                     ["<C-e>"] = { "name_project", mode = { "n", "i" } },
+                    ["<C-d>"] = { "close_project", mode = { "n", "i" } },
                     ["<C-x>"] = { "forget_project", mode = { "n", "i" } },
                 },
             },

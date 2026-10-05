@@ -5,6 +5,7 @@ local M = {}
 local entries = {
     { "Project", "<leader>p", "n", "Switch project and preserve its open panes" },
     { "Project", "<C-e>", "switcher", "Name the project under the cursor, or clear its name" },
+    { "Project", "<C-d>", "switcher", "Close the project under the cursor, keeping it listed" },
     { "Project", "<C-x>", "switcher", "Forget the project under the cursor" },
     { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
     { "Project", "zcd", "n", "Use the current file's project as the workspace" },
@@ -46,7 +47,7 @@ local entries = {
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
     { "Terminal", "<C-v> → <C-g>", "t", "Jump through output, then copy from the cursor", "terminal_normal" },
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable, saveable buffer", "terminal_edit" },
-    { "Terminal", "<leader>t", "n", "Open terminal action selector" },
+    { "Terminal", "<leader>t", "n", "Open terminal action selector (new terminal here lives there)" },
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
     { "Git", "zg", "n", "Open Git action selector" },

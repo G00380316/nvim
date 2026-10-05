@@ -46,7 +46,8 @@ local menus = {
         icon = "",
         actions = {
             { label = "Open or focus terminal", detail = "Return to the editor when already there", run = command("FocusTerminal") },
-            { label = "New terminal", detail = "Create another project terminal", run = command("TerminalNew") },
+            { label = "New terminal", detail = "Another shell in the project root", run = command("TerminalNew") },
+            { label = "New terminal here", detail = "A shell in this file's own directory", run = command("TerminalHere"), at_origin = true },
             { label = "Split terminal panel", detail = "Add a side-by-side shell in the bottom row", run = command("TerminalSplit") },
             { label = "Choose terminal", detail = "Search the current project's live shells", run = command("TerminalList") },
             { label = "Edit terminal output", detail = "Copy output into an editable, saveable buffer", run = command("TerminalEdit"), at_origin = true },

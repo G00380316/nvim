@@ -994,12 +994,17 @@ local function enter_terminal_insert()
     end)
 end
 
-local function new_terminal()
+---@param opts? { here?: boolean } here: start in the focused file's directory
+local function new_terminal(opts)
     oil_focus_generation = oil_focus_generation + 1
     ide_layout.note_explicit_focus()
     focus_editor()
-    vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("terminals").launch_cwd()))
+    vim.cmd("FloatermNew --cwd=" .. vim.fn.fnameescape(require("terminals").launch_cwd(opts)))
     enter_terminal_insert()
+end
+
+local function new_terminal_here()
+    new_terminal({ here = true })
 end
 
 -- Splits the bottom panel itself in half rather than carving a full-height
@@ -1326,7 +1331,10 @@ vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
 })
 vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Open or focus the file explorer" })
 vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Open or focus the terminal" })
-vim.api.nvim_create_user_command("TerminalNew", new_terminal, { desc = "Open another bottom terminal" })
+vim.api.nvim_create_user_command("TerminalNew", function() new_terminal() end,
+    { desc = "Open another bottom terminal in the project root" })
+vim.api.nvim_create_user_command("TerminalHere", new_terminal_here,
+    { desc = "Open a terminal in the focused file's own directory" })
 vim.api.nvim_create_user_command("TerminalSplit", split_terminal,
     { desc = "Split the bottom terminal panel in half" })
 vim.api.nvim_create_user_command("TerminalList", terminal_picker, { desc = "List and jump to an open terminal" })

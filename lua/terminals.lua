@@ -47,31 +47,38 @@ local function editor_buffer()
     end
 end
 
+---The directory of the file in the editor, if there is one.
+local function editor_directory()
+    local buf = editor_buffer()
+    if not buf then return nil end
+
+    local name = vim.api.nvim_buf_get_name(buf)
+    if name == "" then return nil end
+
+    local directory = vim.fs.dirname(vim.fn.fnamemodify(name, ":p"))
+    directory = vim.fs.normalize(vim.uv.fs_realpath(directory) or directory)
+    return vim.fn.isdirectory(directory) == 1 and directory or nil
+end
+
 ---Where a new terminal should start.
 ---
----The project root, normally, so every shell in a context agrees on what
----"here" means. But a file opened from outside the project -- a dotfile, a
----dependency's source, a note from elsewhere -- has no relationship to that
----root, and a shell standing there cannot so much as `ls` the thing on
----screen. For those, the file's own directory is the useful answer.
+---The project root, and only the project root. Every shell in a context then
+---agrees on what "here" means, and a relative path copied from one works in
+---the next. This used to drop you in the file's own directory whenever that
+---file was from outside the project, which made the answer depend on which
+---buffer happened to be focused when you reached for a shell.
 ---
----The terminal still *belongs* to the current project either way: ownership
----comes from b:floaterm_workspace, set when the buffer is created, so a shell
----launched outside the root still appears in this project's terminal list.
-function M.launch_cwd()
+---`opts.here` is the other thing, asked for by its own key: the directory of
+---the file you are looking at, wherever that is.
+---
+---The terminal belongs to the current project either way -- ownership comes
+---from b:floaterm_workspace, set when the buffer is created -- so a shell
+---started outside the root still appears in this project's terminal list.
+---@param opts? { here?: boolean }
+function M.launch_cwd(opts)
     local project = vim.fs.normalize(require("workspace").get())
-
-    local buf = editor_buffer()
-    if not buf then return project end
-
-    local directory = vim.fs.dirname(vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":p"))
-    directory = vim.fs.normalize(vim.uv.fs_realpath(directory) or directory)
-    if vim.fn.isdirectory(directory) ~= 1 then return project end
-
-    if directory == project or directory:sub(1, #project + 1) == project .. "/" then
-        return project
-    end
-    return directory
+    if not (opts and opts.here) then return project end
+    return editor_directory() or project
 end
 
 ---Terminal buffers for one project in floaterm's own order, so cycling
