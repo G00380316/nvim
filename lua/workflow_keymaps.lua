@@ -61,6 +61,7 @@ local entries = {
     { "Tools", "zl", "n", "Open LeetCode action selector" },
     { "Tools", "zs", "n", "Open live-server action selector" },
     { "Tools", "<leader>x", "n/x", "Open Xcode action selector" },
+    { "Tools", "<leader>a", "n/x", "Open AI action selector" },
     { "Tools", "zS", "n", "Open SSH action selector" },
     { "Tools", "zT", "n", "Open Typst preview action selector" },
 

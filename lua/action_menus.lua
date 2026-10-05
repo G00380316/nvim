@@ -148,6 +148,21 @@ local menus = {
             { label = "Reset solution", detail = "Reset the current problem buffer", run = command("Leet Reset") },
         },
     },
+    ai = {
+        lhs = "<leader>a",
+        mode = { "n", "x" },
+        title = "AI Actions",
+        icon = "󰸴",
+        actions = {
+            { label = "Open the chat", detail = "Start or return to a conversation", run = command("CodeCompanionChat Toggle") },
+            { label = "New chat", detail = "Begin a fresh conversation", run = command("CodeCompanionChat") },
+            { label = "Action palette", detail = "The plugin's own list of prompts", run = command("CodeCompanionActions") },
+            { label = "Inline edit", detail = "Rewrite the buffer or selection in place", run = command("CodeCompanion") },
+            { label = "Review the changes", detail = "Have this branch's diff read back to you", run = command("CodeCompanionCodeReview") },
+            { label = "Build a shell command", detail = "Describe it and have it written", run = command("CodeCompanionCmd") },
+            { label = "Show which adapter", detail = "And what is missing if there is none", run = command("AiStatus") },
+        },
+    },
     ssh = {
         -- zS and zT: capitals because zr and zy are Vim's own fold commands,
         -- and this config has shadowed enough of those already.
