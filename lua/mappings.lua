@@ -996,6 +996,19 @@ end, {
     desc = "Search Vim's own keys",
 })
 
+-- Everything this config can do, by name: build, stage a hunk, switch project,
+-- open the SSH launcher. The selectors still exist for browsing one tool; this
+-- is for when you know what you want and not where it lives.
+vim.keymap.set("n", "<leader><leader>", function()
+    require("palette").open()
+end, {
+    desc = "Command palette",
+})
+
+vim.api.nvim_create_user_command("Palette", function()
+    require("palette").open()
+end, { desc = "Search every action by name" })
+
 vim.keymap.set({ "n", "i", "x", "t" }, "<C-\\>", function()
     require("workflow_keymaps").open()
 end, {

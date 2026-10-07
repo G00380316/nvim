@@ -1,7 +1,23 @@
 local M = {}
 
+-- Every :command a menu row runs, so the palette can list the rest of the
+-- commands without offering the same thing twice under two names.
+local covered_commands = {}
+
 local function command(value)
+    covered_commands[value:match("^%S+")] = true
     return function() vim.cmd(value) end
+end
+
+local function gitsigns(method, ...)
+    local args = { ... }
+    return function()
+        local ok, gs = pcall(require, "gitsigns")
+        if not ok or type(gs[method]) ~= "function" then
+            error("Git hunk actions need gitsigns, which is not available here")
+        end
+        gs[method](unpack(args))
+    end
 end
 
 -- The picker restores focus to its own idea of a "main" window on close, and
@@ -58,6 +74,17 @@ local menus = {
         title = "Git Actions",
         icon = "",
         actions = {
+            { label = "Next hunk", detail = "Direct key: ]h", run = gitsigns("nav_hunk", "next") },
+            { label = "Previous hunk", detail = "Direct key: [h", run = gitsigns("nav_hunk", "prev") },
+            { label = "Preview hunk", detail = "Show what this hunk changed", run = gitsigns("preview_hunk") },
+            { label = "Stage hunk", detail = "Stage this hunk, or unstage it if staged", run = gitsigns("stage_hunk") },
+            { label = "Reset hunk", detail = "Throw away this hunk's changes", run = gitsigns("reset_hunk") },
+            { label = "Stage buffer", detail = "Stage every change in this file", run = gitsigns("stage_buffer") },
+            { label = "Reset buffer", detail = "Throw away every change in this file", run = gitsigns("reset_buffer") },
+            { label = "Blame line", detail = "Who changed this line, and why", run = gitsigns("blame_line", { full = true }) },
+            { label = "Toggle line blame", detail = "Show blame at the end of the current line", run = gitsigns("toggle_current_line_blame") },
+            { label = "Diff this file", detail = "Compare this file with the index", run = gitsigns("diffthis") },
+            { label = "Hunks to quickfix", detail = "List every hunk in this file to step through", run = gitsigns("setqflist", 0) },
             { label = "Open LazyGit", detail = "Use this project's persistent LazyGit buffer", run = command("GitPanel") },
             { label = "Review changed files", detail = "Open the repository Diffview", run = command("DiffviewOpen") },
             { label = "Browse repository history", detail = "Open Diffview file history", run = command("DiffviewFileHistory") },
@@ -209,6 +236,26 @@ local menus = {
 
 M.menus = menus
 
+M.covered_commands = covered_commands
+M.capture_origin = capture_origin
+
+---Run one row of a menu the way picking it from that menu would.
+---
+---One path for it, so the palette cannot drift from the selectors: the menu's
+---own preparation (the Xcode one turns the project on), the return to where
+---the menu was opened for the rows that need it, and an error that says which
+---menu it came from.
+---@param menu table
+---@param action table
+---@param origin? { win: integer, buf: integer }
+function M.run_action(menu, action, origin)
+    if menu.prepare then menu.prepare() end
+    if action.at_origin then return_to_origin(origin) end
+
+    local ok, err = pcall(action.run)
+    if not ok then vim.notify(tostring(err), vim.log.levels.ERROR, { title = menu.title }) end
+end
+
 function M.pick(menu)
     local items = {}
     for index, action in ipairs(menu.actions) do
@@ -238,11 +285,7 @@ function M.pick(menu)
         confirm = function(picker, item)
             picker:close()
             if not item then return end
-            vim.schedule(function()
-                if item.action.at_origin then return_to_origin(origin) end
-                local ok, err = pcall(item.action.run)
-                if not ok then vim.notify(tostring(err), vim.log.levels.ERROR, { title = menu.title }) end
-            end)
+            vim.schedule(function() M.run_action(menu, item.action, origin) end)
         end,
     })
 end
@@ -312,6 +355,13 @@ function M.setup()
     for _, mapping in ipairs(direct_debug) do
         vim.keymap.set("n", mapping[1], mapping[2], { silent = true, desc = mapping[3] })
     end
+
+    -- Hunk navigation is repeated for as long as a diff takes to read, so it
+    -- keeps a direct key. The native ]c walks diff-mode hunks only.
+    vim.keymap.set("n", "]h", function() gitsigns("nav_hunk", "next")() end,
+        { silent = true, desc = "Git: next hunk" })
+    vim.keymap.set("n", "[h", function() gitsigns("nav_hunk", "prev")() end,
+        { silent = true, desc = "Git: previous hunk" })
 
     pcall(vim.api.nvim_del_user_command, "ActionMenu")
     vim.api.nvim_create_user_command("ActionMenu", function(args) M.open(args.args) end, {

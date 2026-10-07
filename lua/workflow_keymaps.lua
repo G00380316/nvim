@@ -50,7 +50,9 @@ local entries = {
     { "Terminal", "<leader>t", "n", "Open terminal action selector (new terminal here lives there)" },
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
-    { "Git", "zg", "n", "Open Git action selector" },
+    { "Git", "zg", "n", "Open Git action selector (hunks, blame, LazyGit, Diffview)" },
+    { "Git", "]h", "n", "Jump to the next changed hunk" },
+    { "Git", "[h", "n", "Jump to the previous changed hunk" },
 
     { "Debug", "zd", "n", "Open debug action selector" },
     { "Debug", "<F5>", "n", "Start or continue debugging" },
@@ -74,6 +76,7 @@ local entries = {
     { "Daily", "<leader>o", "n", "Save this file and source it" },
     { "Daily", "<leader>h", "n", "Search Neovim's help" },
     { "Daily", "zmm", "n", "Open or focus the mobile device hub" },
+    { "Daily", "<leader><leader>", "n", "Command palette: search every action by name" },
     { "Daily", "<C-\\>", "any", "Open this command guide from any mode" },
     { "Daily", "<leader>k", "n", "Show this workflow guide" },
     { "Daily", "<leader>K", "n", "Search every active keymap" },
@@ -109,6 +112,58 @@ local function return_to_origin(context)
     return true
 end
 
+---Do what a guide row says, from wherever the guide was opened.
+---
+---One path for it, so the palette behaves exactly as the guide does: a row
+---chosen from a terminal, Oil or a tool panel acts on the editor rather than
+---on that special-purpose buffer.
+---@param item table a row from M.items()
+---@param context table from M.capture_context()
+function M.activate(item, context)
+    -- These keys exist only inside the project switcher's own window. Feeding
+    -- one from here would press it somewhere else entirely.
+    if item.mode == "switcher" then
+        vim.notify(item.lhs .. " works inside the project switcher (<leader>p)", vim.log.levels.INFO)
+        return
+    end
+
+    local from_terminal = valid_origin(context)
+        and vim.bo[context.buf].buftype == "terminal"
+
+    if item.action == "terminal_normal" then
+        if not from_terminal then
+            vim.notify("Terminal-normal mode is only available from a terminal", vim.log.levels.INFO)
+            return
+        end
+        return_to_origin(context)
+        if vim.api.nvim_get_mode().mode:sub(1, 1) == "t" then vim.cmd("stopinsert") end
+        return
+    end
+
+    -- No longer refused away from a terminal: edit() falls back to the
+    -- terminal on screen. Returning to the origin first still matters, so a
+    -- split panel copies the half you were in.
+    if item.action == "terminal_edit" then
+        return_to_origin(context)
+        require("terminals").edit()
+        return
+    end
+
+    if item.action == "terminal_or_editor" and from_terminal then
+        pcall(vim.cmd, "EditorFocus")
+        return
+    end
+
+    if item.action == "close_current" then
+        return_to_origin(context)
+        vim.api.nvim_feedkeys(vim.keycode("<C-q>"), "m", false)
+        return
+    end
+
+    pcall(vim.cmd, "EditorFocus")
+    vim.api.nvim_feedkeys(vim.keycode(item.lhs), "m", false)
+end
+
 local function open_picker(context)
     local Snacks = require("snacks")
     Snacks.picker.pick({
@@ -131,51 +186,15 @@ local function open_picker(context)
         confirm = function(picker, item)
             picker:close()
             if not item then return end
-
-            vim.schedule(function()
-                local from_terminal = valid_origin(context)
-                    and vim.bo[context.buf].buftype == "terminal"
-
-                if item.action == "terminal_normal" then
-                    if not from_terminal then
-                        vim.notify("Terminal-normal mode is only available from a terminal", vim.log.levels.INFO)
-                        return
-                    end
-                    return_to_origin(context)
-                    if vim.api.nvim_get_mode().mode:sub(1, 1) == "t" then vim.cmd("stopinsert") end
-                    return
-                end
-
-                -- No longer refused away from a terminal: edit() falls back
-                -- to the terminal on screen. Returning to the origin first
-                -- still matters, so a split panel copies the half you were in.
-                if item.action == "terminal_edit" then
-                    return_to_origin(context)
-                    require("terminals").edit()
-                    return
-                end
-
-                if item.action == "terminal_or_editor" and from_terminal then
-                    pcall(vim.cmd, "EditorFocus")
-                    return
-                end
-
-                if item.action == "close_current" then
-                    return_to_origin(context)
-                    vim.api.nvim_feedkeys(vim.keycode("<C-q>"), "m", false)
-                    return
-                end
-
-                -- A command chosen from terminal, Oil, or a tool panel should
-                -- act on the editor rather than that special-purpose buffer.
-                pcall(vim.cmd, "EditorFocus")
-                vim.api.nvim_feedkeys(vim.keycode(item.lhs), "m", false)
-            end)
+            vim.schedule(function() M.activate(item, context) end)
         end,
     })
 end
 
-function M.open()
+---Note where a guide or palette was opened from, and step out of whatever mode
+---that was in, so the picker is not opened inside the mode-changing mapping's
+---own callback -- especially from a terminal buffer.
+function M.capture_context()
     local mode = vim.api.nvim_get_mode().mode
     local context = {
         mode = mode,
@@ -187,9 +206,11 @@ function M.open()
     elseif mode:match("[vV\22]") then
         vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
     end
+    return context
+end
 
-    -- Deferring avoids opening the picker inside the mode-changing mapping's
-    -- own callback, especially from a terminal buffer.
+function M.open()
+    local context = M.capture_context()
     vim.schedule(function() open_picker(context) end)
 end
 
