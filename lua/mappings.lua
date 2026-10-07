@@ -699,8 +699,7 @@ vim.keymap.set("n", "<S-Tab>", function() cycle_editor_buffer(-1) end, {
 --
 -- Both default keys are already spoken for: <C-o> opens the project switcher,
 -- and <C-i> is the same keycode as the <Tab> above. `normal!` reaches the
--- jumplist underneath both mappings. The cost is that [ and ] stop being
--- prefixes for the built-in section, method and paragraph motions.
+-- jumplist underneath both mappings.
 local function jump(key)
     local keys = vim.keycode(key)
     return function()
@@ -710,14 +709,86 @@ local function jump(key)
     end
 end
 
-vim.keymap.set("n", "[", jump("<C-o>"), {
+local jump_back = jump("<C-o>")
+local jump_forward = jump("<C-i>")
+
+vim.keymap.set("n", "[", jump_back, {
     silent = true,
     desc = "Jump back to the previous cursor position",
 })
 
-vim.keymap.set("n", "]", jump("<C-i>"), {
+vim.keymap.set("n", "]", jump_forward, {
     silent = true,
     desc = "Jump forward to the next cursor position",
+})
+
+-- A single [ or ] is the start of dozens of other mappings -- ]d, [q, ]b, and
+-- the buffer-local ]] [[ ]m of whatever filetype is open -- so Vim waits
+-- 'timeoutlen' after every press to learn whether another key is coming. That
+-- wait was half a second on every jump.
+--
+-- Nothing can make a key both a complete mapping and a prefix without it, so
+-- the prefix goes: the whole [x / ]x family moves to g[x / g]x, where the
+-- which-key popup lists it after g. The one-key jumplist mappings are then
+-- <nowait> in every buffer, so a longer mapping some plugin adds later cannot
+-- bring the wait back.
+local function is_bracket_family(lhs)
+    local first = lhs:sub(1, 1)
+    return #lhs > 1 and (first == "[" or first == "]")
+end
+
+---@param buffer? integer a buffer to move that buffer's own mappings, or nil for the global ones
+local function move_bracket_family(buffer)
+    local maps = buffer and vim.api.nvim_buf_get_keymap(buffer, "n") or vim.api.nvim_get_keymap("n")
+
+    for _, map in ipairs(maps) do
+        if is_bracket_family(map.lhs) and not (map.desc or ""):match("^which%-key") then
+            local moved = "g" .. map.lhs
+            local rhs = map.callback or map.rhs
+
+            if rhs and rhs ~= "" then
+                vim.keymap.set("n", moved, rhs, {
+                    buffer = buffer,
+                    desc = map.desc,
+                    silent = map.silent == 1,
+                    expr = map.expr == 1,
+                    nowait = map.nowait == 1,
+                    remap = map.noremap ~= 1,
+                })
+            end
+            pcall(vim.keymap.del, "n", map.lhs, { buffer = buffer })
+        end
+    end
+end
+
+local function keep_brackets_instant(buf)
+    if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype == "prompt" then return end
+
+    move_bracket_family()
+    move_bracket_family(buf)
+
+    vim.keymap.set("n", "[", jump_back, {
+        buffer = buf,
+        nowait = true,
+        silent = true,
+        desc = "Jump back to the previous cursor position",
+    })
+    vim.keymap.set("n", "]", jump_forward, {
+        buffer = buf,
+        nowait = true,
+        silent = true,
+        desc = "Jump forward to the next cursor position",
+    })
+end
+
+-- FileType as well as BufWinEnter: a filetype plugin adds its own [[ and ]m
+-- as the buffer is configured, and this has to move them after it has.
+vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
+    group = vim.api.nvim_create_augroup("InstantBrackets", { clear = true }),
+    callback = function(args)
+        vim.schedule(function() keep_brackets_instant(args.buf) end)
+    end,
+    desc = "Keep [ and ] instant by moving the [x / ]x family under g",
 })
 
 -- ============================================================

@@ -1592,7 +1592,19 @@ require("leetcode").setup({
 local hints_ok, hints_err = pcall(function()
     require("which-key").setup({
         delay = 300,
-        triggers = { { "<auto>", mode = "nx" } },
+        -- Named rather than "<auto>". Auto plants a trigger on every key that
+        -- starts a longer mapping, and [ and ] are exactly that for any buffer
+        -- with a filetype plugin -- a trigger there is a prefix again, which is
+        -- the half-second wait the jumplist keys were moved to avoid.
+        triggers = {
+            { "<leader>", mode = "nx" },
+            { "z", mode = "nx" },
+            { "g", mode = "nx" },
+            { "<C-w>", mode = "n" },
+            { '"', mode = "nx" },
+            { "'", mode = "n" },
+            { "`", mode = "n" },
+        },
         spec = {
             { "<leader>s", group = "search / replace" },
             { "<leader>d", group = "diagnostics" },

@@ -43,6 +43,9 @@ local entries = {
     { "Code", "<C-Space>", "n/x", "Code action or refactor selection" },
     { "Code", "<leader>dd", "n", "Show diagnostics for this buffer" },
     { "Code", "<leader>dw", "n", "Show diagnostics for the project" },
+    { "Code", "g]d", "n", "Jump to the next diagnostic" },
+    { "Code", "g[d", "n", "Jump to the previous diagnostic" },
+    { "Code", "[ / ]", "n", "Jump back / forward through where the cursor has been" },
 
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
     { "Terminal", "<C-v> → <C-g>", "t", "Jump through output, then copy from the cursor", "terminal_normal" },
@@ -51,8 +54,8 @@ local entries = {
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
     { "Git", "zg", "n", "Open Git action selector (hunks, blame, LazyGit, Diffview)" },
-    { "Git", "]h", "n", "Jump to the next changed hunk" },
-    { "Git", "[h", "n", "Jump to the previous changed hunk" },
+    { "Git", "g]h", "n", "Jump to the next changed hunk" },
+    { "Git", "g[h", "n", "Jump to the previous changed hunk" },
 
     { "Debug", "zd", "n", "Open debug action selector" },
     { "Debug", "<F5>", "n", "Start or continue debugging" },
@@ -161,7 +164,7 @@ function M.activate(item, context)
     end
 
     pcall(vim.cmd, "EditorFocus")
-    vim.api.nvim_feedkeys(vim.keycode(item.lhs), "m", false)
+    vim.api.nvim_feedkeys(vim.keycode(item.lhs:match("^%S+")), "m", false)
 end
 
 local function open_picker(context)

@@ -74,8 +74,8 @@ local menus = {
         title = "Git Actions",
         icon = "",
         actions = {
-            { label = "Next hunk", detail = "Direct key: ]h", run = gitsigns("nav_hunk", "next") },
-            { label = "Previous hunk", detail = "Direct key: [h", run = gitsigns("nav_hunk", "prev") },
+            { label = "Next hunk", detail = "Direct key: g]h", run = gitsigns("nav_hunk", "next") },
+            { label = "Previous hunk", detail = "Direct key: g[h", run = gitsigns("nav_hunk", "prev") },
             { label = "Preview hunk", detail = "Show what this hunk changed", run = gitsigns("preview_hunk") },
             { label = "Stage hunk", detail = "Stage this hunk, or unstage it if staged", run = gitsigns("stage_hunk") },
             { label = "Reset hunk", detail = "Throw away this hunk's changes", run = gitsigns("reset_hunk") },
@@ -357,10 +357,12 @@ function M.setup()
     end
 
     -- Hunk navigation is repeated for as long as a diff takes to read, so it
-    -- keeps a direct key. The native ]c walks diff-mode hunks only.
-    vim.keymap.set("n", "]h", function() gitsigns("nav_hunk", "next")() end,
+    -- keeps a direct key. g]h rather than ]h: [ and ] are the jumplist, and
+    -- the family that used to hang off them lives under g. The native ]c walks
+    -- diff-mode hunks only.
+    vim.keymap.set("n", "g]h", function() gitsigns("nav_hunk", "next")() end,
         { silent = true, desc = "Git: next hunk" })
-    vim.keymap.set("n", "[h", function() gitsigns("nav_hunk", "prev")() end,
+    vim.keymap.set("n", "g[h", function() gitsigns("nav_hunk", "prev")() end,
         { silent = true, desc = "Git: previous hunk" })
 
     pcall(vim.api.nvim_del_user_command, "ActionMenu")
