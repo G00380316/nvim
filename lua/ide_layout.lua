@@ -19,11 +19,42 @@ local function normal_window(win)
         and not vim.wo[win].previewwindow
 end
 
+-- Windows a plugin puts beside the editor to show something: the debugger's
+-- scopes and stacks, Diffview's file list, the AI chat, a help page. They are
+-- not places a file belongs, and until they were recognised as such every one
+-- counted as an extra editor split -- so <C-q> on a file with the debugger open
+-- closed the file's window instead of the file, and a file opened from inside
+-- one landed in it.
+local tool_filetype_prefixes = { "dapui_", "dap-", "Diffview", "codecompanion" }
+local tool_filetypes = { man = true, checkhealth = true }
+
+local function is_tool_buffer(buf)
+    local buftype = vim.bo[buf].buftype
+    if buftype == "help" or buftype == "quickfix" then return true end
+
+    local filetype = vim.bo[buf].filetype
+    if tool_filetypes[filetype] then return true end
+    for _, prefix in ipairs(tool_filetype_prefixes) do
+        if filetype:sub(1, #prefix) == prefix then return true end
+    end
+    return false
+end
+
 function M.panel_kind(win)
     if not normal_window(win) then return nil end
 
     local claimed = vim.w[win].ide_panel_kind
     if claimed == "oil" or claimed == "terminal" then return claimed end
+
+    -- A tool window keeps the claim only while the buffer it was claimed for
+    -- is still around. Once that is gone the window is just a window again,
+    -- rather than something files are refused entry to for ever.
+    if claimed == "tool" then
+        local tool_buf = vim.w[win].ide_panel_buf
+        if type(tool_buf) == "number" and vim.api.nvim_buf_is_valid(tool_buf) then
+            return "tool"
+        end
+    end
     if vim.w[win].oil_sidebar then return "oil" end
     if vim.w[win].terminal_panel then return "terminal" end
 
@@ -31,6 +62,7 @@ function M.panel_kind(win)
     if filetype == "oil" then return "oil" end
     if filetype == "floaterm" then return "terminal" end
     if filetype == "qf" then return "quickfix" end
+    if is_tool_buffer(vim.api.nvim_win_get_buf(win)) then return "tool" end
 end
 
 function M.is_panel_window(win)
@@ -160,6 +192,13 @@ function M.remember_visible_panel_buffer(buf)
             M.mark_panel("oil", win, buf)
         elseif filetype == "floaterm" then
             M.mark_panel("terminal", win, buf)
+        elseif M.panel_kind(win) ~= "oil" and M.panel_kind(win) ~= "terminal" then
+            -- A plugin has put its own window here, including the quickfix
+            -- list, which is recognised as a panel by its buffer and so would
+            -- stop being one the moment a file replaced that buffer.
+            if is_tool_buffer(buf) and vim.api.nvim_win_get_config(win).relative == "" then
+                M.mark_panel("tool", win, buf)
+            end
         end
     end
 end
@@ -241,6 +280,7 @@ function M.route_editor_buffer(buf)
     for _, win in ipairs(vim.fn.win_findbuf(buf)) do
         local kind = M.panel_kind(win)
         if (kind == "oil" and ordinary_editor_buffer(buf))
+            or (kind == "tool" and ordinary_editor_buffer(buf))
             or (kind == "terminal" and window_filetype(win) ~= "floaterm")
         then
             protected[#protected + 1] = win

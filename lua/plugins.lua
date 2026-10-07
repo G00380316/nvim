@@ -1908,5 +1908,16 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
         ide_layout.remember_visible_panel_buffer(args.buf)
         ide_layout.route_editor_buffer(args.buf)
     end,
-    desc = "Route non-panel buffers out of the Oil and terminal panels",
+    desc = "Route non-panel buffers out of the Oil, terminal and tool panels",
+})
+
+-- A plugin often sets its buffer's filetype after the window is already up
+-- (the AI chat does), so BufWinEnter alone sees a buffer it cannot yet
+-- recognise as a tool and the window is never claimed.
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("EditorZoneToolClaim", { clear = true }),
+    callback = function(args)
+        ide_layout.remember_visible_panel_buffer(args.buf)
+    end,
+    desc = "Claim a window once its plugin has said what it is",
 })
