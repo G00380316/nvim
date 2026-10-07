@@ -535,13 +535,39 @@ function M.open(path, opts)
     return true
 end
 
-function M.from_current_buffer()
-    local path = vim.api.nvim_buf_get_name(0)
-    if path == "" then
-        vim.notify("Current buffer has no workspace", vim.log.levels.WARN)
-        return
+---Make where you are the workspace.
+---
+---The file you are editing, when there is one: its project, found by the usual
+---markers. With no file open -- the editor is on the dashboard or a blank
+---buffer -- the directory the explorer is showing, exactly as shown, since
+---having navigated there is the only statement of intent there is. Standing in
+---the explorer itself means the same thing.
+function M.from_here()
+    local function explorer_directory(buf)
+        local loaded, oil = pcall(require, "oil")
+        if not loaded then return nil end
+
+        local ok, directory = pcall(oil.get_current_dir, buf)
+        return ok and type(directory) == "string" and directory ~= "" and directory or nil
     end
-    M.set(path)
+
+    local buf = vim.api.nvim_get_current_buf()
+
+    if vim.bo[buf].filetype == "oil" then
+        local directory = explorer_directory(buf)
+        if directory then return M.set(directory, { exact = true }) end
+    end
+
+    local name = vim.api.nvim_buf_get_name(buf)
+    if vim.bo[buf].buftype == "" and name ~= "" then
+        return M.set(name)
+    end
+
+    local sidebar = require("ide_layout").find_sidebar()
+    local directory = sidebar and explorer_directory(vim.api.nvim_win_get_buf(sidebar))
+    if directory then return M.set(directory, { exact = true }) end
+
+    vim.notify("No file is open and the explorer is not showing a folder", vim.log.levels.WARN)
 end
 
 function M.setup()

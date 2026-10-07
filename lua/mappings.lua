@@ -1423,8 +1423,8 @@ vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
 
 -- Deliberately change the workspace instead of creating a temporary cwd.
 vim.keymap.set("n", "zcd", function()
-    require("workspace").from_current_buffer()
-end, { desc = "Use current file's project as workspace" })
+    require("workspace").from_here()
+end, { desc = "Use this file's project, or the explorer's folder, as workspace" })
 
 -- ============================================================
 -- Insert / Command / Terminal
