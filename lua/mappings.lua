@@ -782,6 +782,34 @@ vim.keymap.set("n", "z=", "<cmd>EditorPanesEqual<CR>", {
     desc = "Equalize editor panes",
 })
 
+-- The z-prefixed keys above and the action selectors (zs, zg, zd ...) belong to
+-- the editor. The SSH launcher's windows are not the editor: pressing zs in
+-- its list opened the live-server menu, and zv split the editor out from under
+-- a form you were filling in. They get Vim's own meaning of those keys back
+-- there, rather than dead ones -- `zh` and `zs` scroll sideways again.
+local function restore_native_z_keys(buf)
+    local keys = { "zv", "zh", "z=" }
+    for _, menu in pairs(require("action_menus").menus) do
+        if menu.lhs:match("^z") then keys[#keys + 1] = menu.lhs end
+    end
+
+    for _, lhs in ipairs(keys) do
+        vim.keymap.set("n", lhs, lhs, {
+            buffer = buf,
+            remap = false,
+            silent = true,
+            desc = "Vim's own " .. lhs,
+        })
+    end
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("NativeZKeysInSsh", { clear = true }),
+    pattern = { "ssh-launcher", "ssh-launcher-preview", "ssh-launcher-form", "ssh-launcher-dialog" },
+    callback = function(args) restore_native_z_keys(args.buf) end,
+    desc = "Keep the editor's z keys out of the SSH launcher",
+})
+
 vim.keymap.set("n", "<C-Right>", "<cmd>EditorPaneWider<CR>", {
     silent = true,
     desc = "Grow editor pane right",
