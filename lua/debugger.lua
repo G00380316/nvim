@@ -43,11 +43,17 @@ dapui.setup({
         {
             position = "right",
             size = 44,
+            -- The console is the debugged program's own output. Without it in
+            -- the layout that output went to a buffer shown in no window at
+            -- all, so a print() in the program was invisible while debugging.
+            -- It lives in this column rather than along the bottom, which is
+            -- the terminal row's.
             elements = {
-                { id = "scopes", size = 0.35 },
-                { id = "stacks", size = 0.25 },
-                { id = "breakpoints", size = 0.20 },
-                { id = "watches", size = 0.20 },
+                { id = "scopes", size = 0.30 },
+                { id = "stacks", size = 0.20 },
+                { id = "watches", size = 0.15 },
+                { id = "breakpoints", size = 0.10 },
+                { id = "console", size = 0.25 },
             },
         },
     },
