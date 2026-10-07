@@ -86,4 +86,25 @@ function M.keep_single(buf)
     end
 end
 
+-- One dashboard buffer serves every project tab, and Snacks remembers a single
+-- window for it. When the tab holding that window closes -- closing a project
+-- does -- the buffer lives on in another tab with the remembered window gone,
+-- and every resize and cursor move after raises "Invalid window id".
+--
+-- Snacks already repairs it on entering the buffer, so entering it is what is
+-- announced once a tab has closed.
+vim.api.nvim_create_autocmd("TabClosed", {
+    group = vim.api.nvim_create_augroup("EditorFillerDashboardWindow", { clear = true }),
+    callback = function()
+        vim.schedule(function()
+            for _, buf in ipairs(dashboard_buffers()) do
+                if first_dashboard_window(buf) then
+                    pcall(vim.api.nvim_exec_autocmds, "WinEnter", { buffer = buf, modeline = false })
+                end
+            end
+        end)
+    end,
+    desc = "Point the shared dashboard at a window that still exists",
+})
+
 return M

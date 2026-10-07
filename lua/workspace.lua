@@ -337,6 +337,15 @@ function M.forget(path)
     return true
 end
 
+---The project to land on when the only open one is closed: the most recently
+---used other project in the list, which is where you were before this one.
+local function successor_of(directory)
+    load_history()
+    for _, path in ipairs(history) do
+        if path ~= directory and vim.fn.isdirectory(path) == 1 then return path end
+    end
+end
+
 ---Close a project's live context: the tab that holds its windows, its splits
 ---and its terminals.
 ---
@@ -344,21 +353,17 @@ end
 ---buffers stay loaded too, and reachable, which is how everything else in this
 ---config treats a buffer; closing a project is about the layout it owns.
 ---
----Refused while any of its buffers has unsaved changes, and refused for the
----last tab standing, which Vim will not close anyway.
+---Closing the only open project opens the next one first, so there is always
+---somewhere to land. Neovim cannot close its last tab, and a refusal there
+---would just be the picker declining to do what its key says.
+---
+---Refused while any of its buffers has unsaved changes, and when there is no
+---other project to land on.
 function M.close(path)
     local directory = normalize(path or M.get())
     local tab = directory and context_tab(directory)
     if not tab then
         vim.notify("That project has nothing open: " .. M.label(directory), vim.log.levels.WARN)
-        return false
-    end
-
-    if #vim.api.nvim_list_tabpages() == 1 then
-        vim.notify(
-            "This is the only project open. Open another before closing " .. M.label(directory) .. ".",
-            vim.log.levels.WARN
-        )
         return false
     end
 
@@ -374,6 +379,26 @@ function M.close(path)
     end
 
     local name = M.label(directory)
+    local landed
+
+    if #vim.api.nvim_list_tabpages() == 1 then
+        local successor = successor_of(directory)
+        if not successor then
+            vim.notify(
+                "No other project to open. Add one with <leader>w before closing " .. name .. ".",
+                vim.log.levels.WARN
+            )
+            return false
+        end
+
+        if not M.open(successor, { exact = true, silent = true }) then return false end
+        landed = M.label(successor)
+    end
+
+    -- Looked up again: opening the next project may have renumbered the tabs.
+    tab = context_tab(directory)
+    if not tab then return true end
+
     local ok, err = pcall(vim.cmd, vim.api.nvim_tabpage_get_number(tab) .. "tabclose")
     if not ok then
         vim.notify("Could not close " .. name .. ": " .. tostring(err), vim.log.levels.ERROR)
@@ -381,7 +406,7 @@ function M.close(path)
     end
 
     context_tabs[directory] = nil
-    vim.notify("Closed project: " .. name)
+    vim.notify(landed and ("Closed project: " .. name .. "  \u{203a}  " .. landed) or ("Closed project: " .. name))
     return true
 end
 
