@@ -215,7 +215,10 @@ end
 local function is_rewrite(map)
     local desc = map.desc
     if desc and desc ~= "" then
-        return desc:match("%-default$") == nil
+        -- which-key plants a trigger on every prefix it may need to show a hint
+        -- for, g and z and " among them. It forwards the keys on untouched, so
+        -- it is no more a change to them than a default is.
+        return desc:match("%-default$") == nil and not desc:match("^which%-key")
     end
     return type(map.rhs) ~= "string" or map.rhs:match("^<Plug>") == nil
 end

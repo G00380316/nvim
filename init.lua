@@ -102,6 +102,9 @@ vim.pack.add({
     -- AI (OpenAI API key required -- a ChatGPT subscription does not cover it)
     { src = "https://github.com/olimorris/codecompanion.nvim" },
     { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" },
+
+    -- Shows what the next key does when you pause after a prefix
+    { src = "https://github.com/folke/which-key.nvim" },
 })
 
 

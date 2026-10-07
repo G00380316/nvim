@@ -1578,6 +1578,35 @@ require("leetcode").setup({
 
 
 -- ============================================================
+-- Key hints
+-- ============================================================
+
+-- Pause after <leader>, z, [ or ] and a list of what comes next appears, so
+-- the keys do not have to be remembered, only started. Names come from the
+-- mappings' own descriptions; the groups below only label prefixes that have
+-- no mapping of their own to describe them.
+--
+-- Normal and visual mode only. Select mode is where a snippet leaves a
+-- placeholder highlighted waiting to be typed over, and a trigger there would
+-- take the space or z you are typing; terminal and insert mode are for typing.
+local hints_ok, hints_err = pcall(function()
+    require("which-key").setup({
+        delay = 300,
+        triggers = { { "<auto>", mode = "nx" } },
+        spec = {
+            { "<leader>s", group = "search / replace" },
+            { "<leader>d", group = "diagnostics" },
+            { "<leader>q", group = "notes" },
+        },
+        win = { border = "rounded" },
+    })
+end)
+if not hints_ok then
+    vim.notify("Key hints setup failed: " .. tostring(hints_err), vim.log.levels.WARN)
+end
+
+
+-- ============================================================
 -- Misc Plugin Setup
 -- ============================================================
 

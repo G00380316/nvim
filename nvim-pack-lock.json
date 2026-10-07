@@ -240,6 +240,10 @@
       "rev": "c492741b4679b3cdd4d9e34138209784e061d916",
       "src": "https://github.com/lambdalisue/vim-suda"
     },
+    "which-key.nvim": {
+      "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
+      "src": "https://github.com/folke/which-key.nvim"
+    },
     "wtf.nvim": {
       "rev": "010c779f84a151477f74398c8ead71e42d70b816",
       "src": "https://github.com/piersolenski/wtf.nvim"
