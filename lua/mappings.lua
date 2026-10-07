@@ -857,11 +857,14 @@ vim.keymap.set("n", "z=", "<cmd>EditorPanesEqual<CR>", {
 -- the editor. The SSH launcher's windows are not the editor: pressing zs in
 -- its list opened the live-server menu, and zv split the editor out from under
 -- a form you were filling in. They get Vim's own meaning of those keys back
--- there, rather than dead ones -- `zh` and `zs` scroll sideways again.
+-- there, rather than dead ones -- `zh` and `zs` scroll sideways again. The SSH
+-- selector is the exception, since it belongs to these windows.
 local function restore_native_z_keys(buf)
     local keys = { "zv", "zh", "z=" }
-    for _, menu in pairs(require("action_menus").menus) do
-        if menu.lhs:match("^z") then keys[#keys + 1] = menu.lhs end
+    for name, menu in pairs(require("action_menus").menus) do
+        -- Not the SSH selector: it is the launcher's own menu, and this is
+        -- the one place it is wanted.
+        if name ~= "ssh" and menu.lhs:match("^z") then keys[#keys + 1] = menu.lhs end
     end
 
     for _, lhs in ipairs(keys) do
