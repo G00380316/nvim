@@ -5,8 +5,7 @@ local M = {}
 local entries = {
     { "Project", "<leader>p", "n", "Switch project and preserve its open panes" },
     { "Project", "<C-e>", "switcher", "Name the project under the cursor, or clear its name" },
-    { "Project", "<C-d>", "switcher", "Close the project under the cursor, keeping it listed" },
-    { "Project", "<C-x>", "switcher", "Forget the project under the cursor" },
+    { "Project", "<C-d>", "switcher", "Close the open project under the cursor; press again to forget it" },
     { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
     { "Project", "zcd", "n", "Use the current file's project as the workspace" },
     { "Project", "zcf", "n", "Find a file in this Neovim config" },

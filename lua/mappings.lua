@@ -1222,7 +1222,7 @@ local function open_project_switcher()
     end
 
     Snacks.picker.pick({
-        title = "Switch Project  ·  Ctrl-E name  ·  Ctrl-D close  ·  Ctrl-X forget",
+        title = "Switch Project  ·  Ctrl-E name  ·  Ctrl-D close, again to forget",
         finder = projects,
         preview = false,
         layout = { preset = "vscode" },
@@ -1240,28 +1240,46 @@ local function open_project_switcher()
                     picker:find({ refresh = true })
                 end)
             end,
-            -- Close puts a project away: its tab, splits and terminals go, and
-            -- it stays in the list. Forget takes it out of the list and leaves
-            -- the directory alone. They are different enough to be two keys.
-            close_project = function(picker, item)
+            -- One key, two steps, in the order they have to happen. A project
+            -- that is open is put away first -- its tab, splits and terminals
+            -- go and it stays listed -- and once nothing of it is open, the
+            -- same key takes it out of the list, leaving the directory alone.
+            -- Forgetting an open project is refused anyway, since every tab
+            -- re-asserts its own workspace, so the two never needed two keys.
+            put_away_project = function(picker, item)
                 if not item or item.browse then return end
-                if workspace.close(item.file) then
-                    picker:find({ refresh = true })
+
+                local done
+                if workspace.is_open(item.file) then
+                    done = workspace.close(item.file)
+                else
+                    done = workspace.forget(item.file)
                 end
-            end,
-            forget_project = function(picker, item)
-                if not item or item.browse then return end
-                if workspace.forget(item.file) then
-                    picker:find({ refresh = true })
-                end
+                if not done then return end
+
+                -- A redraw puts the cursor back on the first row, which would
+                -- make "press it again" act on a different project -- the
+                -- current one, most likely. It stays on the same project, or
+                -- on the row it was in once that project is gone.
+                local row = picker.list.cursor
+                picker:find({
+                    refresh = true,
+                    on_done = function()
+                        local index, found = 0, nil
+                        for _, listed in ipairs(picker:items()) do
+                            index = index + 1
+                            if listed.file == item.file then found = index break end
+                        end
+                        picker.list:view(found or math.min(row, math.max(index, 1)))
+                    end,
+                })
             end,
         },
         win = {
             input = {
                 keys = {
                     ["<C-e>"] = { "name_project", mode = { "n", "i" } },
-                    ["<C-d>"] = { "close_project", mode = { "n", "i" } },
-                    ["<C-x>"] = { "forget_project", mode = { "n", "i" } },
+                    ["<C-d>"] = { "put_away_project", mode = { "n", "i" } },
                 },
             },
         },

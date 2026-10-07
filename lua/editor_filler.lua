@@ -92,14 +92,20 @@ end
 -- and every resize and cursor move after raises "Invalid window id".
 --
 -- Snacks already repairs it on entering the buffer, so entering it is what is
--- announced once a tab has closed.
+-- announced once a tab has closed -- to the dashboard's own handlers only.
+-- Announced to everything, the project switcher's focus handling read it as
+-- focus leaving and closed the picker the moment a project was put away.
 vim.api.nvim_create_autocmd("TabClosed", {
     group = vim.api.nvim_create_augroup("EditorFillerDashboardWindow", { clear = true }),
     callback = function()
         vim.schedule(function()
             for _, buf in ipairs(dashboard_buffers()) do
                 if first_dashboard_window(buf) then
-                    pcall(vim.api.nvim_exec_autocmds, "WinEnter", { buffer = buf, modeline = false })
+                    pcall(vim.api.nvim_exec_autocmds, "WinEnter", {
+                        group = "snacks_dashboard",
+                        buffer = buf,
+                        modeline = false,
+                    })
                 end
             end
         end)
