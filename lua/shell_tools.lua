@@ -135,14 +135,9 @@ function M.reveal()
     vim.fn.jobstart({ "open", "-R", file }, { detach = true })
 end
 
----Files opened recently, newest first. `everywhere` lists them from every
----project; otherwise only the ones inside the current workspace.
----@param everywhere? boolean
-function M.recent_files(everywhere)
-    Snacks.picker.recent({
-        title = everywhere and "Recent Files (all projects)" or "Recent Files",
-        filter = { cwd = not everywhere and require("workspace").context() or nil },
-    })
+---Files opened recently, newest first, from every project.
+function M.recent_files()
+    Snacks.picker.recent({ title = "Recent Files" })
 end
 
 function M.setup()
@@ -151,8 +146,7 @@ function M.setup()
         { "PipInstall", M.pip_install, "pip install a package (asks which)" },
         { "PipxInstall", M.pipx_install, "pipx install a tool (asks which)" },
         { "OpenInBrowser", M.open_in_browser, "Open this HTML file in the browser, straight from disk" },
-        { "RecentFiles", function() M.recent_files(false) end, "Files you opened recently in this project" },
-        { "RecentFilesAll", function() M.recent_files(true) end, "Files you opened recently, from every project" },
+        { "RecentFiles", M.recent_files, "Files you opened recently, from every project" },
         { "OpenExternally", M.open_externally, "Open this file in its default app (CSV, SVG, anything)" },
         { "RevealInFinder", M.reveal, "Show this file in Finder" },
         { "Extract", M.extract, "Extract the archive under the cursor or in this buffer" },

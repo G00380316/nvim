@@ -228,8 +228,7 @@ local menus = {
         title = "File Actions",
         icon = "󰈔",
         actions = {
-            { label = "Recent files", detail = "Files you opened recently in this project", run = command("RecentFiles") },
-            { label = "Recent files, all projects", detail = "Files you opened recently anywhere", run = command("RecentFilesAll") },
+            { label = "Recent files", detail = "Files you opened recently, from every project", run = command("RecentFiles") },
             { label = "Open in default app", detail = "This file, or the one under the cursor in the explorer", run = command("OpenExternally") },
             { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
             { label = "Reveal in Finder", detail = "Show this file in Finder", run = command("RevealInFinder") },
