@@ -251,6 +251,7 @@ require("snacks").setup({
         exclude = {
             "node_modules",
             ".git",
+            ".DS_Store",
             "dist",
             "build",
             "target",
@@ -475,6 +476,10 @@ oil.setup({
     cleanup_delay_ms = false,
     view_options = {
         show_hidden = true,
+        -- macOS litters every folder it opens with these. They are hidden here
+        -- even though dotfiles are shown, and not brought back by the toggle for
+        -- hidden files either: there is never a reason to open one.
+        is_always_hidden = function(name) return name == ".DS_Store" end,
         natural_order = true,
         sort = {
             { "type", "asc" },
