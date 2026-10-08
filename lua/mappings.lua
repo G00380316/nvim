@@ -1723,3 +1723,6 @@ vim.api.nvim_create_user_command("Run", run_current_file, {
 vim.api.nvim_create_user_command("RunTest", test_current_file, {
     desc = "Test the current file through the zsh runtest function",
 })
+
+-- The chores from ~/.zshrc that make sense inside the editor: palette only.
+require("shell_tools").setup()
