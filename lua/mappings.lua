@@ -1139,13 +1139,19 @@ end, {
     desc = "Choose buffer",
 })
 
-vim.keymap.set("n", "/", function()
+---Every line of this buffer in a searchable list; Enter jumps to the one you
+---pick, however far away it is. `pattern` pre-fills the search.
+---@param pattern? string
+local function find_in_buffer(pattern)
     Snacks.picker.lines({
+        pattern = pattern,
         layout = {
             preview = false,
         },
     })
-end, {
+end
+
+vim.keymap.set("n", "/", function() find_in_buffer() end, {
     desc = "Find in current buffer",
 })
 
@@ -1555,7 +1561,34 @@ end
 
 pcall(patch_flash_ffi)
 
-vim.keymap.set({ "n", "x", "o" }, "s", function() require("flash").jump() end, { desc = "Flash" })
+vim.keymap.set({ "x", "o" }, "s", function() require("flash").jump() end, { desc = "Flash" })
+
+-- Flash only ever sees the lines on screen, and gives up the moment what you
+-- have typed matches nothing there. In normal mode that is where `/` takes over:
+-- the same text, over every line of the buffer. Flash exits without keeping the
+-- keys typed after the one that failed, and a quick typist has already typed
+-- some, so those are collected and carried into the search rather than being
+-- run as commands.
+vim.keymap.set("n", "s", function()
+    local before = vim.api.nvim_win_get_cursor(0)
+    local state = require("flash").jump()
+
+    if not state or #state.results > 0 or state.pattern:empty() then return end
+    if not vim.deep_equal(before, vim.api.nvim_win_get_cursor(0)) then return end
+
+    local typed = state.pattern()
+    while true do
+        local key = vim.fn.getchar(0)
+        if key == 0 then break end
+        if type(key) ~= "number" or key < 32 then
+            if key == 27 then return end   -- Escape: they changed their mind
+            break
+        end
+        typed = typed .. vim.fn.nr2char(key)
+    end
+
+    vim.schedule(function() find_in_buffer(typed) end)
+end, { desc = "Flash, or search the whole buffer if nothing on screen matches" })
 -- vim.keymap.set({ "n" }, "sa", function()
 --     require("flash").jump({
 --         pattern = ".", -- initialize pattern with any char
