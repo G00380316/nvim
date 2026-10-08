@@ -1649,6 +1649,11 @@ vim.api.nvim_create_autocmd("FileType", {
             silent = true,
             desc = "Show or hide the Markdown note-taking hints",
         })
+        vim.keymap.set("n", "<leader>M", function() require("markdown_hints").focus() end, {
+            buffer = args.buf,
+            silent = true,
+            desc = "Pick a Markdown element from the hints and insert it",
+        })
     end,
     desc = "Continue Markdown lists on Enter, and offer the hints window",
 })
