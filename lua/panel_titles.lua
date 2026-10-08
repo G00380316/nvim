@@ -28,7 +28,8 @@ end
 
 local function folder(path)
     if not path or path == "" then return "" end
-    return vim.fn.fnamemodify(path:gsub("/$", ""), ":~")
+    local peers = require("workspace").recent(20)
+    return require("names").label(path, peers)
 end
 
 local function describe(win)

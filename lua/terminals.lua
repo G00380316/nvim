@@ -129,7 +129,14 @@ function M.name(bufnr)
         if type(launched) == "string" and launched ~= "" then path = launched end
     end
     if not path then return "terminal" end
-    return vim.fn.fnamemodify(path, ":~")
+    -- The folder's own name; its parent is added only if another terminal
+    -- is in a folder called the same.
+    local peers = {}
+    for _, other in ipairs(M.list()) do
+        local p = cwd_cache[other] or vim.fn.getbufvar(other, "floaterm_cwd")
+        if type(p) == "string" and p ~= "" then peers[#peers + 1] = p end
+    end
+    return require("names").label(path, peers)
 end
 
 local function terminal_window(bufnr)

@@ -442,6 +442,12 @@ lualine.setup({
                     if vim.bo.filetype == "floaterm" then
                         return require("terminals").name(vim.api.nvim_get_current_buf())
                     end
+                    -- Folder and file, not the whole path from the project
+                    -- root: enough to tell two files of one name apart.
+                    local parts = vim.split(name, "/", { plain = true })
+                    if #parts > 2 then
+                        return parts[#parts - 1] .. "/" .. parts[#parts]
+                    end
                     return name
                 end,
             },

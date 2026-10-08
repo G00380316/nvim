@@ -88,6 +88,7 @@ load_history()
 local alias_file = vim.fn.stdpath("state") .. "/workspace-aliases.json"
 local aliases = {}
 local labels = {}
+local labels_signature
 
 local function load_aliases()
     labels = {}
@@ -195,11 +196,26 @@ end
 function M.label(path)
     path = path or M.get()
 
+    -- A new project in the history can make an old name ambiguous, so the
+    -- memo is only good for as long as the history is the same.
+    local signature = table.concat(history, "\n")
+    if signature ~= labels_signature then
+        labels, labels_signature = {}, signature
+    end
+
     local cached = labels[path]
     if cached then return cached end
 
     local directory = normalize(path)
-    local label = (directory and aliases[directory]) or vim.fs.basename(directory or path)
+    local label = directory and aliases[directory]
+    if not label then
+        -- Only unnamed projects can clash: a named one shows its alias.
+        local peers = {}
+        for _, dir in ipairs(history) do
+            if not aliases[normalize(dir) or dir] then peers[#peers + 1] = dir end
+        end
+        label = require("names").label(directory or path, peers)
+    end
     labels[path] = label
     return label
 end
