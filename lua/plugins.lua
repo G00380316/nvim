@@ -1635,6 +1635,18 @@ vim.fn["lexima#add_rule"]({
 })
 
 
+-- Enter continues a Markdown list: the next bullet, number or unchecked box.
+-- Attached per buffer, before blink.cmp loads its own <CR> on entering insert
+-- mode, so blink keeps accepting a completion and falls through to this only
+-- when the menu is closed.
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("MarkdownLists", { clear = true }),
+    pattern = "markdown",
+    callback = function(args) require("markdown_lists").attach(args.buf) end,
+    desc = "Continue Markdown lists on Enter",
+})
+
+
 -- ============================================================
 -- Misc Plugin Setup
 -- ============================================================

@@ -206,6 +206,30 @@ require("blink.cmp").setup({
 
 
 -- ============================================================
+-- Snippet sessions
+-- ============================================================
+
+-- A snippet stays "active" until the last placeholder is jumped past, with
+-- every placeholder still highlighted, and nothing ends it if you simply stop
+-- and press <Esc> -- the highlights then sit on the text for good. Tab and
+-- Shift-Tab move between placeholders; leaving insert mode ends the session.
+--
+-- Checked a tick later: jumping to a placeholder passes through normal mode
+-- on the way into select mode, and that must not count as leaving.
+vim.api.nvim_create_autocmd("ModeChanged", {
+    group = vim.api.nvim_create_augroup("EndSnippetOnEscape", { clear = true }),
+    pattern = "*:n",
+    callback = function()
+        if not vim.snippet.active() then return end
+        vim.schedule(function()
+            if vim.snippet.active() and vim.fn.mode() == "n" then vim.snippet.stop() end
+        end)
+    end,
+    desc = "End the snippet session when leaving insert mode",
+})
+
+
+-- ============================================================
 -- Xcodebuild / SourceKit
 -- Adds Swift-only Xcode mappings when SourceKit attaches.
 -- ============================================================
