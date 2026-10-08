@@ -204,6 +204,7 @@ function M.send(command, opts)
         bufnr = M.list()[1]
     end
 
+    local fresh = not bufnr
     if not bufnr then
         vim.cmd("TerminalNew")
         bufnr = vim.api.nvim_get_current_buf()
@@ -227,7 +228,23 @@ function M.send(command, opts)
         M.focus(bufnr, { insert = true })
     end
 
-    vim.fn.chansend(job, command .. "\n")
+    -- A shell that is still starting up swallows or garbles what arrives before
+    -- its first prompt (the first run after opening a terminal failed that way),
+    -- so wait for the prompt to be drawn.
+    if fresh then
+        vim.wait(3000, function()
+            if not vim.api.nvim_buf_is_valid(bufnr) then return true end
+            for _, l in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
+                if l:match("%S") then return true end
+            end
+            return false
+        end, 20)
+        vim.wait(150)
+    end
+
+    -- ^U first: anything already typed on the line (a stray key, a half-written
+    -- command) would otherwise be glued onto the front of this one.
+    vim.fn.chansend(job, "\21" .. command .. "\n")
     return true
 end
 
