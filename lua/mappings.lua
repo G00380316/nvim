@@ -1729,6 +1729,19 @@ require("shell_tools").setup()
 
 -- The "how do I ..." list: surround a word, change what is inside a block, swap
 -- lines. Same list as the palette, opened already filtered to the editing recipes.
-vim.api.nvim_create_user_command("Recipes", function()
+local function open_recipes()
+    -- From a selection, leave visual mode first: that is what sets the '< and
+    -- '> marks the "surround selection" recipes work on.
+    if vim.fn.mode():match("[vV\22]") then
+        vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
+    end
     require("palette").open("Edit ")
-end, { desc = "Search editing recipes: surround, blocks, lines" })
+end
+
+vim.api.nvim_create_user_command("Recipes", open_recipes, {
+    desc = "Search editing recipes: surround, blocks, lines",
+})
+
+vim.keymap.set({ "n", "x" }, "<leader>?", open_recipes, {
+    desc = "Search editing recipes (surround, blocks, lines)",
+})
