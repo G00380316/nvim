@@ -115,12 +115,19 @@ end
 
 load_aliases()
 
+---Where to start. From a directory that is no project -- the home folder --
+---that is the folder you used last, and exactly that one: history holds the
+---folders as they were chosen, and searching upward from one for a project
+---marker can land on a parent you never opened (an iCloud folder with a
+---Makefile somewhere above your project, say).
+---@return string path
+---@return boolean exact
 local function startup_workspace(path)
     local directory = normalize(path)
     if directory and excluded_history_roots[directory] and history[1] then
-        return history[1]
+        return history[1], true
     end
-    return path
+    return path, false
 end
 
 local function set_current_directory(path)
@@ -570,12 +577,23 @@ function M.from_here()
     vim.notify("No file is open and the explorer is not showing a folder", vim.log.levels.WARN)
 end
 
+---Where a start with `name` open begins.
+---
+---A file: the project it belongs to, found by the usual markers. Nothing open:
+---the folder used last, exactly -- it was recorded as chosen, and searching
+---upward from it again would be a second guess at something already decided.
+---@param name string the first buffer's name, "" for none
+---@return string path
+---@return boolean exact
+local function initial_workspace(name)
+    if name ~= "" then return startup_workspace(name) end
+    if history[1] then return history[1], true end
+    return vim.fn.getcwd(), false
+end
+
 function M.setup()
-    local initial = vim.api.nvim_buf_get_name(0)
-    if initial == "" then
-        initial = history[1] or vim.fn.getcwd()
-    end
-    M.set(startup_workspace(initial), { silent = true })
+    local start, exact = initial_workspace(vim.api.nvim_buf_get_name(0))
+    M.set(start, { silent = true, exact = exact })
 
     local workspace_group = vim.api.nvim_create_augroup("WorkspaceRoot", { clear = true })
 
@@ -583,8 +601,16 @@ function M.setup()
         group = workspace_group,
         callback = function()
             local target = vim.api.nvim_buf_get_name(0)
-            if target == "" then target = root or history[1] or vim.fn.getcwd() end
-            M.set(startup_workspace(target), { silent = true })
+
+            -- Nothing was opened, so setup() has already chosen; do it again
+            -- only to apply it to the window that now exists, and as chosen.
+            if target == "" and root then
+                M.set(root, { silent = true, exact = true })
+                return
+            end
+
+            local start, exact = initial_workspace(target)
+            M.set(start, { silent = true, exact = exact })
         end,
         once = true,
         desc = "Initialize the first live project context",
