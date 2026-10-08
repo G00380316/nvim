@@ -47,7 +47,7 @@ local entries = {
     { "Buffers", "[ / ]", "n", "Back / forward through the buffers you have been in" },
 
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
-    { "Terminal", "<C-v> → <C-g>", "t", "Jump through output, then copy from the cursor", "terminal_normal" },
+    { "Terminal", "<C-v> → <C-g>", "t", "Move through output like a buffer, then copy it with the cursor where you were", "terminal_normal" },
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable, saveable buffer", "terminal_edit" },
     { "Terminal", "<leader>t", "n", "Open terminal action selector (new terminal here lives there)" },
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },

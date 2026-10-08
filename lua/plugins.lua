@@ -1183,7 +1183,7 @@ vim.api.nvim_create_autocmd("FileType", {
         vim.keymap.set("n", "<C-g>", function()
             require("terminals").edit({ cursor = vim.api.nvim_win_get_cursor(0) })
         end, vim.tbl_extend("force", opts, {
-            desc = "Copy terminal output from the cursor into an editable buffer",
+            desc = "Copy the terminal output into an editable buffer, cursor where it is here",
         }))
         -- Select the lines you care about and copy just those, rather than
         -- taking the whole scrollback and deleting the rest by hand.
@@ -1248,8 +1248,8 @@ vim.keymap.set("t", "<C-s>", from_terminal(split_terminal),
     { noremap = true, silent = true, desc = "Split the bottom terminal panel in half" })
 -- Terminal buffers are read-only, so "edit this output" means editing a copy.
 -- <C-g> works directly from terminal mode, and again after <C-v> has entered
--- terminal-normal mode -- there it copies from the cursor, or from the visual
--- selection, so you can take just the lines you want.
+-- terminal-normal mode -- there the copy opens with the cursor on the line you
+-- were on, or holds only the visual selection if you made one.
 vim.keymap.set("t", "<C-g>", from_terminal(function() require("terminals").edit() end),
     { noremap = true, silent = true, desc = "Copy terminal output into an editable buffer" })
 

@@ -456,7 +456,14 @@ function M.edit(opts)
     vim.api.nvim_win_set_buf(win, buf)
     vim.api.nvim_set_current_win(win)
 
+    -- Land where the cursor was in the terminal, so the copy opens on the part
+    -- you were looking at rather than at the bottom. Without a window to ask --
+    -- the terminal is hidden -- the end is as good a place as any.
     local cursor = opts.cursor
+    if not cursor then
+        local terminal = terminal_window(source)
+        if terminal then cursor = vim.api.nvim_win_get_cursor(terminal) end
+    end
     local row = cursor and (cursor[1] - (first - 1)) or #lines
     row = math.max(1, math.min(row, #lines))
     local col = math.max(0, math.min(cursor and cursor[2] or 0, #(lines[row] or "")))
