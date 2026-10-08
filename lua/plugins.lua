@@ -1619,6 +1619,23 @@ end
 
 
 -- ============================================================
+-- Autopairs
+-- ============================================================
+
+-- lexima pads a space typed inside empty brackets, so `[` `<Space>` gives
+-- `[ | ]` with two spaces. Right for code, wrong for Markdown, where `[ ]` is
+-- a task-list checkbox and `[  ]` is not one: it neither renders as a box nor
+-- toggles. The same space is left alone there, and only there.
+vim.fn["lexima#add_rule"]({
+    char = "<Space>",
+    at = [=[\[\%#\]]=],
+    input = "<Space>",
+    filetype = { "markdown" },
+    priority = 10,
+})
+
+
+-- ============================================================
 -- Misc Plugin Setup
 -- ============================================================
 
