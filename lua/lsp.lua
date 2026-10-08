@@ -151,16 +151,49 @@ require("blink.cmp").setup({
     },
 
     sources = {
-        default = {
-            "lsp",
-            "path",
-            "snippets",
+        default = { "lsp", "path", "snippets", "buffer" },
+
+        -- Prose has no language server to ask, so what it completes from is
+        -- the words already written: the snippets first (headings, tasks,
+        -- tables), then every word in the open buffers.
+        per_filetype = {
+            markdown = { "snippets", "buffer", "path", "lsp" },
+            text = { "snippets", "buffer", "path" },
+            gitcommit = { "buffer" },
+        },
+
+        providers = {
+            -- Templates are the fastest way to type, so they rank above the
+            -- rest; loose words come last and only after two letters.
+            snippets = { score_offset = 4 },
+            lsp = { score_offset = 2 },
+            path = { score_offset = 1 },
+            buffer = {
+                min_keyword_length = 2,
+                score_offset = -3,
+                opts = {
+                    -- Words from every open file, not just this one: the
+                    -- terms you are writing about live in the other notes.
+                    get_bufnrs = function()
+                        return vim.tbl_filter(function(buf)
+                            return vim.bo[buf].buftype == ""
+                        end, vim.api.nvim_list_bufs())
+                    end,
+                },
+            },
         },
     },
 
     completion = {
+        -- The first match is already chosen, so <CR> or <Tab> takes it.
+        list = { selection = { preselect = true, auto_insert = false } },
+        keyword = { range = "full" },
+        accept = { auto_brackets = { enabled = true } },
+        trigger = { show_on_trigger_character = true, show_on_keyword = true },
+
         documentation = {
             auto_show = true,
+            auto_show_delay_ms = 150,
         },
 
         menu = {

@@ -1,0 +1,4 @@
+{
+  "Date": { "prefix": "date", "body": ["${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}"], "description": "Today's date" },
+  "Todo": { "prefix": "todo", "body": ["[ ] ${1:task}"], "description": "Task line" }
+}

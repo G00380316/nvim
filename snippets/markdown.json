@@ -1,0 +1,17 @@
+{
+  "Task": { "prefix": ["todo", "task"], "body": ["- [ ] ${1:task}"], "description": "Checkbox task" },
+  "Tasks": { "prefix": "tasks", "body": ["- [ ] ${1:first}", "- [ ] ${2:second}", "- [ ] ${3:third}"], "description": "Three tasks" },
+  "Note": { "prefix": "note", "body": ["> [!NOTE]", "> ${1:text}"], "description": "Note callout" },
+  "Tip": { "prefix": "tip", "body": ["> [!TIP]", "> ${1:text}"], "description": "Tip callout" },
+  "Warning": { "prefix": "warn", "body": ["> [!WARNING]", "> ${1:text}"], "description": "Warning callout" },
+  "Important": { "prefix": "important", "body": ["> [!IMPORTANT]", "> ${1:text}"], "description": "Important callout" },
+  "Table": { "prefix": "table", "body": ["| ${1:Column} | ${2:Column} |", "| --- | --- |", "| ${3:cell} | ${4:cell} |"], "description": "Two-column table" },
+  "Code block": { "prefix": "code", "body": ["```${1:lang}", "${2:code}", "```"], "description": "Fenced code block" },
+  "Link": { "prefix": "link", "body": ["[${1:text}](${2:url})"], "description": "Link" },
+  "Image": { "prefix": "img", "body": ["![${1:alt}](${2:path})"], "description": "Image" },
+  "Date": { "prefix": "date", "body": ["${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}"], "description": "Today's date" },
+  "Daily note": { "prefix": "daily", "body": ["# ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}", "", "## Plan", "- [ ] ${1:}", "", "## Notes", "${2:}", "", "## Done", ""], "description": "Daily note" },
+  "Meeting": { "prefix": "meeting", "body": ["# ${1:Meeting} — ${CURRENT_YEAR}-${CURRENT_MONTH}-${CURRENT_DATE}", "", "**Attendees:** ${2:}", "", "## Agenda", "- ${3:}", "", "## Decisions", "- ${4:}", "", "## Actions", "- [ ] ${5:}"], "description": "Meeting notes" },
+  "Lecture": { "prefix": "lecture", "body": ["# ${1:Topic}", "", "## Key ideas", "- ${2:}", "", "## Definitions", "- **${3:term}**: ${4:meaning}", "", "## Questions", "- ${5:}"], "description": "Lecture notes" },
+  "Collapsible": { "prefix": "details", "body": ["<details>", "<summary>${1:Summary}</summary>", "", "${2:content}", "", "</details>"], "description": "Collapsible section" }
+}
