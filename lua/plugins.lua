@@ -1335,12 +1335,54 @@ local function avoid_explorer(origin)
     vim.api.nvim_set_current_win(window_is_valid(editor) and editor or origin)
 end
 
+---Every window a directional key may land in, in reading order. The explorer
+---is left out (it is only reached with <C-e>), and so are floating windows.
+local function reachable_windows()
+    local wins = {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        local config = vim.api.nvim_win_get_config(win)
+        if config.relative == "" and config.focusable ~= false and window_filetype(win) ~= "oil" then
+            wins[#wins + 1] = win
+        end
+    end
+    table.sort(wins, function(a, b)
+        local pa, pb = vim.api.nvim_win_get_position(a), vim.api.nvim_win_get_position(b)
+        if pa[1] ~= pb[1] then return pa[1] < pb[1] end
+        return pa[2] < pb[2]
+    end)
+    return wins
+end
+
+---When the direction leads nowhere -- the only thing that way is the explorer,
+---or the edge of the screen -- go to the next window that is allowed instead,
+---wrapping round. h and k step back through reading order, j and l forward.
+local function next_reachable(origin, direction)
+    local wins = reachable_windows()
+    if #wins < 2 then return end
+
+    local index
+    for i, win in ipairs(wins) do
+        if win == origin then index = i end
+    end
+    if not index then return end
+
+    local step = (direction == "h" or direction == "k") and -1 or 1
+    vim.api.nvim_set_current_win(wins[(index - 1 + step) % #wins + 1])
+end
+
 local function navigate_window(direction, tmux_flag)
     if vim.fn.mode() == "t" then vim.cmd("stopinsert") end
 
     local current = vim.api.nvim_get_current_win()
     vim.cmd("wincmd " .. direction)
+    local into_explorer = window_filetype(vim.api.nvim_get_current_win()) == "oil"
     avoid_explorer(current)
+    -- Blocked by the explorer: another window of ours is the answer. At a plain
+    -- screen edge inside tmux, the neighbouring tmux pane is.
+    local in_tmux = vim.env.TMUX and vim.env.TMUX ~= ""
+    if vim.api.nvim_get_current_win() == current and (into_explorer or not in_tmux) then
+        next_reachable(current, direction)
+    end
 
     -- At a Neovim edge, continue into the adjacent tmux pane when available.
     if vim.api.nvim_get_current_win() == current and vim.env.TMUX and vim.env.TMUX ~= "" then
