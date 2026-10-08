@@ -229,6 +229,7 @@ vim.diagnostic.config({
 
 vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
 require("panel_titles").setup()
+require("responsive").setup()
 
 
 -- ============================================================
@@ -315,11 +316,13 @@ local mode = {
 
 local branch = {
     "branch",
+    cond = function() return require("responsive").show_statusline_part("branch") end,
     icon = "",
 }
 
 local lsp_status = {
     "lsp_status",
+    cond = function() return require("responsive").show_statusline_part("lsp") end,
     icon = "",
     symbols = {
         spinner = {
@@ -359,6 +362,7 @@ local lsp_status = {
 -- it takes searches with it, and that is worth seeing: a scope that moved
 -- silently is the kind of thing you only notice through its results.
 local cwd_component = {
+    cond = function() return require("responsive").show_statusline_part("project") end,
     function()
         local workspace = require("workspace")
         local visiting = workspace.visiting()
@@ -374,6 +378,7 @@ local cwd_component = {
 local floaterm_component = {
     floaterm_tabline,
     cond = function()
+        if not require("responsive").show_statusline_part("terminals") then return false end
         for _, buf in ipairs(vim.api.nvim_list_bufs()) do
             if vim.bo[buf].filetype == "floaterm" then
                 return true

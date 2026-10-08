@@ -7,7 +7,11 @@
 ---nvim-navic, and a window that stops being a panel gets that back.
 local M = {}
 
-local WINBAR = "%{%v:lua.require'panel_titles'.render()%}"
+-- The window id is written into the string: it is this window's own winbar, and
+-- g:statusline_winid is not reliably set while the title is being drawn.
+local function winbar_for(win)
+    return ("%%{%%v:lua.require'panel_titles'.render(%d)%%}"):format(win)
+end
 
 local function hl_attr(name, attr)
     local ok, hl = pcall(vim.api.nvim_get_hl, 0, { name = name, link = false })
@@ -37,8 +41,10 @@ local function describe(win)
     local buf = vim.api.nvim_win_get_buf(win)
 
     if kind == "oil" then
+        -- Not nvim_buf_call: a winbar is drawn under a text lock, where
+        -- switching buffers is an error.
         local ok, oil = pcall(require, "oil")
-        local dir = ok and vim.api.nvim_buf_call(buf, function() return oil.get_current_dir() end)
+        local dir = ok and oil.get_current_dir(buf)
         return "EXPLORER", folder(dir)
     elseif kind == "terminal" then
         return "TERMINAL", require("terminals").name(buf)
@@ -49,8 +55,7 @@ local function describe(win)
     return (vim.bo[buf].filetype ~= "" and vim.bo[buf].filetype or "TOOL"):upper(), ""
 end
 
-function M.render()
-    local win = vim.g.statusline_winid
+local function render(win)
     if not (win and vim.api.nvim_win_is_valid(win)) then return "" end
 
     local label, detail = describe(win)
@@ -60,13 +65,23 @@ function M.render()
     return ("%%#%s# %s%s%%#%s#"):format(group, label, detail ~= "" and ("  " .. detail) or "", group)
 end
 
+---A failure here would blank the title bar and, repeated every redraw, flood
+---the screen with errors; a title is never worth that.
+function M.render(win)
+    local ok, text = pcall(render, win)
+    return ok and text or ""
+end
+
 local function apply(win)
     if not vim.api.nvim_win_is_valid(win) then return end
-    local panel = require("ide_layout").is_panel_window(win)
+    -- The dashboard is a tool window to the layout, but it has its own header.
+    local buf = vim.api.nvim_win_get_buf(win)
+    local panel = vim.bo[buf].filetype ~= "snacks_dashboard"
+        and require("ide_layout").is_panel_window(win)
     local current = vim.api.nvim_get_option_value("winbar", { win = win, scope = "local" })
-    if panel and current ~= WINBAR then
-        vim.api.nvim_set_option_value("winbar", WINBAR, { win = win, scope = "local" })
-    elseif not panel and current == WINBAR then
+    if panel and current ~= winbar_for(win) then
+        vim.api.nvim_set_option_value("winbar", winbar_for(win), { win = win, scope = "local" })
+    elseif not panel and current:find("panel_titles", 1, true) then
         vim.api.nvim_set_option_value("winbar", "", { win = win, scope = "local" })
     end
 end

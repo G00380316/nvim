@@ -148,7 +148,7 @@ require("snacks").setup({
         -- The IDE frame opens this explicitly after Oil. Snacks' UIEnter
         -- auto-open happens too early and centers against the full screen.
         enabled = false,
-        width = 48,
+        width = require("responsive").dashboard_width(),
         preset = {
             header = [[
 ███╗   ██╗██╗   ██╗██╗███╗   ███╗
@@ -180,7 +180,7 @@ require("snacks").setup({
             },
         },
         sections = {
-            { section = "header", padding = 1 },
+            { section = "header", padding = 1, enabled = function() return require("responsive").dashboard_header() end },
             -- Where you are, under the logo: the workspace you opened into.
             function()
                 local label = require("workspace").label()
@@ -222,13 +222,18 @@ require("snacks").setup({
                     return rows
                 end,
             },
-            {
-                text = {
-                    { "<Space><Space>", hl = "Special" },
-                    { "  command palette", hl = "Comment" },
-                },
-                align = "center",
-            },
+            function()
+                -- The short form when the dashboard is narrow, so it is never
+                -- cut off at the edge.
+                local narrow = require("responsive").dashboard_width() < 34
+                return { {
+                    text = {
+                        { "<Space><Space>", hl = "Special" },
+                        { narrow and " palette" or "  command palette", hl = "Comment" },
+                    },
+                    align = "center",
+                } }
+            end,
         },
     },
     input = { enabled = true },
@@ -334,7 +339,7 @@ vim.api.nvim_create_autocmd("User", {
 
 local oil = require("oil")
 local ide_layout = require("ide_layout")
-local explorer_width = 30
+local function explorer_width() return require("responsive").sidebar_width() end
 local last_editor_win = nil
 local last_panel_win = nil
 local oil_focus_generation = 0
@@ -672,7 +677,7 @@ local function open_oil_sidebar(opts)
         -- Keep the editor side alive without opening the dashboard before Oil.
         ide_layout.placeholder(vim.api.nvim_get_current_win())
     end
-    vim.cmd("topleft " .. explorer_width .. "vsplit")
+    vim.cmd("topleft " .. explorer_width() .. "vsplit")
     local sidebar = vim.api.nvim_get_current_win()
     -- Marked before oil.open so the singleton guard below can tell this
     -- window apart from a stray oil buffer the moment BufWinEnter fires;
@@ -682,7 +687,7 @@ local function open_oil_sidebar(opts)
         if not window_is_valid(sidebar) then return end
         ide_layout.mark_panel("oil", sidebar, vim.api.nvim_win_get_buf(sidebar))
         vim.wo[sidebar].winfixwidth = true
-        vim.api.nvim_win_set_width(sidebar, explorer_width)
+        vim.api.nvim_win_set_width(sidebar, explorer_width())
         local editor = find_editor_window()
         if editor then
             reveal_editor_file_in_oil(vim.api.nvim_buf_get_name(vim.api.nvim_win_get_buf(editor)))
@@ -800,8 +805,8 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
             ide_layout.mark_panel("oil", win, args.buf)
         end
         vim.wo[win].winfixwidth = true
-        if vim.w[win].oil_sidebar and vim.api.nvim_win_get_width(win) ~= explorer_width then
-            vim.api.nvim_win_set_width(win, explorer_width)
+        if vim.w[win].oil_sidebar and vim.api.nvim_win_get_width(win) ~= explorer_width() then
+            vim.api.nvim_win_set_width(win, explorer_width())
         end
 
     end,
@@ -1002,7 +1007,7 @@ local function resize_terminal(delta)
         local bufnr = vim.api.nvim_win_get_buf(win)
         if vim.bo[bufnr].filetype == "floaterm" then
             local height = vim.api.nvim_win_get_height(win)
-            local maximum = math.max(5, vim.o.lines - 6)
+            local maximum = require("responsive").terminal_max_height()
             terminal_height = math.max(5, math.min(maximum, height + delta))
             vim.g.floaterm_height = terminal_height
             vim.api.nvim_win_set_height(win, terminal_height)
@@ -1143,9 +1148,9 @@ local function restore_sidebar_width()
     local sidebar = find_oil_sidebar()
     if sidebar
         and vim.api.nvim_win_is_valid(sidebar)
-        and vim.api.nvim_win_get_width(sidebar) ~= explorer_width
+        and vim.api.nvim_win_get_width(sidebar) ~= explorer_width()
     then
-        pcall(vim.api.nvim_win_set_width, sidebar, explorer_width)
+        pcall(vim.api.nvim_win_set_width, sidebar, explorer_width())
     end
 end
 
@@ -1197,7 +1202,7 @@ vim.api.nvim_create_autocmd("FileType", {
         -- silently defeats balancing them.
         vim.wo.winfixwidth = false
         vim.b.floaterm_position = "belowright"
-        terminal_height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
+        terminal_height = math.min(terminal_height, require("responsive").terminal_max_height())
         vim.api.nvim_win_set_height(0, terminal_height)
 
         vim.keymap.set({ "n", "t" }, "<C-Up>", function() resize_terminal(3) end, opts)
@@ -1380,7 +1385,7 @@ end, { desc = "Open the previous editor tab from any panel" })
 -- Source Control
 -- ============================================================
 
-local git_width = explorer_width
+local git_width = explorer_width()
 
 require("diffview").setup({
     enhanced_diff_hl = true,
@@ -1942,8 +1947,8 @@ local function enforce_layout()
             if vim.api.nvim_win_get_position(sidebar)[2] ~= 0 then
                 vim.api.nvim_win_call(sidebar, function() vim.cmd("wincmd H") end)
             end
-            if vim.api.nvim_win_get_width(sidebar) ~= explorer_width then
-                vim.api.nvim_win_set_width(sidebar, explorer_width)
+            if vim.api.nvim_win_get_width(sidebar) ~= explorer_width() then
+                vim.api.nvim_win_set_width(sidebar, explorer_width())
             end
             vim.wo[sidebar].winfixwidth = true
         end
@@ -1951,7 +1956,7 @@ local function enforce_layout()
         -- Moving the sidebar or equalizing another split can resize the panel
         -- even when its topology is still correct. Re-pin its dimensions on
         -- every guard pass, then balance only the terminal row's width.
-        local height = math.min(terminal_height, math.max(5, vim.o.lines - 6))
+        local height = math.min(terminal_height, require("responsive").terminal_max_height())
         for _, win in ipairs(terminals) do
             if vim.api.nvim_win_is_valid(win) then
                 if vim.api.nvim_win_get_height(win) ~= height then
