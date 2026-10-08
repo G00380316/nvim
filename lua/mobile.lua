@@ -1507,7 +1507,6 @@ function M.setup()
     vim.api.nvim_create_user_command("MobileDevices", M.open, {
         desc = "Open or focus the workspace mobile device hub",
     })
-    vim.keymap.set("n", "zmm", M.open, { desc = "Open/focus mobile device hub" })
 
     vim.api.nvim_create_user_command("XcodeUpdatePackages", update_packages, {
         desc = "Delete Package.resolved and re-resolve SPM dependencies to their latest versions",

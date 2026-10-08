@@ -63,12 +63,7 @@ local entries = {
     { "Debug", "<F11>", "n", "Step into" },
     { "Debug", "<F12>", "n", "Step out" },
 
-    { "Tools", "zl", "n", "Open LeetCode action selector" },
-    { "Tools", "zs", "n", "Open live-server action selector" },
     { "Tools", "<leader>x", "n/x", "Open Xcode action selector" },
-    { "Tools", "<leader>a", "n/x", "Open AI action selector" },
-    { "Tools", "zS", "n", "Open SSH action selector" },
-    { "Tools", "zT", "n", "Open Typst preview action selector" },
 
     { "Run", "<leader>e", "n", "Run the current file through the zsh run function" },
     { "Run", "<leader>xr", "n", "Test the current file through the zsh runtest function" },
@@ -83,7 +78,6 @@ local entries = {
     { "Daily", "<leader>qn", "n", "Open quick notes" },
     { "Daily", "<leader>o", "n", "Save this file and source it" },
     { "Daily", "<leader>h", "n", "Search Neovim's help" },
-    { "Daily", "zmm", "n", "Open or focus the mobile device hub" },
     { "Daily", "<leader><leader>", "n", "Command palette: search every action by name" },
     { "Daily", "<C-\\>", "any", "Open this command guide from any mode" },
     { "Daily", "<leader>k", "n", "Show this workflow guide" },

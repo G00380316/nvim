@@ -24,6 +24,7 @@ local project_actions = {
     -- Takes an optional file, so the scan for argument-free commands skips it.
     { "Import a document as a note", "A PDF, Word file, web page or image becomes Markdown", "NoteImport", "Notes" },
     { "Show note hints", "The Markdown cheat sheet beside the note", "MarkdownHints", "Notes" },
+    { "Mobile device hub", "Boot, run and watch simulators and emulators", "MobileDevices", "Tools" },
 }
 
 local function build(context)
@@ -69,6 +70,21 @@ local function build(context)
                 detail = action.detail,
                 key = menu.lhs,
                 run = function() menus.run_action(menu, action, context) end,
+            })
+        end
+    end
+
+    -- A tool with no key of its own is one row here that opens its whole menu,
+    -- so browsing what it can do is "Tools", Enter. Its individual actions are
+    -- listed above too, for when you already know what you want.
+    for _, name in ipairs(names) do
+        local menu = menus.menus[name]
+        if not menu.lhs then
+            add({
+                group = "Tools",
+                label = menu.title,
+                detail = "Browse everything it can do",
+                run = function() menus.open(name) end,
             })
         end
     end

@@ -165,7 +165,8 @@ local menus = {
         },
     },
     leetcode = {
-        lhs = "zl",
+        -- No key of its own: reached from the palette (<leader><leader>, group
+        -- "Tools"), or :ActionMenu leetcode.
         title = "LeetCode Actions",
         icon = "󰘦",
         actions = {
@@ -177,7 +178,8 @@ local menus = {
         },
     },
     ai = {
-        lhs = "<leader>a",
+        -- No key of its own: reached from the palette (<leader><leader>, group
+        -- "Tools"), or :ActionMenu ai.
         mode = { "n", "x" },
         title = "AI Actions",
         icon = "󰸴",
@@ -192,9 +194,8 @@ local menus = {
         },
     },
     ssh = {
-        -- zS and zT: capitals because zr and zy are Vim's own fold commands,
-        -- and this config has shadowed enough of those already.
-        lhs = "zS",
+        -- No key of its own: reached from the palette (<leader><leader>, group
+        -- "Tools"), or :ActionMenu ssh.
         title = "SSH Actions",
         icon = "",
         actions = {
@@ -208,7 +209,8 @@ local menus = {
         },
     },
     typst = {
-        lhs = "zT",
+        -- No key of its own: reached from the palette (<leader><leader>, group
+        -- "Tools"), or :ActionMenu typst.
         title = "Typst Actions",
         icon = "",
         actions = {
@@ -221,7 +223,8 @@ local menus = {
         },
     },
     server = {
-        lhs = "zs",
+        -- No key of its own: reached from the palette (<leader><leader>, group
+        -- "Tools"), or :ActionMenu server.
         title = "Live Server Actions",
         icon = "󰖟",
         actions = {
@@ -335,12 +338,16 @@ function M.setup()
         end
     end
 
+    -- Only the menus worth a key of their own have one. The rest are reached
+    -- from the palette, where every tool is one row in the "Tools" group.
     for name, menu in pairs(menus) do
-        vim.keymap.set(menu.mode or "n", menu.lhs, function() M.open(name) end, {
-            noremap = true,
-            silent = true,
-            desc = "Open " .. menu.title,
-        })
+        if menu.lhs then
+            vim.keymap.set(menu.mode or "n", menu.lhs, function() M.open(name) end, {
+                noremap = true,
+                silent = true,
+                desc = "Open " .. menu.title,
+            })
+        end
     end
 
     -- These are worth keeping direct because they are repeated while stopped
