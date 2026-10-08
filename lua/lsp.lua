@@ -145,6 +145,29 @@ vim.lsp.config("lua_ls", {
 -- Main completion engine.
 -- ============================================================
 
+local prose_filetypes = { markdown = true, text = true, gitcommit = true, typst = true, tex = true }
+
+local function prose_filetype()
+    return prose_filetypes[vim.bo.filetype] == true
+end
+
+---Whether the cursor is inside a comment. Insert mode leaves the cursor one past
+---the character just typed, so the character before it is the one that counts.
+local function in_comment()
+    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+    col = math.max(col - 1, 0)
+    local ok, captures = pcall(vim.treesitter.get_captures_at_pos, 0, row - 1, col)
+    if ok then
+        for _, capture in ipairs(captures) do
+            if capture.capture:find("^comment") then return true end
+        end
+        if #captures > 0 then return false end
+    end
+    -- No parser for this filetype: the syntax groups say the same thing.
+    local id = vim.fn.synID(row, col + 1, 1)
+    return vim.fn.synIDattr(vim.fn.synIDtrans(id), "name") == "Comment"
+end
+
 require("blink.cmp").setup({
     signature = {
         enabled = true,
@@ -169,6 +192,9 @@ require("blink.cmp").setup({
             lsp = { score_offset = 2 },
             path = { score_offset = 1 },
             buffer = {
+                -- In code, loose words are noise except where prose is being
+                -- written: inside a comment. Prose files take them everywhere.
+                enabled = function() return prose_filetype() or in_comment() end,
                 min_keyword_length = 2,
                 score_offset = -3,
                 opts = {
