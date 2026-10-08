@@ -8,7 +8,6 @@ local entries = {
     { "Project", "<C-d>", "switcher", "Close the open project under the cursor; press again to forget it" },
     { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
     { "Project", "zcd", "n", "Use this file's project as the workspace; with no file open, the explorer's folder" },
-    { "Project", "zcf", "n", "Find a file in this Neovim config" },
     { "Project", "<leader>f", "n", "Find a file anywhere under home" },
     { "Project", "<C-e>", "n/i/x", "Open or focus the Oil project tree" },
     { "Project", "<C-f>", "n/i/x", "Find a file in the current project" },
@@ -17,8 +16,6 @@ local entries = {
 
     { "Search", "/", "n", "Search within the current buffer" },
     { "Search", "<leader>s", "n/x", "Replace in the buffer or selection" },
-    { "Search", "<leader>sq", "n", "Search into editable project results" },
-    { "Search", "<leader>st", "n", "Open or focus editable project results" },
     { "Search", "<leader>c", "n", "Clear the active search" },
     { "Search", "<leader>r", "n", "Replace the word under the cursor, interactively" },
 
@@ -77,7 +74,6 @@ local entries = {
     { "Daily", "<leader>?", "n/x", "Search editing recipes: surround a word, change inside a block, swap lines" },
     { "Daily", "S", "x", "Surround the selection: S\" quotes it, S( or Sb brackets it, S* makes it bold" },
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
-    { "Daily", "<leader>qn", "n", "Open quick notes" },
     { "Daily", "<leader>o", "n", "Save this file and source it" },
     { "Daily", "<leader>h", "n", "Search Neovim's help" },
     { "Daily", "<leader><leader>", "n", "Command palette: search every action by name" },

@@ -1857,7 +1857,7 @@ local function open_project_results(query)
                 local results_win = find_window("qf")
                 if results_win then vim.api.nvim_set_current_win(results_win) end
             else
-                quicker.open({ focus = true })
+                if not pcall(quicker.open, { focus = true }) then pcall(vim.cmd, "copen") end
             end
         end)
     end)
@@ -1881,22 +1881,17 @@ vim.keymap.set({ "n", "x" }, "<leader>s", function()
     require("rip-substitute").sub()
 end, { desc = "Replace in buffer or selection" })
 
-vim.keymap.set("n", "<leader>sq", "<cmd>ProjectResults<CR>", {
-    silent = true,
-    desc = "Search project into editable results",
-})
-
-vim.keymap.set("n", "<leader>st", function()
+-- Palette commands, not keys: occasional enough to search for.
+vim.api.nvim_create_user_command("ResultsFocus", function()
     if quicker.is_open() then
         local results_win = find_window("qf")
         if results_win then vim.api.nvim_set_current_win(results_win) end
-    else
-        quicker.open({ focus = true })
+        return
     end
-end, {
-    silent = true,
-    desc = "Open/focus editable results",
-})
+    -- quicker can fail to open (an option error from the list's own settings);
+    -- the plain quickfix window is the fallback, and still takes focus.
+    if not pcall(quicker.open, { focus = true }) then pcall(vim.cmd, "copen") end
+end, { desc = "Open or focus the editable project results" })
 
 
 -- ============================================================

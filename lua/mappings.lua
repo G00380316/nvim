@@ -1039,11 +1039,9 @@ end, {
     desc = "Help picker",
 })
 
-vim.keymap.set("n", "zcf", function()
+vim.api.nvim_create_user_command("ConfigFiles", function()
     Snacks.picker.files({ cwd = vim.fn.stdpath("config") })
-end, {
-    desc = "Find config files",
-})
+end, { desc = "Find a file in this Neovim config" })
 
 vim.keymap.set({ "n", "x" }, "<leader>l", function()
     Snacks.picker.grep_word({ cwd = require("workspace").context() })
@@ -1506,7 +1504,7 @@ end, {
 -- Quick Notes / Kitty
 -- ============================================================
 
-vim.keymap.set("n", "<leader>qn", function()
+vim.api.nvim_create_user_command("QuickNotes", function()
     local notes = vim.fn.expand("~/Library/Mobile Documents/com~apple~CloudDocs/Desktop/quicknotes.md")
 
     if vim.fn.filereadable(notes) == 0 then
@@ -1515,11 +1513,7 @@ vim.keymap.set("n", "<leader>qn", function()
 
     pcall(vim.cmd, "EditorFocus")
     vim.cmd("edit " .. vim.fn.fnameescape(notes))
-end, {
-    noremap = true,
-    silent = true,
-    desc = "Open quick notes in this Neovim instance",
-})
+end, { desc = "Open quick notes" })
 
 -- ============================================================
 -- Flash Search
