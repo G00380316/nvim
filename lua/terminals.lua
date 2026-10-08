@@ -184,11 +184,18 @@ end
 ---jobstart can never reach those: it execs a program, and a shell function is
 ---not one. Output also lands where output belongs instead of being discarded
 ---by a detached job, and a program that reads stdin still works.
+---
+---By default you are taken to the terminal in insert mode, so a program that
+---stops to ask something -- a prompt, a password, input() -- can be answered
+---without pressing i first. With `focus = false` the panel is shown but you stay
+---in the window and mode you were in: right for running a file or its tests,
+---where you want to watch the output and keep editing.
 ---@param command string
 ---@param opts? { focus?: boolean }
 ---@return boolean sent
 function M.send(command, opts)
     opts = opts or {}
+    local origin = vim.api.nvim_get_current_win()
 
     -- Prefer the terminal being looked at, so a split panel runs where you are
     -- rather than jumping to whichever shell happens to be first.
@@ -209,9 +216,17 @@ function M.send(command, opts)
         return false
     end
 
-    -- Insert mode: a program that stops to ask something -- a prompt, a
-    -- password, input() -- has to be answerable without pressing i first.
-    if opts.focus ~= false then M.focus(bufnr, { insert = true }) end
+    if opts.focus == false then
+        -- Shown if it is not already, then handed straight back. A terminal that
+        -- was just created has also been entered; leaving it cancels the insert
+        -- that creating one asks for.
+        if not terminal_window(bufnr) then M.focus(bufnr) end
+        if vim.api.nvim_win_is_valid(origin) then pcall(vim.api.nvim_set_current_win, origin) end
+        if vim.fn.mode():sub(1, 1) == "t" then vim.cmd("stopinsert") end
+    else
+        M.focus(bufnr, { insert = true })
+    end
+
     vim.fn.chansend(job, command .. "\n")
     return true
 end

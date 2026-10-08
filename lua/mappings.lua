@@ -1697,7 +1697,7 @@ local function send_to_runner(name)
             vim.fn.shellescape(vim.fn.fnamemodify(path, ":p:h")),
             name,
             vim.fn.shellescape(basename)
-        ))
+        ), { focus = false }) -- watch the output from the editor; <C-t> goes down for input
     end
 end
 
