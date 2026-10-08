@@ -118,6 +118,28 @@ local function rewrap(from_left, from_right, to_left, to_right)
     end
 end
 
+M.wrap_selection = wrap_selection
+
+local pairs_for = {
+    ["("] = { "(", ")" }, [")"] = { "(", ")" }, b = { "(", ")" },
+    ["["] = { "[", "]" }, ["]"] = { "[", "]" },
+    ["{"] = { "{", "}" }, ["}"] = { "{", "}" }, B = { "{", "}" },
+    ["<"] = { "<", ">" }, [">"] = { "<", ">" },
+    ["*"] = { "**", "**" },
+}
+
+---Visual `S`: wrap the selection in the pair for the next key typed. Brackets
+---give their pair (b and B too), * gives **bold**, and any other character
+---wraps with itself -- quotes, backticks, _, ~.
+function M.surround_selection()
+    local key = vim.fn.getcharstr()
+    if key == "\27" or key == "" then return end
+    local pair = pairs_for[key] or { key, key }
+    -- Leaving visual mode is what sets the '< and '> marks.
+    vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
+    wrap_selection(pair[1], pair[2])()
+end
+
 -- ----------------------------------------------------------------- recipes
 
 -- { title, keys shown, explanation, action }  -- action: function or key string
@@ -166,8 +188,8 @@ local entries = {
 
     -- Lines
     { "Comment or uncomment the line", "gcc", "Toggle a comment on the line", "gcc" },
-    { "Duplicate the line", "yyp", "Copy the line and paste it below", "yyp" },
-    { "Swap this line with the one below", "ddp", "Move the line down one", "ddp" },
+    { "Duplicate the line", ":t.", "Copy the line to just below it", ":t.<CR>" },
+    { "Swap this line with the one below", ":m .+1", "Move the line down one", ":m .+1<CR>==" },
     { "Move the line up", ":m .-2", "Move the line up one", ":m .-2<CR>==" },
     { "Move the line down", ":m .+1", "Move the line down one", ":m .+1<CR>==" },
     { "Delete the line", "dd", "Remove the whole line", "dd" },

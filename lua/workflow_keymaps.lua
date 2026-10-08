@@ -75,6 +75,7 @@ local entries = {
     { "Markdown", "<leader>M", "n", "Pick from the hints and insert it; j/k, Enter, q to leave" },
 
     { "Daily", "<leader>?", "n/x", "Search editing recipes: surround a word, change inside a block, swap lines" },
+    { "Daily", "S", "x", "Surround the selection: S\" quotes it, S( or Sb brackets it, S* makes it bold" },
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>qn", "n", "Open quick notes" },
     { "Daily", "<leader>o", "n", "Save this file and source it" },

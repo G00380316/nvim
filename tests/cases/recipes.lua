@@ -35,5 +35,26 @@ T.eq(text(), "say (hello) there", "selection in parentheses")
 
 buf({ "a", "b" }, 1, 0)
 recipe("Duplicate the line")()
-vim.wait(100)
+-- Key recipes queue their keys; run them before anything reads the keyboard.
+vim.api.nvim_feedkeys("", "x", false)
+T.eq(text(), "a\na\nb", "duplicate line")
 T.ok(#require("recipes").items() > 50, "plenty of recipes")
+
+-- Visual S: the key typed next picks the pair.
+buf({ "say hello there" }, 1, 4)
+vim.cmd("normal! viw")
+vim.api.nvim_feedkeys('"', "n", false)
+require("recipes").surround_selection()
+T.eq(text(), 'say "hello" there', "S then a quote")
+
+buf({ "say hello there" }, 1, 4)
+vim.cmd("normal! viw")
+vim.api.nvim_feedkeys("b", "n", false)
+require("recipes").surround_selection()
+T.eq(text(), "say (hello) there", "S then b gives parentheses")
+
+buf({ "say hello there" }, 1, 4)
+vim.cmd("normal! viw")
+vim.api.nvim_feedkeys("*", "n", false)
+require("recipes").surround_selection()
+T.eq(text(), "say **hello** there", "S then * gives bold")

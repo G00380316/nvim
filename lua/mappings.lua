@@ -1729,6 +1729,12 @@ require("shell_tools").setup()
 
 -- The "how do I ..." list: surround a word, change what is inside a block, swap
 -- lines. Same list as the palette, opened already filtered to the editing recipes.
+-- Select, then S and the character: S" quotes it, S( or Sb brackets it, S* makes
+-- it bold. The same job as the "Surround selection" recipes with one key.
+vim.keymap.set("x", "S", function()
+    require("recipes").surround_selection()
+end, { desc = "Surround the selection with the next character typed" })
+
 local function open_recipes()
     -- From a selection, leave visual mode first: that is what sets the '< and
     -- '> marks the "surround selection" recipes work on.
