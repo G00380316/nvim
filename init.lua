@@ -175,7 +175,14 @@ vim.o.scrolloff = 10
 vim.o.matchtime = 2
 vim.o.paste = false
 
-vim.o.guicursor = "n-v-c-sm:block-blinkon1,i-ci-ve:ver25,r-cr-o:hor20,a:Cursor/Cursor"
+-- Insert mode gets its own cursor colour, so the mode shows at the cursor
+-- itself, not only in the statusline.
+local function insert_cursor_color()
+    vim.api.nvim_set_hl(0, "CursorInsert", { bg = "#98bb6c", fg = "#1f1f28" })
+end
+insert_cursor_color()
+vim.api.nvim_create_autocmd("ColorScheme", { callback = insert_cursor_color })
+vim.o.guicursor = "a:Cursor/Cursor,n-v-c-sm:block-blinkon1,i-ci-ve:ver25-CursorInsert,r-cr-o:hor20"
 
 vim.o.wrap = true
 -- vim.o.wrap = false
@@ -192,10 +199,21 @@ vim.cmd("set completeopt+=noselect")
 vim.diagnostic.config({
     severity_sort = true,
     update_in_insert = false,
+    -- Message text only on the line the cursor is on; every other problem is
+    -- just a mark in the sign column. A file full of errors stays readable.
     virtual_text = {
         spacing = 2,
         source = "if_many",
         prefix = "●",
+        current_line = true,
+    },
+    signs = {
+        text = {
+            [vim.diagnostic.severity.ERROR] = " ",
+            [vim.diagnostic.severity.WARN] = " ",
+            [vim.diagnostic.severity.INFO] = " ",
+            [vim.diagnostic.severity.HINT] = "󰌵 ",
+        },
     },
     float = {
         border = "rounded",
