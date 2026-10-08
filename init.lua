@@ -210,6 +210,7 @@ vim.diagnostic.config({
 
 
 vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
+require("panel_titles").setup()
 
 
 -- ============================================================
@@ -292,15 +293,6 @@ local mode = {
     fmt = function(str)
         return " " .. str
     end,
-}
-
-local diff = {
-    "diff",
-    symbols = {
-        added = " ",
-        modified = " ",
-        removed = " ",
-    },
 }
 
 local branch = {
@@ -410,9 +402,10 @@ lualine.setup({
             mode,
         },
 
+        -- Branch only: what changed is already marked in the gutter by
+        -- gitsigns, and the counts here just repeated it.
         lualine_b = {
             branch,
-            diff,
         },
 
         lualine_c = {
@@ -464,9 +457,10 @@ lualine.setup({
             floaterm_component,
         },
 
+        -- Where the cursor is. The percentage through the file is dropped:
+        -- the line number says the same with less to read.
         lualine_z = {
             "location",
-            "progress",
         },
     },
 })
