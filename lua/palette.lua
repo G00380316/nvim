@@ -89,6 +89,8 @@ local function build(context)
         end
     end
 
+    for _, recipe in ipairs(require("recipes").items()) do add(recipe) end
+
     for _, entry in ipairs(project_actions) do
         menus.covered_commands[entry[3]] = true
         add({
@@ -129,12 +131,13 @@ function M.items(context)
     return build(context or {})
 end
 
-local function open_picker(context)
+local function open_picker(context, pattern)
     local Snacks = require("snacks")
 
     Snacks.picker.pick({
         title = "Command Palette  \u{b7}  type what you want  \u{b7}  Ctrl-Q closes",
         items = build(context),
+        pattern = pattern,
         preview = false,
         layout = { preset = "vscode" },
         format = function(item)
@@ -168,9 +171,10 @@ local function open_picker(context)
     })
 end
 
-function M.open()
+---@param pattern? string search text to start with
+function M.open(pattern)
     local context = require("workflow_keymaps").capture_context()
-    vim.schedule(function() open_picker(context) end)
+    vim.schedule(function() open_picker(context, pattern) end)
 end
 
 return M

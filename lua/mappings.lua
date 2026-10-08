@@ -1726,3 +1726,9 @@ vim.api.nvim_create_user_command("RunTest", test_current_file, {
 
 -- The chores from ~/.zshrc that make sense inside the editor: palette only.
 require("shell_tools").setup()
+
+-- The "how do I ..." list: surround a word, change what is inside a block, swap
+-- lines. Same list as the palette, opened already filtered to the editing recipes.
+vim.api.nvim_create_user_command("Recipes", function()
+    require("palette").open("Edit ")
+end, { desc = "Search editing recipes: surround, blocks, lines" })
