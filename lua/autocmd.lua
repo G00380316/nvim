@@ -413,3 +413,35 @@ vim.api.nvim_create_autocmd({ "BufLeave", "WinLeave" }, {
     end,
     desc = "Auto save markdown files on leave",
 })
+
+-- ============================================================
+-- Reload files changed on disk
+-- ============================================================
+
+-- 'autoread' reloads an unmodified buffer silently, but Neovim only looks when
+-- it is told to. Check whenever you come back to the window, move between
+-- buffers, or pause -- so a file changed by git, a formatter, or an AI agent is
+-- simply up to date. A buffer with unsaved edits of your own is the exception:
+-- it still asks, because reloading it would throw those edits away.
+local reload_group = vim.api.nvim_create_augroup("ReloadChangedFiles", { clear = true })
+
+vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter", "CursorHold", "TermClose", "TermLeave" }, {
+    group = reload_group,
+    callback = function()
+        if vim.fn.getcmdwintype() == "" and vim.fn.mode() ~= "c" then
+            vim.cmd("silent! checktime")
+        end
+    end,
+    desc = "Pick up changes made to files outside Neovim",
+})
+
+vim.api.nvim_create_autocmd("FileChangedShellPost", {
+    group = reload_group,
+    callback = function(args)
+        vim.notify(
+            "Reloaded " .. vim.fn.fnamemodify(args.file, ":t") .. " (changed on disk)",
+            vim.log.levels.INFO
+        )
+    end,
+    desc = "Say which file was reloaded",
+})
