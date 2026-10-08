@@ -75,6 +75,7 @@ local entries = {
 
     { "Markdown", "<CR>", "n/x", "Tick or untick the checkbox on this line; a plain bullet becomes one" },
     { "Markdown", "o", "n", "Open a new list item below (O for above)" },
+    { "Markdown", "<leader>m", "n", "Show or hide the note-taking hints beside the note" },
 
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>qn", "n", "Open quick notes" },

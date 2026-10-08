@@ -1642,9 +1642,18 @@ vim.fn["lexima#add_rule"]({
 vim.api.nvim_create_autocmd("FileType", {
     group = vim.api.nvim_create_augroup("MarkdownLists", { clear = true }),
     pattern = "markdown",
-    callback = function(args) require("markdown_lists").attach(args.buf) end,
-    desc = "Continue Markdown lists on Enter",
+    callback = function(args)
+        require("markdown_lists").attach(args.buf)
+        vim.keymap.set("n", "<leader>m", function() require("markdown_hints").toggle() end, {
+            buffer = args.buf,
+            silent = true,
+            desc = "Show or hide the Markdown note-taking hints",
+        })
+    end,
+    desc = "Continue Markdown lists on Enter, and offer the hints window",
 })
+
+require("markdown_hints").setup()
 
 vim.api.nvim_create_user_command("MarkdownToggleCheckbox", function(args)
     local first = args.range > 0 and args.line1 or nil
