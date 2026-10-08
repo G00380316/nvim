@@ -228,6 +228,7 @@ local menus = {
         title = "Live Server Actions",
         icon = "󰖟",
         actions = {
+            { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
             { label = "Start or stop server", detail = "Toggle this project's live server", run = command("LiveServer toggle") },
             { label = "Open server manager", detail = "Inspect all live-server instances", run = command("LiveServer") },
             { label = "Open page in browser", detail = "Open the current served page", run = command("LiveServer open") },
