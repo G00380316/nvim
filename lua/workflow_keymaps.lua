@@ -44,7 +44,7 @@ local entries = {
     { "Code", "<leader>dw", "n", "Show diagnostics for the project" },
     { "Code", "g]d", "n", "Jump to the next diagnostic" },
     { "Code", "g[d", "n", "Jump to the previous diagnostic" },
-    { "Code", "[ / ]", "n", "Jump back / forward through where the cursor has been" },
+    { "Buffers", "[ / ]", "n", "Back / forward through the buffers you have been in" },
 
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
     { "Terminal", "<C-v> → <C-g>", "t", "Jump through output, then copy from the cursor", "terminal_normal" },

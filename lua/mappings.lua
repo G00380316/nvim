@@ -695,31 +695,25 @@ vim.keymap.set("n", "<S-Tab>", function() cycle_editor_buffer(-1) end, {
     desc = "Previous editor buffer",
 })
 
--- Jump back and forward through cursor positions.
---
--- Both default keys are already spoken for: <C-o> opens the project switcher,
--- and <C-i> is the same keycode as the <Tab> above. `normal!` reaches the
--- jumplist underneath both mappings.
-local function jump(key)
-    local keys = vim.keycode(key)
-    return function()
-        -- Quietly at either end of the list: beeping on every further press
-        -- is noise rather than information.
-        pcall(vim.cmd.normal, { vim.v.count1 .. keys, bang = true })
-    end
-end
+-- [ and ] go back and forward through the buffers you have been in, like a
+-- browser's Back and Forward. They used to drive the cursor jumplist, which
+-- records every search hit, `G` and jump inside a file, so "back" landed on a
+-- line you had passed through in whichever buffer that was -- places that read
+-- as random. A buffer is what you actually want to return to. See
+-- lua/buffer_history.lua.
+require("buffer_history").setup()
 
-local jump_back = jump("<C-o>")
-local jump_forward = jump("<C-i>")
+local function jump_back() require("buffer_history").back(vim.v.count1) end
+local function jump_forward() require("buffer_history").forward(vim.v.count1) end
 
 vim.keymap.set("n", "[", jump_back, {
     silent = true,
-    desc = "Jump back to the previous cursor position",
+    desc = "Back to the previous buffer",
 })
 
 vim.keymap.set("n", "]", jump_forward, {
     silent = true,
-    desc = "Jump forward to the next cursor position",
+    desc = "Forward to the next buffer",
 })
 
 -- A single [ or ] is the start of dozens of other mappings -- ]d, [q, ]b, and
@@ -771,13 +765,13 @@ local function keep_brackets_instant(buf)
         buffer = buf,
         nowait = true,
         silent = true,
-        desc = "Jump back to the previous cursor position",
+        desc = "Back to the previous buffer",
     })
     vim.keymap.set("n", "]", jump_forward, {
         buffer = buf,
         nowait = true,
         silent = true,
-        desc = "Jump forward to the next cursor position",
+        desc = "Forward to the next buffer",
     })
 end
 
