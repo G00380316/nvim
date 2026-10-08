@@ -195,61 +195,65 @@ vim.api.nvim_create_autocmd("WinLeave", {
 
 
 -- ============================================================
--- Unsupported File Handling
--- Opens binary/document files externally and closes the buffer.
+-- Documents Neovim cannot edit
+-- Open them in the system's own viewer, and stay where you were.
 -- ============================================================
 
-local function open_external_file()
-    local file = vim.fn.expand("<afile>")
-    if file == "" then
-        return
-    end
+-- By extension. A document goes to whatever macOS opens it with; a video goes
+-- to mpv, when it is installed.
+--
+-- .ts is not here: it is TypeScript far more often than it is an MPEG transport
+-- stream, and listing it opened every TypeScript file in a video player and
+-- deleted the buffer.
+local external_documents = {
+    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp",
+    "pages", "numbers", "key", "epub", "mobi",
+}
+local external_videos = { "mp4", "mkv", "mov", "avi", "webm", "m4v", "flv", "wmv", "m2ts" }
 
-    local ext = vim.fn.fnamemodify(file, ":e"):lower()
+local external_by_extension = {}
+for _, extension in ipairs(external_documents) do external_by_extension[extension] = "document" end
+for _, extension in ipairs(external_videos) do external_by_extension[extension] = "video" end
 
-    local video_exts = {
-        mp4 = true,
-        mkv = true,
-        mov = true,
-        avi = true,
-        webm = true,
-        m4v = true,
-        flv = true,
-        wmv = true,
-        ts = true,
-        m2ts = true,
-    }
+local function open_external_file(args)
+    local file = args.file ~= "" and args.file or vim.fn.expand("<afile>")
+    local kind = external_by_extension[vim.fn.fnamemodify(file, ":e"):lower()]
+    if not kind then return end
 
-    if video_exts[ext] then
+    local doc = args.buf
+    local win = vim.api.nvim_get_current_win()
+
+    -- Where you came from: the alternate buffer, which at this point is the one
+    -- the document was opened from.
+    local previous = vim.fn.bufnr("#")
+
+    if kind == "video" and vim.fn.executable("mpv") == 1 then
         vim.fn.jobstart({ "mpv", file }, { detach = true })
     else
         vim.fn.jobstart({ "open", file }, { detach = true })
     end
 
     vim.schedule(function()
-        if vim.api.nvim_buf_is_valid(0) then
-            pcall(vim.api.nvim_buf_delete, 0, { force = true })
+        -- Back first, then delete: deleting the buffer a window is showing lets
+        -- Neovim choose what to show instead, and it chooses without knowing
+        -- which project or what you were just doing.
+        if vim.api.nvim_win_is_valid(win) and vim.api.nvim_win_get_buf(win) == doc then
+            local buffers = require("buffers")
+            local target = (previous > 0 and previous ~= doc and buffers.is_editor(previous)) and previous
+                or buffers.replacement(doc)
+            if target then pcall(vim.api.nvim_win_set_buf, win, target) end
+        end
+
+        if vim.api.nvim_buf_is_valid(doc) then
+            pcall(vim.api.nvim_buf_delete, doc, { force = true })
         end
     end)
 end
 
 vim.api.nvim_create_autocmd("BufEnter", {
-    pattern = {
-        "*.pdf",
-        "*.doc",
-        "*.docx",
-        "*.mp4",
-        "*.mkv",
-        "*.mov",
-        "*.avi",
-        "*.webm",
-        "*.m4v",
-        "*.flv",
-        "*.wmv",
-        "*.ts",
-        "*.m2ts",
-    },
+    pattern = vim.tbl_map(function(extension) return "*." .. extension end, vim.tbl_keys(external_by_extension)),
     callback = open_external_file,
+    desc = "Open documents in the system viewer and return to the previous buffer",
 })
 
 -- Nothing starts insert mode on entering a terminal any more. Every way into
