@@ -189,7 +189,13 @@ require("snacks").setup({
                     local workspace = require("workspace")
                     local rows = {}
 
-                    for _, dir in ipairs(workspace.recent(5)) do
+                    -- The first entry is the workspace Neovim just opened
+                    -- into (the most recent is what starts), so it is the one
+                    -- you are already in; the list is for going elsewhere.
+                    local recent = workspace.recent(6)
+                    table.remove(recent, 1)
+
+                    for _, dir in ipairs(recent) do
                         rows[#rows + 1] = {
                             icon = "directory",
                             desc = workspace.label(dir),
