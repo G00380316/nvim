@@ -73,6 +73,9 @@ local entries = {
     { "Run", "<leader>e", "n", "Run the current file through the zsh run function" },
     { "Run", "<leader>xr", "n", "Test the current file through the zsh runtest function" },
 
+    { "Markdown", "<CR>", "n/x", "Tick or untick the checkbox on this line; a plain bullet becomes one" },
+    { "Markdown", "o", "n", "Open a new list item below (O for above)" },
+
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>qn", "n", "Open quick notes" },
     { "Daily", "<leader>o", "n", "Save this file and source it" },

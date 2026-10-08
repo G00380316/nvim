@@ -1646,6 +1646,11 @@ vim.api.nvim_create_autocmd("FileType", {
     desc = "Continue Markdown lists on Enter",
 })
 
+vim.api.nvim_create_user_command("MarkdownToggleCheckbox", function(args)
+    local first = args.range > 0 and args.line1 or nil
+    require("markdown_lists").toggle(first, args.range > 0 and args.line2 or nil)
+end, { range = true, desc = "Tick or untick the Markdown checkbox on this line" })
+
 
 -- ============================================================
 -- Misc Plugin Setup
