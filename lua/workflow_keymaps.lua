@@ -73,6 +73,7 @@ local entries = {
     { "Run", "<leader>e", "n", "Run the current file through the zsh run function" },
     { "Run", "<leader>xr", "n", "Test the current file through the zsh runtest function" },
 
+    { "Markdown", "<leader>i", "n", "Import a PDF, Word file, web page or image as a new note" },
     { "Markdown", "<CR>", "n/x", "Tick or untick the checkbox on this line; a plain bullet becomes one" },
     { "Markdown", "o", "n", "Open a new list item below (O for above)" },
     { "Markdown", "<leader>m", "n", "Show or hide the note-taking hints beside the note" },

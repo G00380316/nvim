@@ -21,6 +21,9 @@ local project_actions = {
     { "Close this project", "Close its tab, splits and terminals; keep it listed", "WorkspaceClose" },
     { "Forget this project", "Remove it from the project list; the folder stays", "WorkspaceForget" },
     { "Show project folder", "Print where the current project lives", "WorkspaceRoot" },
+    -- Takes an optional file, so the scan for argument-free commands skips it.
+    { "Import a document as a note", "A PDF, Word file, web page or image becomes Markdown", "NoteImport", "Notes" },
+    { "Show note hints", "The Markdown cheat sheet beside the note", "MarkdownHints", "Notes" },
 }
 
 local function build(context)
@@ -73,7 +76,7 @@ local function build(context)
     for _, entry in ipairs(project_actions) do
         menus.covered_commands[entry[3]] = true
         add({
-            group = "Project",
+            group = entry[4] or "Project",
             label = entry[1],
             detail = entry[2],
             run = function() vim.cmd(entry[3]) end,

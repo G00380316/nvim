@@ -1079,6 +1079,13 @@ end, {
     desc = "Command palette",
 })
 
+-- Bring a PDF, Word file, web page or image in as a Markdown note.
+vim.keymap.set("n", "<leader>i", function()
+    require("note_import").pick()
+end, {
+    desc = "Import a document as a note",
+})
+
 vim.api.nvim_create_user_command("Palette", function()
     require("palette").open()
 end, { desc = "Search every action by name" })
