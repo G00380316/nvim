@@ -577,16 +577,41 @@ function M.from_here()
     vim.notify("No file is open and the explorer is not showing a folder", vim.log.levels.WARN)
 end
 
+---The project Neovim was launched in, if it was launched in one.
+---
+---A folder is a project when it holds a marker itself, or sits inside a
+---repository. A marker found further up the tree is not enough: that is how a
+---folder of notes inside an iCloud directory with a Makefile somewhere above it
+---would count as the Makefile's project.
+---@param cwd string
+---@return string?
+local function launched_in_project(cwd)
+    local directory = normalize(cwd)
+    if not directory or excluded_history_roots[directory] then return nil end
+
+    local marked = vim.fs.root(directory, is_marker)
+    if marked and normalize(marked) == directory then return directory end
+
+    local repository = vim.fs.root(directory, { ".git", ".hg" })
+    repository = repository and normalize(repository)
+    if repository and not excluded_history_roots[repository] then return repository end
+end
+
 ---Where a start with `name` open begins.
 ---
 ---A file: the project it belongs to, found by the usual markers. Nothing open:
----the folder used last, exactly -- it was recorded as chosen, and searching
----upward from it again would be a second guess at something already decided.
+---the project you launched in, if you launched in one; otherwise the folder
+---used last, exactly -- it was recorded as chosen, and searching upward from it
+---again would be a second guess at something already decided.
 ---@param name string the first buffer's name, "" for none
 ---@return string path
 ---@return boolean exact
 local function initial_workspace(name)
     if name ~= "" then return startup_workspace(name) end
+
+    local project = launched_in_project(vim.fn.getcwd())
+    if project then return project, true end
+
     if history[1] then return history[1], true end
     return vim.fn.getcwd(), false
 end
