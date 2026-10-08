@@ -109,12 +109,40 @@ function M.open_in_browser()
     end
 end
 
+---Open any file with the app macOS picks for it: the file under the cursor in
+---Oil, else this buffer. For what does not open itself -- a .csv, a .svg, a
+---.docx you are looking at as text.
+function M.open_externally()
+    local file = target_file()
+    if not file then
+        vim.notify("No file to open", vim.log.levels.WARN, { title = "Open" })
+        return
+    end
+    if vim.bo.modified then vim.cmd("silent! write") end
+    local ok, err = vim.ui.open(file)
+    if not ok then
+        vim.notify("Could not open " .. file .. ": " .. tostring(err), vim.log.levels.ERROR, { title = "Open" })
+    end
+end
+
+---Show the file in Finder, selected.
+function M.reveal()
+    local file = target_file()
+    if not file then
+        vim.notify("No file to reveal", vim.log.levels.WARN, { title = "Finder" })
+        return
+    end
+    vim.fn.jobstart({ "open", "-R", file }, { detach = true })
+end
+
 function M.setup()
     local cmds = {
         { "PythonEnv", M.python_env, "Create and activate a .venv in the project (zsh: setup python)" },
         { "PipInstall", M.pip_install, "pip install a package (asks which)" },
         { "PipxInstall", M.pipx_install, "pipx install a tool (asks which)" },
         { "OpenInBrowser", M.open_in_browser, "Open this HTML file in the browser, straight from disk" },
+        { "OpenExternally", M.open_externally, "Open this file in its default app (CSV, SVG, anything)" },
+        { "RevealInFinder", M.reveal, "Show this file in Finder" },
         { "Extract", M.extract, "Extract the archive under the cursor or in this buffer" },
         { "PortCheck", M.port, "Show what is listening on a port (asks which)" },
         { "CheatSheet", M.cheat, "Look something up on cht.sh (asks what)" },

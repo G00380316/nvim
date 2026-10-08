@@ -200,7 +200,7 @@ vim.api.nvim_create_autocmd("WinLeave", {
 -- ============================================================
 
 -- By extension. A document goes to whatever macOS opens it with; a video goes
--- to mpv, when it is installed.
+-- to mpv, when it is installed (as is audio).
 --
 -- .ts is not here: it is TypeScript far more often than it is an MPEG transport
 -- stream, and listing it opened every TypeScript file in a video player and
@@ -210,10 +210,16 @@ local external_documents = {
     "pages", "numbers", "key", "epub", "mobi",
 }
 local external_videos = { "mp4", "mkv", "mov", "avi", "webm", "m4v", "flv", "wmv", "m2ts" }
+-- Sound and design files: binary, so a buffer of them is garbage, and each has
+-- an app made for it. Audio goes to mpv like video does.
+local external_audio = { "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "aiff" }
+local external_design = { "psd", "ai", "sketch", "fig", "xd", "indd", "heic" }
 
 local external_by_extension = {}
 for _, extension in ipairs(external_documents) do external_by_extension[extension] = "document" end
 for _, extension in ipairs(external_videos) do external_by_extension[extension] = "video" end
+for _, extension in ipairs(external_audio) do external_by_extension[extension] = "audio" end
+for _, extension in ipairs(external_design) do external_by_extension[extension] = "document" end
 
 local function open_external_file(args)
     local file = args.file ~= "" and args.file or vim.fn.expand("<afile>")
@@ -227,7 +233,7 @@ local function open_external_file(args)
     -- the document was opened from.
     local previous = vim.fn.bufnr("#")
 
-    if kind == "video" and vim.fn.executable("mpv") == 1 then
+    if (kind == "video" or kind == "audio") and vim.fn.executable("mpv") == 1 then
         vim.fn.jobstart({ "mpv", file }, { detach = true })
     else
         vim.fn.jobstart({ "open", file }, { detach = true })
