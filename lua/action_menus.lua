@@ -222,6 +222,20 @@ local menus = {
             { label = "Update the preview", detail = "Re-render without restarting", run = command("TypstPreviewUpdate") },
         },
     },
+    files = {
+        -- No key of its own: reached from the palette (group "Tools", "Files
+        -- Actions"), or :ActionMenu files.
+        title = "File Actions",
+        icon = "󰈔",
+        actions = {
+            { label = "Recent files", detail = "Files you opened recently in this project", run = command("RecentFiles") },
+            { label = "Recent files, all projects", detail = "Files you opened recently anywhere", run = command("RecentFilesAll") },
+            { label = "Open in default app", detail = "This file, or the one under the cursor in the explorer", run = command("OpenExternally") },
+            { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
+            { label = "Reveal in Finder", detail = "Show this file in Finder", run = command("RevealInFinder") },
+            { label = "Extract archive", detail = "Unpack this archive next to itself", run = command("Extract") },
+        },
+    },
     server = {
         -- No key of its own: reached from the palette (<leader><leader>, group
         -- "Tools"), or :ActionMenu server.
