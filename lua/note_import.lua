@@ -239,9 +239,15 @@ local function convert_office(path, ctx, done)
     local extension = extension_of(path)
 
     if vim.fn.executable("pandoc") == 1 then
-        local media = ctx.stem .. "_files"
-        run({ "pandoc", "-t", "gfm", "--wrap=none", "--extract-media=" .. media, path },
-            { cwd = ctx.directory }, function(ok, stdout, stderr)
+        -- Named after the note, not the source: two imports that share a source
+        -- name (a report.docx and a report.epub) must not share their pictures.
+        -- No spaces: one in a link target ends the link.
+        local media = ctx.note_stem:gsub("%s+", "-") .. "_files"
+        run({
+            "pandoc", "-t", "gfm", "--wrap=none",
+            "--lua-filter=" .. vim.fn.stdpath("config") .. "/scripts/plain-markdown.lua",
+            "--extract-media=" .. media, path,
+        }, { cwd = ctx.directory }, function(ok, stdout, stderr)
                 if ok then return done(stdout) end
                 done(nil, "pandoc could not read it: " .. vim.trim(stderr))
             end)
@@ -310,6 +316,10 @@ function M.import(path)
         directory = destination_directory(),
         stem = vim.fn.fnamemodify(path, ":t:r"),
     }
+    -- Decided now, not after converting, because the converter needs a name for
+    -- the folder it puts pictures in.
+    ctx.note = unique_path(ctx.directory, ctx.stem)
+    ctx.note_stem = vim.fn.fnamemodify(ctx.note, ":t:r")
 
     notify("Importing " .. vim.fs.basename(path) .. "...")
     convert(path, ctx, function(body, err, caveat, detail)
@@ -317,7 +327,7 @@ function M.import(path)
             return notify("Import failed: " .. tostring(err), vim.log.levels.ERROR)
         end
 
-        local note = unique_path(ctx.directory, ctx.stem)
+        local note = ctx.note
         local header = {
             "# " .. ctx.stem,
             "",
