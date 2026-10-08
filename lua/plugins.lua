@@ -81,7 +81,15 @@ require("kanagawa").setup({
                 bold = true,
             },
             BufferLineFill = { bg = theme.ui.bg_m3 },
-            BufferLineBackground = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m3 },
+            -- Inactive buffers recede; the selected one is the only bright, bold
+            -- tab, and a modified buffer carries a warm dot in every state.
+            BufferLineBackground = { fg = theme.syn.comment, bg = theme.ui.bg_m3 },
+            BufferLineBufferVisible = { fg = theme.ui.fg_dim, bg = theme.ui.bg_m3 },
+            BufferLineModified = { fg = theme.diag.warning, bg = theme.ui.bg_m3 },
+            BufferLineModifiedVisible = { fg = theme.diag.warning, bg = theme.ui.bg_m3 },
+            BufferLineModifiedSelected = { fg = theme.diag.warning, bg = theme.ui.bg_p1 },
+            BufferLineDuplicate = { fg = theme.syn.comment, bg = theme.ui.bg_m3, italic = true },
+            BufferLineDuplicateSelected = { fg = theme.ui.fg_dim, bg = theme.ui.bg_p1, italic = true },
             BufferLineSeparator = { fg = theme.ui.bg_m3, bg = theme.ui.bg_m3 },
             BufferLineSeparatorVisible = { fg = theme.ui.bg_m3, bg = theme.ui.bg_m3 },
             BufferLineSeparatorSelected = { fg = theme.ui.bg_p1, bg = theme.ui.bg_p1 },
@@ -172,7 +180,12 @@ require("snacks").setup({
             },
         },
         sections = {
-            { section = "header" },
+            { section = "header", padding = 1 },
+            -- Where you are, under the logo: the workspace you opened into.
+            function()
+                local label = require("workspace").label()
+                return { { text = { { "󰉋 " .. label, hl = "Title" } }, align = "center", padding = 1 } }
+            end,
             { section = "keys",  gap = 1, padding = 1 },
             {
                 icon = " ",
@@ -208,6 +221,13 @@ require("snacks").setup({
 
                     return rows
                 end,
+            },
+            {
+                text = {
+                    { "<Space><Space>", hl = "Special" },
+                    { "  command palette", hl = "Comment" },
+                },
+                align = "center",
             },
         },
     },

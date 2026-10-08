@@ -497,6 +497,11 @@ require("bufferline").setup({
             style = "underline",
         },
 
+        modified_icon = "●",
+        truncate_names = true,
+        max_name_length = 24,
+        show_duplicate_prefix = true,
+        diagnostics = false,
         show_buffer_icons = true,
         show_buffer_close_icons = false,
         show_close_icon = false,
