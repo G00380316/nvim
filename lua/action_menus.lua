@@ -235,6 +235,16 @@ local menus = {
             { label = "Extract archive", detail = "Unpack this archive next to itself", run = command("Extract") },
         },
     },
+    view = {
+        -- No key of its own: reached from the palette (group "Tools", "View
+        -- Actions"), or :ActionMenu view.
+        title = "View Actions",
+        icon = "󰍉",
+        actions = {
+            { label = "Toggle column ruler", detail = "Show or hide the vertical line at column 80 / 120", run = command("RulerToggle") },
+            { label = "Switch ruler 80 / 120", detail = "Move the vertical line between column 80 and 120", run = command("RulerWidth") },
+        },
+    },
     server = {
         -- No key of its own: reached from the palette (<leader><leader>, group
         -- "Tools"), or :ActionMenu server.
