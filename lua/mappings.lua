@@ -706,15 +706,9 @@ require("buffer_history").setup()
 local function jump_back() require("buffer_history").back(vim.v.count1) end
 local function jump_forward() require("buffer_history").forward(vim.v.count1) end
 
-vim.keymap.set("n", "[", jump_back, {
-    silent = true,
-    desc = "Back to the previous buffer",
-})
-
-vim.keymap.set("n", "]", jump_forward, {
-    silent = true,
-    desc = "Forward to the next buffer",
-})
+-- Not mapped globally. Only buffers that belong in the editor get them (below):
+-- pressed in a picker, the explorer, a terminal or a plugin's panel, they would
+-- change the buffer underneath it.
 
 -- A single [ or ] is the start of dozens of other mappings -- ]d, [q, ]b, and
 -- the buffer-local ]] [[ ]m of whatever filetype is open -- so Vim waits
@@ -755,11 +749,29 @@ local function move_bracket_family(buffer)
     end
 end
 
+---Whether a buffer is what the editor zone shows: a file or a blank buffer, or
+---the dashboard and placeholder that fill it when nothing is open. Not the
+---explorer, a terminal, the quickfix list, a picker, or a plugin's panel.
+local function editor_zone_buffer(buf)
+    local filetype = vim.bo[buf].filetype
+    if filetype == "snacks_dashboard" or filetype == "ide_layout_placeholder" then return true end
+    if vim.bo[buf].buftype ~= "" then return false end
+    return not require("ide_layout").is_tool_buffer(buf)
+end
+
 local function keep_brackets_instant(buf)
     if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].buftype == "prompt" then return end
 
+    -- The family still moves for every buffer: a plugin panel's own [x / ]x
+    -- would otherwise be a prefix of nothing, and a silent dead key.
     move_bracket_family()
     move_bracket_family(buf)
+
+    if not editor_zone_buffer(buf) then
+        pcall(vim.keymap.del, "n", "[", { buffer = buf })
+        pcall(vim.keymap.del, "n", "]", { buffer = buf })
+        return
+    end
 
     vim.keymap.set("n", "[", jump_back, {
         buffer = buf,

@@ -40,6 +40,8 @@ local function is_tool_buffer(buf)
     return false
 end
 
+M.is_tool_buffer = is_tool_buffer
+
 function M.panel_kind(win)
     if not normal_window(win) then return nil end
 

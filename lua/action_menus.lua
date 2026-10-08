@@ -74,6 +74,10 @@ local menus = {
         title = "Git Actions",
         icon = "",
         actions = {
+            { label = "Open LazyGit", detail = "Use this project's persistent LazyGit buffer", run = command("GitPanel") },
+            { label = "Review changed files", detail = "Open the repository Diffview", run = command("DiffviewOpen") },
+            { label = "Browse repository history", detail = "Open Diffview file history", run = command("DiffviewFileHistory") },
+            { label = "Close Git tools", detail = "Close LazyGit and Diffview", run = command("GitCloseAll") },
             { label = "Next hunk", detail = "Direct key: g]h", run = gitsigns("nav_hunk", "next") },
             { label = "Previous hunk", detail = "Direct key: g[h", run = gitsigns("nav_hunk", "prev") },
             { label = "Preview hunk", detail = "Show what this hunk changed", run = gitsigns("preview_hunk") },
@@ -85,10 +89,6 @@ local menus = {
             { label = "Toggle line blame", detail = "Show blame at the end of the current line", run = gitsigns("toggle_current_line_blame") },
             { label = "Diff this file", detail = "Compare this file with the index", run = gitsigns("diffthis") },
             { label = "Hunks to quickfix", detail = "List every hunk in this file to step through", run = gitsigns("setqflist", 0) },
-            { label = "Open LazyGit", detail = "Use this project's persistent LazyGit buffer", run = command("GitPanel") },
-            { label = "Review changed files", detail = "Open the repository Diffview", run = command("DiffviewOpen") },
-            { label = "Browse repository history", detail = "Open Diffview file history", run = command("DiffviewFileHistory") },
-            { label = "Close Git tools", detail = "Close LazyGit and Diffview", run = command("GitCloseAll") },
         },
     },
     debug = {
