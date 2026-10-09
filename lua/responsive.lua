@@ -12,10 +12,29 @@ function M.profile()
     return "tiny"
 end
 
----The explorer's width: a third of a narrow window is too much to give it.
+local sidebar_wide = false
+
+---The explorer's width: a third of a narrow window is too much to give it. When
+---widened (ExplorerWiden) it takes up to 45% of the window, 60 columns at most.
 function M.sidebar_width()
     local columns = vim.o.columns
+    if sidebar_wide then
+        return math.max(24, math.min(60, math.floor(columns * 0.45)))
+    end
     return math.max(18, math.min(30, math.floor(columns * 0.25)))
+end
+
+---Switch the explorer between its normal and wide width, and apply it now.
+function M.toggle_sidebar_width()
+    sidebar_wide = not sidebar_wide
+    local width = M.sidebar_width()
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].filetype == "oil" and vim.w[win].oil_sidebar then
+            pcall(vim.api.nvim_win_set_width, win, width)
+        end
+    end
+    vim.notify(sidebar_wide and "Explorer wide" or "Explorer normal width", vim.log.levels.INFO, { title = "Explorer" })
 end
 
 ---Columns left for the editor beside the explorer.

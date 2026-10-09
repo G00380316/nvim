@@ -254,6 +254,7 @@ local menus = {
         icon = "󰍉",
         actions = {
             { label = "Toggle column ruler", detail = "Show or hide the vertical line at column 80 / 120", run = command("RulerToggle") },
+            { label = "Widen or narrow the explorer", detail = "Switch the file explorer between normal and wide, to read long names", run = command("ExplorerWiden") },
             { label = "Switch ruler 80 / 120", detail = "Move the vertical line between column 80 and 120", run = command("RulerWidth") },
         },
     },
