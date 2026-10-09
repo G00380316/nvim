@@ -16,7 +16,7 @@ local entries = {
 
     { "Search", "/", "n", "Search within the current buffer" },
     { "Search", "<leader>s", "n/x", "Replace in the buffer or selection" },
-    { "Search", "<leader>c", "n", "Clear the active search" },
+    { "Search", "<leader>c", "n", "Clear the active search and any unfinished snippet" },
     { "Search", "<leader>r", "n", "Replace the word under the cursor, interactively" },
 
     { "Buffers", "<C-b>", "n/i/x", "Choose an open editor buffer" },
@@ -36,7 +36,7 @@ local entries = {
     { "Code", "gd", "n", "Go to definition" },
     { "Code", "gr", "n", "Find references" },
     { "Code", "gi", "n", "Go to implementation" },
-    { "Code", "<C-Space>", "n/x", "Code action or refactor selection" },
+    { "Code", "<C-Space>", "n/x", "Normal: fill the next snippet placeholder, else change the word and suggest; visual: change the selection" },
     { "Code", "<leader>dd", "n", "Show diagnostics for this buffer" },
     { "Code", "<leader>dw", "n", "Show diagnostics for the project" },
     { "Code", "g]d", "n", "Jump to the next diagnostic" },

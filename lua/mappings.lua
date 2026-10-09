@@ -947,8 +947,12 @@ vim.keymap.set("n", "<C-Down>", "<cmd>EditorPaneShorter<CR>", {
 -- Search / Replace
 -- ============================================================
 
-vim.keymap.set("n", "<leader>c", clear_search, {
-    desc = "Clear search highlight and pattern",
+vim.keymap.set("n", "<leader>c", function()
+    clear_search()
+    -- Also drops a half-filled snippet, so its highlights go too.
+    if vim.snippet.active() then vim.snippet.stop() end
+end, {
+    desc = "Clear search highlight and pattern, and any unfinished snippet",
 })
 
 vim.keymap.set({ "n", "x" }, "n", function()

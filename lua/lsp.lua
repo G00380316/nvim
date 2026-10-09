@@ -178,6 +178,12 @@ vim.api.nvim_create_autocmd("LspAttach", {
 -- ============================================================
 
 vim.keymap.set("n", "<C-Space>", function()
+    -- A snippet with placeholders left to fill: carry on with the next one.
+    if vim.snippet.active({ direction = 1 }) then
+        vim.snippet.jump(1)
+        return
+    end
+
     local col = vim.fn.col(".")
     local line = vim.fn.getline(".")
     local char = line:sub(col, col)
@@ -197,7 +203,7 @@ vim.keymap.set("n", "<C-Space>", function()
 end, {
     noremap = true,
     silent = true,
-    desc = "Change word or next word and show blink",
+    desc = "Fill the next snippet placeholder; otherwise change the word and show blink",
 })
 
 vim.keymap.set("x", "<C-Space>", function()
@@ -387,9 +393,13 @@ require("blink.cmp").setup({
 -- ============================================================
 
 -- A snippet stays "active" until the last placeholder is jumped past, with
--- every placeholder still highlighted, and nothing ends it if you simply stop
--- and press <Esc> -- the highlights then sit on the text for good. Tab and
--- Shift-Tab move between placeholders; leaving insert mode ends the session.
+-- every placeholder still highlighted. Tab and Shift-Tab move between
+-- placeholders while typing.
+--
+-- Pressing <Esc> part-way does NOT end the session while placeholders are still
+-- ahead: <C-Space> in normal mode carries on filling the next one. A session
+-- with nothing left to fill ends, so no highlights are left on the text, and
+-- <leader>c clears one you have decided to abandon.
 --
 -- Checked a tick later: jumping to a placeholder passes through normal mode
 -- on the way into select mode, and that must not count as leaving.
@@ -399,10 +409,14 @@ vim.api.nvim_create_autocmd("ModeChanged", {
     callback = function()
         if not vim.snippet.active() then return end
         vim.schedule(function()
-            if vim.snippet.active() and vim.fn.mode() == "n" then vim.snippet.stop() end
+            if vim.snippet.active() and vim.fn.mode() == "n"
+                and not vim.snippet.active({ direction = 1 })
+            then
+                vim.snippet.stop()
+            end
         end)
     end,
-    desc = "End the snippet session when leaving insert mode",
+    desc = "End the snippet session when leaving insert mode with nothing left to fill",
 })
 
 
