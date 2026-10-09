@@ -241,6 +241,7 @@ vim.o.winbar = "%{%v:lua.require'nvim-navic'.get_location()%}"
 require("panel_titles").setup()
 require("responsive").setup()
 require("ruler").setup()
+require("explorer_view").setup()
 
 
 -- ============================================================

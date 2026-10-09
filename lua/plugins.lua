@@ -522,13 +522,9 @@ oil.setup({
         relativenumber = false,
         cursorline = true,
         signcolumn = "yes:3",
-        -- A long name wraps onto the next line, indented under itself, rather
-        -- than being cut off at the panel's edge.
-        wrap = true,
-        linebreak = false,
-        breakindent = true,
-        breakindentopt = "shift:2",
-        showbreak = "↪ ",
+        -- Wrapping and the git marks column are toggled from the palette; see
+        -- explorer_view.lua.
+        wrap = false,
         winfixwidth = true,
         winhighlight = "Normal:OilNormal,NormalNC:OilNormalNC,WinSeparator:OilWinSeparator",
     },
