@@ -369,6 +369,7 @@ local function close_current()
     local buftype = vim.bo[buf].buftype
     local filetype = vim.bo[buf].filetype
     local mode = vim.fn.mode()
+    local was_typing = mode == "t"
 
     -- Leave modal editing states before changing buffers or windows.
     if mode == "t" then
@@ -424,11 +425,18 @@ local function close_current()
 
     if buftype == "terminal" then
         protect_terminal_tab_before_close()
-        local job_id = vim.b[buf].terminal_job_id
-        if job_id then pcall(vim.fn.jobstop, job_id) end
-        pcall(vim.api.nvim_buf_delete, buf, { force = true })
-        local editor = require("ide_layout").find_editor_window()
-        if editor then vim.api.nvim_set_current_win(editor) end
+        -- Another terminal takes this one's place and the focus, so closing one
+        -- of several leaves you in the terminal section. Only when it was the
+        -- last does focus go back to the editor.
+        local stayed = filetype == "floaterm"
+            and require("terminals").close(buf, { insert = was_typing })
+        if not stayed then
+            local job_id = vim.b[buf].terminal_job_id
+            if job_id then pcall(vim.fn.jobstop, job_id) end
+            pcall(vim.api.nvim_buf_delete, buf, { force = true })
+            local editor = require("ide_layout").find_editor_window()
+            if editor then vim.api.nvim_set_current_win(editor) end
+        end
     elseif buftype == "quickfix" then
         pcall(vim.cmd, "cclose")
     elseif filetype == "oil" then

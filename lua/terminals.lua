@@ -376,6 +376,27 @@ local function replace_closed(bufnr, win)
         pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
     end
     cwd_cache[bufnr] = nil
+    return successor
+end
+
+---Close a terminal on purpose (the close key). If another terminal exists it
+---takes the slot and the focus, so you stay in the terminal section; with
+---none left, returns false and the caller decides where focus goes.
+---@param bufnr integer
+---@param opts? { insert?: boolean } insert: re-enter terminal mode in the next one
+---@return boolean stayed
+function M.close(bufnr, opts)
+    opts = opts or {}
+    local win = terminal_window(bufnr)
+    local job = vim.b[bufnr].terminal_job_id
+    if job then pcall(vim.fn.jobstop, job) end
+
+    local successor = replace_closed(bufnr, win)
+    if successor and vim.api.nvim_buf_is_valid(successor) then
+        M.focus(successor, { insert = opts.insert })
+        return true
+    end
+    return false
 end
 
 ---The terminal to copy from. Usually the current buffer, but the command and
@@ -528,11 +549,23 @@ function M.setup()
     vim.api.nvim_create_autocmd("TermClose", {
         group = group,
         callback = function(args)
+            -- Already gone: the close key removed it and handled the hand-over.
+            if not vim.api.nvim_buf_is_valid(args.buf) then return end
             if vim.bo[args.buf].filetype ~= "floaterm" then return end
             -- Captured synchronously: floaterm closes the panel itself before
             -- the scheduled follow-up runs, losing the slot we want to reuse.
             local win = terminal_window(args.buf)
-            vim.schedule(function() replace_closed(args.buf, win) end)
+            -- If you were in it -- typed `exit` -- you stay in the terminal
+            -- section: the next terminal takes the slot and the focus, in the
+            -- mode you were in. A terminal closing elsewhere never takes focus.
+            local focused = vim.api.nvim_get_current_buf() == args.buf
+            local typing = vim.fn.mode() == "t"
+            vim.schedule(function()
+                local successor = replace_closed(args.buf, win)
+                if focused and successor and vim.api.nvim_buf_is_valid(successor) then
+                    M.focus(successor, { insert = typing })
+                end
+            end)
         end,
         desc = "Hand a closed terminal's slot to the next terminal",
     })

@@ -281,6 +281,10 @@ vim.api.nvim_create_autocmd("TermClose", {
     group = augroup,
     callback = function(args)
         if vim.b[args.buf].lazygit_editor then return end
+        -- The terminal panel hands a closed terminal's slot, and your focus,
+        -- to the next one; deleting the buffer here first would close the
+        -- window it is about to reuse.
+        if vim.bo[args.buf].filetype == "floaterm" then return end
         if vim.v.event.status == 0 and vim.api.nvim_buf_is_valid(args.buf) then
             vim.api.nvim_buf_delete(args.buf, {})
         end
