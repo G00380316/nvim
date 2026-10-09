@@ -278,6 +278,13 @@ function M.send(command, opts)
     -- ^U first: anything already typed on the line (a stray key, a half-written
     -- command) would otherwise be glued onto the front of this one.
     vim.fn.chansend(job, "\21" .. command .. "\n")
+
+    -- A terminal follows new output only while its cursor is on the last line.
+    -- Scrolled up to read something, the command's output would arrive out of
+    -- sight; jump to the end so it is visible straight away.
+    for _, win in ipairs(vim.fn.win_findbuf(bufnr)) do
+        pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(bufnr), 0 })
+    end
     return true
 end
 

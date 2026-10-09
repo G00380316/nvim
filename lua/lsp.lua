@@ -35,7 +35,8 @@ vim.lsp.enable({
 -- AI inline completion (GitHub Copilot)
 -- Grey ghost text after the cursor, using Neovim's built-in inline completion.
 -- Sign in once with :LspCopilotSignIn. Insert-mode keys:
---   <C-l> accept   <C-j> next suggestion   <C-k> previous suggestion
+--   <C-l> accept   <C-Right> or <M-l> accept one word
+--   <C-j> next suggestion   <C-k> previous suggestion
 -- ============================================================
 
 -- On or off for the whole session; the palette toggles it (CopilotToggle).
@@ -100,6 +101,30 @@ vim.api.nvim_create_autocmd("LspAttach", {
                 vim.api.nvim_feedkeys(vim.keycode("<C-l>"), "n", false)
             end
         end, "AI: accept suggestion")
+        -- One word of the suggestion at a time: the leading word of what is still
+        -- to be typed, with the text already typed kept as it is.
+        local function accept_word()
+            local accepted = vim.lsp.inline_completion.get({
+                on_accept = function(item)
+                    if type(item.insert_text) ~= "string" or not item.range then return item end
+                    local sr, sc, er, ec = item.range:to_extmark()
+                    local typed = table.concat(vim.api.nvim_buf_get_text(args.buf, sr, sc, er, ec, {}), "\n")
+                    local rest = item.insert_text:sub(#typed + 1)
+                    local word = rest:match("^%s*[%w_]+") or rest:match("^%s*[^%w_%s]+") or rest
+                    item.insert_text = typed .. word
+                    -- The server counts an accepted suggestion; a part is not one.
+                    item.command = nil
+                    return item
+                end,
+            })
+            if not accepted then return false end
+            return true
+        end
+        for _, lhs in ipairs({ "<C-Right>", "<M-l>" }) do
+            map(lhs, function()
+                if not accept_word() then vim.api.nvim_feedkeys(vim.keycode(lhs), "n", false) end
+            end, "AI: accept one word of the suggestion")
+        end
         map("<C-j>", function() vim.lsp.inline_completion.select({ count = 1 }) end, "AI: next suggestion")
         map("<C-k>", function() vim.lsp.inline_completion.select({ count = -1 }) end, "AI: previous suggestion")
     end,
