@@ -547,6 +547,17 @@ oil.setup({
     },
     keymaps = {
         ["g?"] = { "actions.show_help", mode = "n" },
+        -- <C-x> runs the entry under the cursor with arguments, as it does in a
+        -- file picker. Without this it is Vim's own: in insert mode it starts a
+        -- completion sub-mode, which in a directory listing is just a trap.
+        ["<C-x>"] = {
+            function()
+                vim.cmd("stopinsert")
+                vim.schedule(function() require("runner").run("run", { ask = true }) end)
+            end,
+            mode = { "n", "i" },
+            desc = "Run the entry under the cursor with arguments",
+        },
         ["<CR>"] = function() select_oil_entry() end,
         ["zv"] = function() select_oil_entry("vertical") end,
         ["zh"] = function() select_oil_entry("horizontal") end,

@@ -173,7 +173,7 @@ local function build(context)
                 group = "Tools",
                 label = menu.title,
                 detail = "Browse everything it can do",
-                run = function() menus.open(name) end,
+                run = function() menus.open(name, context) end,
             })
         end
     end

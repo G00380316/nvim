@@ -422,8 +422,10 @@ function M.ranked_actions(menu, origin)
     return vim.tbl_map(function(r) return r.action end, ranked)
 end
 
-function M.pick(menu)
-    local origin = capture_origin()
+function M.pick(menu, origin)
+    -- Opened from the palette, "where it was opened" is where the palette was:
+    -- by now focus has moved, so the caller says.
+    origin = origin or capture_origin()
     local items = {}
     for index, action in ipairs(M.ranked_actions(menu, origin)) do
         items[index] = {
@@ -455,14 +457,16 @@ function M.pick(menu)
     })
 end
 
-function M.open(name)
+---@param name string
+---@param origin? { win: integer, buf: integer } the window the request came from
+function M.open(name, origin)
     local menu = menus[name]
     if not menu then
         vim.notify("Unknown action menu: " .. tostring(name), vim.log.levels.ERROR)
         return
     end
     if menu.prepare then menu.prepare() end
-    M.pick(menu)
+    M.pick(menu, origin)
 end
 
 function M.setup()
