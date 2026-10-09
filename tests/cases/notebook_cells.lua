@@ -34,3 +34,14 @@ local function status()
 end
 vim.wait(10000, function() return (status() or ""):find("Done", 1, true) ~= nil end, 200)
 T.ok((status() or ""):find("Done", 1, true), "cell output shows Done (was: " .. tostring(status()) .. ")")
+
+-- Saving the notebook writes the outputs into the .ipynb.
+vim.cmd("write")
+local saved_nb
+vim.wait(10000, function()
+    saved_nb = vim.json.decode(table.concat(vim.fn.readfile(vim.api.nvim_buf_get_name(0)), "\n"))
+    local outs = saved_nb.cells[1] and saved_nb.cells[1].outputs
+    return outs and #outs > 0
+end, 300)
+local outs = saved_nb.cells[1].outputs
+T.ok(outs and #outs > 0, "the cell's output was saved into the notebook")

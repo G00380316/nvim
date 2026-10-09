@@ -100,6 +100,24 @@ local function molten(command)
     end
 end
 
+---Write the outputs shown under the cells into the .ipynb file. jupytext has
+---already saved the code and text by the time this runs (it updates the
+---notebook in place, keeping existing outputs); molten then adds the new ones.
+---@param buf? integer
+function M.save_outputs(buf)
+    buf = buf or vim.api.nvim_get_current_buf()
+    local file = vim.api.nvim_buf_get_name(buf)
+    if not file:match("%.ipynb$") then
+        notify("This is not a notebook", vim.log.levels.WARN)
+        return
+    end
+    if not initialized[buf] then return end
+    local ok, err = pcall(vim.api.nvim_buf_call, buf, function()
+        vim.cmd("MoltenExportOutput! " .. vim.fn.fnameescape(file))
+    end)
+    if not ok then notify("Could not save outputs: " .. tostring(err), vim.log.levels.WARN) end
+end
+
 function M.setup()
     vim.g.molten_virt_text_output = true
     vim.g.molten_virt_lines_off_by_1 = true
@@ -116,6 +134,7 @@ function M.setup()
     local commands = {
         { "NotebookRunCell", M.run_cell, "Run the code cell under the cursor" },
         { "NotebookRunAll", M.run_all, "Run every code cell, in order" },
+        { "NotebookSaveOutputs", function() M.save_outputs() end, "Write the cell outputs into the .ipynb file" },
         { "NotebookRunAbove", M.run_above, "Run every cell up to and including this one" },
         { "NotebookKernel", molten("MoltenInit"), "Choose and start a kernel for this notebook" },
         { "NotebookInterrupt", molten("MoltenInterrupt"), "Stop the cell that is running" },
@@ -127,6 +146,18 @@ function M.setup()
     for _, c in ipairs(commands) do
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })
     end
+
+    -- Saving a notebook saves what its cells printed, too.
+    vim.api.nvim_create_autocmd("BufWritePost", {
+        group = vim.api.nvim_create_augroup("NotebookOutputs", { clear = true }),
+        pattern = "*.ipynb",
+        callback = function(args)
+            vim.schedule(function()
+                if vim.api.nvim_buf_is_valid(args.buf) then M.save_outputs(args.buf) end
+            end)
+        end,
+        desc = "Write cell outputs into the notebook when it is saved",
+    })
 
     -- <leader>n runs the cell, in notebooks only.
     vim.api.nvim_create_autocmd("BufEnter", {
