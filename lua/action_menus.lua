@@ -291,6 +291,25 @@ local menus = {
             { label = "Extract archive", detail = "Unpack this archive next to itself", run = command("Extract") },
         },
     },
+    hints = {
+        -- No key of its own: reached from the palette (group "Tools"), or
+        -- :ActionMenu hints. Every hint popup and cheat sheet in one place.
+        title = "Hint Actions",
+        icon = "󰌌",
+        actions = {
+            { label = "Leader key hints", detail = "What each <Space> key does", run = function() require("which-key").show({ keys = "<leader>", mode = "n" }) end },
+            { label = "Go (g) key hints", detail = "gd, gr, gi and the other g keys", run = function() require("which-key").show({ keys = "g", mode = "n" }) end },
+            { label = "Window (z / split) key hints", detail = "Splits, folds and layout keys under z", run = function() require("which-key").show({ keys = "z", mode = "n" }) end },
+            { label = "Window commands (<C-w>) hints", detail = "Native window keys", run = function() require("which-key").show({ keys = "<C-w>", mode = "n" }) end },
+            { label = "Registers hints", detail = "What is in each register (\")", run = function() require("which-key").show({ keys = '"', mode = "n" }) end },
+            { label = "Marks hints", detail = "Jump to a mark (')", run = function() require("which-key").show({ keys = "'", mode = "n" }) end },
+            { label = "Search every keymap", detail = "Every active mapping, searchable", run = function() Snacks.picker.keymaps() end },
+            { label = "Vim's own keys", detail = "Motions, operators and text objects, and what this config changed", run = function() require("vim_keymaps").open() end },
+            { label = "Note-taking hints", detail = "Markdown cheat sheet beside the note", run = command("MarkdownHints") },
+            { label = "Editing recipes", detail = "Surround, blocks, lines: how do I ...", run = command("Recipes") },
+            { label = "Workflow guide", detail = "The curated list of keys worth knowing", run = function() require("workflow_keymaps").open() end },
+        },
+    },
     view = {
         -- No key of its own: reached from the palette (group "Tools", "View
         -- Actions"), or :ActionMenu view.

@@ -46,7 +46,7 @@ local relevance = {
         labels = { "notebook", "cell", "kernel" },
     },
     markdown = {
-        groups = { "Markdown", "Notes", "Edit" },
+        groups = { "Markdown", "Notes", "Edit", "Hints" },
         labels = { "note", "checkbox", "hint", "import", "surround" },
     },
     quickfix = {
