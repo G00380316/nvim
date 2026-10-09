@@ -225,6 +225,7 @@ local menus = {
             { label = "Run all cells", detail = "Run every code cell, top to bottom", run = command("NotebookRunAll") },
             { label = "Run cells above", detail = "Run every cell up to and including this one", run = command("NotebookRunAbove") },
             { label = "Show output", detail = "Open the cell's output to read or scroll it", run = command("NotebookOutput") },
+            { label = "Load saved outputs", detail = "Show the outputs stored in the notebook file (done on open)", run = command("NotebookLoadOutputs") },
             { label = "Save outputs into the notebook", detail = "Also done every time the notebook is saved", run = command("NotebookSaveOutputs") },
             { label = "Clear outputs", detail = "Remove every cell's output", run = command("NotebookClearOutput") },
             { label = "Interrupt", detail = "Stop the cell that is running", run = command("NotebookInterrupt") },

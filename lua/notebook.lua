@@ -118,6 +118,34 @@ function M.save_outputs(buf)
     if not ok then notify("Could not save outputs: " .. tostring(err), vim.log.levels.WARN) end
 end
 
+---Whether the notebook file already holds any cell output.
+local function has_saved_outputs(file)
+    local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(file), "\n"))
+    if not (ok and type(data) == "table" and type(data.cells) == "table") then return false end
+    for _, cell in ipairs(data.cells) do
+        if type(cell.outputs) == "table" and #cell.outputs > 0 then return true end
+    end
+    return false
+end
+
+local imported = {}
+
+---Bring a notebook's saved outputs back under its cells. Showing them takes a
+---kernel (molten reads them through one), so this starts the Python kernel for
+---a notebook that has any -- one that has none stays quiet until you run a cell.
+---@param buf? integer
+function M.import_outputs(buf)
+    buf = buf or vim.api.nvim_get_current_buf()
+    local file = vim.api.nvim_buf_get_name(buf)
+    if not (file:match("%.ipynb$") and vim.fn.filereadable(file) == 1) then return end
+    vim.api.nvim_buf_call(buf, function()
+        with_kernel(function()
+            local ok, err = pcall(vim.cmd, "MoltenImportOutput " .. vim.fn.fnameescape(file))
+            if not ok then notify("Could not load saved outputs: " .. tostring(err), vim.log.levels.WARN) end
+        end)
+    end)
+end
+
 function M.setup()
     vim.g.molten_virt_text_output = true
     vim.g.molten_virt_lines_off_by_1 = true
@@ -134,6 +162,7 @@ function M.setup()
     local commands = {
         { "NotebookRunCell", M.run_cell, "Run the code cell under the cursor" },
         { "NotebookRunAll", M.run_all, "Run every code cell, in order" },
+        { "NotebookLoadOutputs", function() M.import_outputs() end, "Show the outputs saved in this notebook" },
         { "NotebookSaveOutputs", function() M.save_outputs() end, "Write the cell outputs into the .ipynb file" },
         { "NotebookRunAbove", M.run_above, "Run every cell up to and including this one" },
         { "NotebookKernel", molten("MoltenInit"), "Choose and start a kernel for this notebook" },
@@ -146,6 +175,21 @@ function M.setup()
     for _, c in ipairs(commands) do
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })
     end
+
+    -- Opening one shows what it printed last time.
+    vim.api.nvim_create_autocmd("BufWinEnter", {
+        group = vim.api.nvim_create_augroup("NotebookOpen", { clear = true }),
+        pattern = "*.ipynb",
+        callback = function(args)
+            if imported[args.buf] then return end
+            imported[args.buf] = true
+            local file = vim.api.nvim_buf_get_name(args.buf)
+            if vim.fn.filereadable(file) == 1 and has_saved_outputs(file) then
+                vim.schedule(function() M.import_outputs(args.buf) end)
+            end
+        end,
+        desc = "Show a notebook's saved outputs when it is opened",
+    })
 
     -- Saving a notebook saves what its cells printed, too.
     vim.api.nvim_create_autocmd("BufWritePost", {
