@@ -46,24 +46,47 @@ function M.show_statusline_part(name)
     return columns >= (from[name] or 0)
 end
 
+local drawn_width, drawn_header
+local redraw_timer
+
+---A dashboard keeps the width it was drawn with, so draw it again -- as a new
+---buffer. Opening a second dashboard on the same buffer registers a second set
+---of cleanup autocmds, and the two then fight over deleting one group when the
+---buffer goes ("E367: No such group").
+local function redraw_dashboards()
+    local ok, snacks = pcall(require, "snacks")
+    if not ok then return end
+
+    local width, header = M.dashboard_width(), M.dashboard_header()
+    if width == drawn_width and header == drawn_header then return end
+    drawn_width, drawn_header = width, header
+    snacks.config.dashboard.width = width
+
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+        local old = vim.api.nvim_win_get_buf(win)
+        if vim.bo[old].filetype == "snacks_dashboard" then
+            local current = vim.api.nvim_get_current_win()
+            vim.api.nvim_win_call(win, function()
+                if pcall(snacks.dashboard.open, { win = win }) then
+                    pcall(vim.api.nvim_buf_delete, old, { force = true })
+                end
+            end)
+            if vim.api.nvim_win_is_valid(current) then pcall(vim.api.nvim_set_current_win, current) end
+        end
+    end
+end
+
 function M.setup()
-    -- The dashboard reads its width when it is opened.
+    drawn_width, drawn_header = M.dashboard_width(), M.dashboard_header()
     vim.api.nvim_create_autocmd("VimResized", {
         group = vim.api.nvim_create_augroup("Responsive", { clear = true }),
         callback = function()
-            local ok, snacks = pcall(require, "snacks")
-            if ok and snacks.config and snacks.config.dashboard then
-                snacks.config.dashboard.width = M.dashboard_width()
-            end
-            -- A dashboard keeps the width it was drawn with, so draw it again.
-            vim.schedule(function()
-                for _, win in ipairs(vim.api.nvim_list_wins()) do
-                    local buf = vim.api.nvim_win_get_buf(win)
-                    if vim.bo[buf].filetype == "snacks_dashboard" and ok then
-                        pcall(snacks.dashboard.open, { buf = buf, win = win })
-                    end
-                end
-            end)
+            -- A drag fires this for every step; draw once it settles.
+            if redraw_timer then redraw_timer:stop() end
+            redraw_timer = vim.defer_fn(function()
+                redraw_timer = nil
+                redraw_dashboards()
+            end, 120)
             vim.cmd("redrawstatus!")
         end,
     })
