@@ -177,6 +177,17 @@ local menus = {
             { label = "Reset solution", detail = "Reset the current problem buffer", run = command("Leet Reset") },
         },
     },
+    ai = {
+        -- No key of its own: reached from the palette (group "Tools"), or
+        -- :ActionMenu ai. Copilot's ghost-text suggestions in code files.
+        title = "AI Actions",
+        icon = "󰚩",
+        actions = {
+            { label = "Toggle Copilot suggestions", detail = "Turn inline suggestions on or off", run = command("CopilotToggle") },
+            { label = "Sign in to Copilot", detail = "Authorise this machine with GitHub (once)", run = command("CopilotSignIn") },
+            { label = "Sign out of Copilot", detail = "Remove this machine's Copilot login", run = command("CopilotSignOut") },
+        },
+    },
     notebook = {
         -- No key of its own beyond <leader>n (run this cell, in a notebook):
         -- reached from the palette (group "Tools"), or :ActionMenu notebook.

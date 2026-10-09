@@ -38,19 +38,59 @@ vim.lsp.enable({
 --   <C-l> accept   <C-j> next suggestion   <C-k> previous suggestion
 -- ============================================================
 
+-- On or off for the whole session; the palette toggles it (CopilotToggle).
+local copilot_on = true
+
+local function prose_buffer(buf)
+    local ft = vim.bo[buf].filetype
+    return ft == "markdown" or ft == "text" or ft == "gitcommit"
+end
+
+local function copilot_buffers()
+    local bufs = {}
+    for _, client in ipairs(vim.lsp.get_clients({ name = "copilot" })) do
+        for buf in pairs(client.attached_buffers) do bufs[#bufs + 1] = buf end
+    end
+    return bufs
+end
+
+vim.api.nvim_create_user_command("CopilotToggle", function()
+    copilot_on = not copilot_on
+    for _, buf in ipairs(copilot_buffers()) do
+        if vim.api.nvim_buf_is_valid(buf) and not prose_buffer(buf) then
+            vim.lsp.inline_completion.enable(copilot_on, { bufnr = buf })
+        end
+    end
+    vim.notify(copilot_on and "Copilot suggestions on" or "Copilot suggestions off", vim.log.levels.INFO, { title = "Copilot" })
+end, { desc = "Turn Copilot's inline suggestions on or off" })
+
+-- LspCopilotSignIn / SignOut exist only in buffers Copilot is attached to, which
+-- is not where the palette is opened from; these find one.
+local function copilot_command(name)
+    return function()
+        local bufs = copilot_buffers()
+        if #bufs == 0 then
+            vim.notify("Open a code file first so Copilot can attach", vim.log.levels.WARN, { title = "Copilot" })
+            return
+        end
+        vim.api.nvim_buf_call(bufs[1], function() vim.cmd(name) end)
+    end
+end
+vim.api.nvim_create_user_command("CopilotSignIn", copilot_command("LspCopilotSignIn"), { desc = "Sign in to GitHub Copilot" })
+vim.api.nvim_create_user_command("CopilotSignOut", copilot_command("LspCopilotSignOut"), { desc = "Sign out of GitHub Copilot" })
+
 vim.api.nvim_create_autocmd("LspAttach", {
     group = vim.api.nvim_create_augroup("CopilotInline", { clear = true }),
     callback = function(args)
         local client = vim.lsp.get_client_by_id(args.data.client_id)
         if not (client and client.name == "copilot") then return end
         -- Prose and notes are written, not completed; suggestions stay in code.
-        local ft = vim.bo[args.buf].filetype
-        if ft == "markdown" or ft == "text" or ft == "gitcommit" then
+        if prose_buffer(args.buf) then
             vim.lsp.inline_completion.enable(false, { bufnr = args.buf })
             return
         end
 
-        vim.lsp.inline_completion.enable(true, { bufnr = args.buf })
+        vim.lsp.inline_completion.enable(copilot_on, { bufnr = args.buf })
         local map = function(lhs, rhs, desc)
             vim.keymap.set("i", lhs, rhs, { buffer = args.buf, desc = desc })
         end
