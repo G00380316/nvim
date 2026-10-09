@@ -224,6 +224,7 @@ local menus = {
             { label = "Run cell", detail = "Run the code cell under the cursor (<leader>n)", run = command("NotebookRunCell") },
             { label = "Run all cells", detail = "Run every code cell, top to bottom", run = command("NotebookRunAll") },
             { label = "Run cells above", detail = "Run every cell up to and including this one", run = command("NotebookRunAbove") },
+            { label = "View in browser", detail = "The notebook as a finished page, with its outputs", run = command("NotebookView") },
             { label = "Switch result style", detail = "Results in a window under the cell, or as text beneath it", run = command("NotebookOutputMode") },
             { label = "Show output", detail = "Open the cell's output to read or scroll it", run = command("NotebookOutput") },
             { label = "Load saved outputs", detail = "Show the outputs stored in the notebook file (done on open)", run = command("NotebookLoadOutputs") },

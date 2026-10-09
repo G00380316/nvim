@@ -166,6 +166,40 @@ end
 
 function M.output_mode() return output_mode end
 
+---Open the notebook as a finished page in the browser, saved outputs and all.
+---Writes the notebook first, so what you see includes the latest results.
+function M.view_in_browser()
+    local buf = vim.api.nvim_get_current_buf()
+    local file = vim.api.nvim_buf_get_name(buf)
+    if not file:match("%.ipynb$") then
+        notify("This is not a notebook", vim.log.levels.WARN)
+        return
+    end
+    if vim.bo[buf].modified then vim.cmd("silent! write") end
+
+    local host = vim.fn.expand("~/.local/share/nvim/python-host/bin/python")
+    local out_dir = vim.fn.stdpath("cache") .. "/notebook-view"
+    vim.fn.mkdir(out_dir, "p")
+    local html = out_dir .. "/" .. vim.fn.fnamemodify(file, ":t:r") .. ".html"
+
+    -- Outputs are saved into the file a moment after the write; give that time.
+    vim.defer_fn(function()
+        vim.system(
+            { host, "-m", "nbconvert", "--to", "html", "--output-dir", out_dir, file },
+            { text = true },
+            function(result)
+                vim.schedule(function()
+                    if result.code ~= 0 then
+                        notify("Could not convert the notebook: " .. vim.trim(result.stderr or ""), vim.log.levels.ERROR)
+                        return
+                    end
+                    vim.ui.open(html)
+                end)
+            end
+        )
+    end, 800)
+end
+
 function M.setup()
     apply_output_mode()
     vim.g.molten_virt_lines_off_by_1 = true
@@ -183,6 +217,7 @@ function M.setup()
         { "NotebookRunAll", M.run_all, "Run every code cell, in order" },
         { "NotebookLoadOutputs", function() M.import_outputs() end, "Show the outputs saved in this notebook" },
         { "NotebookSaveOutputs", function() M.save_outputs() end, "Write the cell outputs into the .ipynb file" },
+        { "NotebookView", M.view_in_browser, "Open this notebook as a finished page in the browser" },
         { "NotebookOutputMode", M.toggle_output_mode, "Switch results between a window under the cell and inline text" },
         { "NotebookRunAbove", M.run_above, "Run every cell up to and including this one" },
         { "NotebookKernel", molten("MoltenInit"), "Choose and start a kernel for this notebook" },
