@@ -1750,58 +1750,28 @@ end, { range = true, desc = "Tick or untick the Markdown checkbox on this line" 
 -- ============================================================
 
 -- ============================================================
--- CodeCompanion
+-- Notebooks
 -- ============================================================
 
--- Declared in vim.pack.add and then never set up, so none of its commands
--- existed and nothing could reach it. The adapter follows whichever key is
--- actually in the environment rather than being asserted here, because the
--- failure without one is a request that goes out and comes back unauthorised,
--- which is a confusing way to learn that a key is missing.
-local function ai_adapter()
-    if vim.env.ANTHROPIC_API_KEY and vim.env.ANTHROPIC_API_KEY ~= "" then return "anthropic" end
-    if vim.env.OPENAI_API_KEY and vim.env.OPENAI_API_KEY ~= "" then return "openai" end
-    if vim.env.GEMINI_API_KEY and vim.env.GEMINI_API_KEY ~= "" then return "gemini" end
+-- A .ipynb is JSON, which is no way to read or write one. jupytext turns it into
+-- Markdown on open -- prose as prose, code in fenced blocks -- and back into
+-- notebook JSON on save, outputs and metadata intact. pipx puts the jupytext
+-- command in ~/.local/bin, which a GUI-launched Neovim may not have on PATH.
+do
+    local bin = vim.fn.expand("~/.local/bin")
+    if not (vim.env.PATH or ""):find(bin, 1, true) then vim.env.PATH = bin .. ":" .. (vim.env.PATH or "") end
 end
 
----Whether the AI actions can do anything, and what to say when they cannot.
----@return boolean ready, string? reason
-local function ai_ready()
-    if ai_adapter() then return true end
-    return false,
-        "No API key for CodeCompanion. Export ANTHROPIC_API_KEY, OPENAI_API_KEY "
-        .. "or GEMINI_API_KEY and restart Neovim."
-end
-
-local ai_setup_ok, ai_setup_err = pcall(function()
-    require("codecompanion").setup({
-        strategies = {
-            chat = { adapter = ai_adapter() or "openai" },
-            inline = { adapter = ai_adapter() or "openai" },
-        },
-        display = {
-            chat = {
-                -- A right-hand column, like the debugger's panel: the left
-                -- edge is the explorer's and the bottom row is the terminal's.
-                window = { layout = "vertical", position = "right", width = 0.35 },
-            },
-            diff = { enabled = true },
-        },
+local jupytext_ok, jupytext_err = pcall(function()
+    require("jupytext").setup({
+        style = "markdown",
+        output_extension = "md",
+        force_ft = "markdown",
     })
 end)
-
-if not ai_setup_ok then
-    vim.notify("CodeCompanion setup failed: " .. tostring(ai_setup_err), vim.log.levels.WARN)
+if not jupytext_ok then
+    vim.notify("jupytext setup failed: " .. tostring(jupytext_err), vim.log.levels.WARN)
 end
-
-vim.api.nvim_create_user_command("AiStatus", function()
-    local ready, reason = ai_ready()
-    if ready then
-        vim.notify("CodeCompanion is using the " .. ai_adapter() .. " adapter")
-    else
-        vim.notify(reason, vim.log.levels.WARN)
-    end
-end, { desc = "Say which adapter CodeCompanion will use, or why it cannot" })
 
 require("ssh_launcher").setup()
 require("rip-substitute").setup({

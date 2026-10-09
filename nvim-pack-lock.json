@@ -16,10 +16,6 @@
       "rev": "655133c3b4c3e5e05ec549b9f8cc2894ac6f51b3",
       "src": "https://github.com/akinsho/bufferline.nvim"
     },
-    "codecompanion.nvim": {
-      "rev": "41aac78df89faa428eb1066b758f4e56c4c47662",
-      "src": "https://github.com/olimorris/codecompanion.nvim"
-    },
     "diffview.nvim": {
       "rev": "4516612fe98ff56ae0415a259ff6361a89419b0a",
       "src": "https://github.com/sindrets/diffview.nvim"
@@ -43,6 +39,10 @@
     "indent-blankline.nvim": {
       "rev": "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",
       "src": "https://github.com/lukas-reineke/indent-blankline.nvim"
+    },
+    "jupytext.nvim": {
+      "rev": "c8baf3ad344c59b3abd461ecc17fc16ec44d0f7b",
+      "src": "https://github.com/GCBallesteros/jupytext.nvim"
     },
     "kanagawa.nvim": {
       "rev": "bb85e4bfc8d89b0e62c8fa53ccdd13d12e2f77b3",

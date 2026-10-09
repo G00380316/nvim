@@ -25,7 +25,7 @@ end
 -- counted as an extra editor split -- so <C-q> on a file with the debugger open
 -- closed the file's window instead of the file, and a file opened from inside
 -- one landed in it.
-local tool_filetype_prefixes = { "dapui_", "dap-", "Diffview", "codecompanion" }
+local tool_filetype_prefixes = { "dapui_", "dap-", "Diffview" }
 local tool_filetypes = { man = true, checkhealth = true }
 
 local function is_tool_buffer(buf)
