@@ -1,4 +1,6 @@
 -- Opening a notebook that has saved outputs shows them under the cells.
+-- These look for the inline text, so switch to that style first.
+if require("notebook").output_mode() ~= "inline" then require("notebook").toggle_output_mode() end
 local python = vim.fn.expand("~/.local/share/nvim/python-host/bin/python")
 if vim.fn.executable("jupytext") == 0 or vim.fn.executable(python) == 0 then return end
 local nb = vim.json.encode({

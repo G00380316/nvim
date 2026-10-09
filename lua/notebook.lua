@@ -146,10 +146,29 @@ function M.import_outputs(buf)
     end)
 end
 
+local output_mode = "window"
+
+---Where results are shown. "window": a floating window under the cell, opened
+---when the cursor is in the cell -- it cannot be covered by anything else on
+---the screen. "inline": text under the cell that stays put as you move about.
+local function apply_output_mode()
+    vim.g.molten_virt_text_output = output_mode == "inline"
+    vim.g.molten_auto_open_output = output_mode == "window"
+end
+
+function M.toggle_output_mode()
+    output_mode = output_mode == "window" and "inline" or "window"
+    apply_output_mode()
+    notify(output_mode == "window"
+        and "Results show in a window under the cell while the cursor is in it"
+        or "Results show as text under the cell")
+end
+
+function M.output_mode() return output_mode end
+
 function M.setup()
-    vim.g.molten_virt_text_output = true
+    apply_output_mode()
     vim.g.molten_virt_lines_off_by_1 = true
-    vim.g.molten_auto_open_output = false
     vim.g.molten_wrap_output = true
     vim.g.molten_output_win_max_height = 20
     if pcall(require, "image") then vim.g.molten_image_provider = "image.nvim" end
@@ -164,6 +183,7 @@ function M.setup()
         { "NotebookRunAll", M.run_all, "Run every code cell, in order" },
         { "NotebookLoadOutputs", function() M.import_outputs() end, "Show the outputs saved in this notebook" },
         { "NotebookSaveOutputs", function() M.save_outputs() end, "Write the cell outputs into the .ipynb file" },
+        { "NotebookOutputMode", M.toggle_output_mode, "Switch results between a window under the cell and inline text" },
         { "NotebookRunAbove", M.run_above, "Run every cell up to and including this one" },
         { "NotebookKernel", molten("MoltenInit"), "Choose and start a kernel for this notebook" },
         { "NotebookInterrupt", molten("MoltenInterrupt"), "Stop the cell that is running" },
