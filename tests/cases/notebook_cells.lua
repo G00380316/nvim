@@ -24,3 +24,13 @@ vim.api.nvim_win_set_cursor(0, { run[1].first, 0 })
 vim.cmd("NotebookRunCell")
 vim.wait(25000, function() return vim.fn.filereadable(out) == 1 end, 200)
 T.eq(vim.fn.filereadable(out), 1, "the cell ran in the kernel")
+
+-- And the result is shown: the cell ends "Done", not stuck "On Hold".
+local function status()
+    for _, m in ipairs(vim.api.nvim_buf_get_extmarks(0, -1, 0, -1, { details = true })) do
+        local d = m[4]
+        if d.virt_lines and d.virt_lines[1] then return d.virt_lines[1][1][1] end
+    end
+end
+vim.wait(10000, function() return (status() or ""):find("Done", 1, true) ~= nil end, 200)
+T.ok((status() or ""):find("Done", 1, true), "cell output shows Done (was: " .. tostring(status()) .. ")")

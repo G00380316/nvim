@@ -41,14 +41,17 @@ local function with_kernel(action)
     local buf = vim.api.nvim_get_current_buf()
     if initialized[buf] then return action() end
 
+    -- MoltenKernelReady, not MoltenInitPost: the latter fires when the kernel
+    -- is merely started, and a cell sent then sits "On Hold" for good.
     vim.api.nvim_create_autocmd("User", {
-        pattern = "MoltenInitPost",
+        pattern = "MoltenKernelReady",
         once = true,
         callback = function()
             initialized[buf] = true
             vim.schedule(action)
         end,
     })
+    notify("Starting the Python kernel; the cell runs as soon as it is ready")
     local ok, err = pcall(vim.cmd, "MoltenInit python3")
     if not ok then notify("Could not start a kernel: " .. tostring(err), vim.log.levels.ERROR) end
 end
