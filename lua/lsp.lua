@@ -221,7 +221,7 @@ vim.lsp.config("lua_ls", {
 -- Main completion engine.
 -- ============================================================
 
-local prose_filetypes = { markdown = true, text = true, gitcommit = true, typst = true, tex = true }
+local prose_filetypes = { markdown = true, jupyter = true, text = true, gitcommit = true, typst = true, tex = true }
 
 local function prose_filetype()
     return prose_filetypes[vim.bo.filetype] == true
@@ -257,6 +257,7 @@ require("blink.cmp").setup({
         -- tables), then every word in the open buffers.
         per_filetype = {
             markdown = { "snippets", "buffer", "path", "lsp" },
+            jupyter = { "snippets", "buffer", "path", "lsp" },
             text = { "snippets", "buffer", "path" },
             gitcommit = { "buffer" },
         },

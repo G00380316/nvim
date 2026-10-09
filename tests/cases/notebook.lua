@@ -11,7 +11,7 @@ local nb = vim.json.encode({
 })
 local path = T.file("n.ipynb", nb)
 vim.cmd("edit " .. path)
-T.eq(vim.bo.filetype, "markdown", "opened as Markdown")
+T.eq(vim.bo.filetype, "jupyter", "opened as a notebook (Markdown inside)")
 local text = table.concat(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
 T.ok(text:find("# Title", 1, true) and text:find("```python", 1, true), "cells shown as markdown and code fences")
 vim.api.nvim_buf_set_lines(0, -1, -1, false, { "", "more text" })

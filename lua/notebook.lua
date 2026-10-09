@@ -231,6 +231,33 @@ function M.setup()
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })
     end
 
+    -- The jupytext header (jupyter: / jupytext: / kernelspec: ...) is a dozen
+    -- lines nobody reads; fold it shut so the first cell is at the top.
+    vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
+        group = vim.api.nvim_create_augroup("NotebookHeader", { clear = true }),
+        pattern = { "*.ipynb" },
+        callback = function(args)
+            vim.defer_fn(function()
+                if not vim.api.nvim_buf_is_valid(args.buf) then return end
+                local win = vim.fn.bufwinid(args.buf)
+                if win == -1 then return end
+                local lines = vim.api.nvim_buf_get_lines(args.buf, 0, 40, false)
+                if lines[1] ~= "---" then return end
+                for i = 2, #lines do
+                    if lines[i] == "---" then
+                        vim.api.nvim_win_call(win, function()
+                            vim.wo.foldmethod = "manual"
+                            vim.cmd("silent! 1," .. i .. "fold")
+                            vim.cmd("silent! 1foldclose")
+                        end)
+                        return
+                    end
+                end
+            end, 300)
+        end,
+        desc = "Fold the jupytext header in notebooks",
+    })
+
     -- Opening one shows what it printed last time.
     vim.api.nvim_create_autocmd("BufWinEnter", {
         group = vim.api.nvim_create_augroup("NotebookOpen", { clear = true }),

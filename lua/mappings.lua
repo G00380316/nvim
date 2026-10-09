@@ -551,6 +551,31 @@ require("render-markdown").setup({
         left_pad = 2,
         right_pad = 4,
     },
+    -- Notebooks are Markdown with a lot of code cells and some markers, and are
+    -- drawn to fit more of them on screen and to hide nothing worth reading:
+    --   * code cells without the bar above and below -- two rows each, and the
+    --     bar is also what covered the results molten draws under a cell;
+    --   * HTML comments left visible. In a notebook they are often real text
+    --     (an "Academic Integrity" notice was sitting in one), and a comment
+    --     is exactly what a renderer hides.
+    file_types = { "markdown", "jupyter" },
+    overrides = {
+        filetype = {
+            jupyter = {
+                code = { border = "none" },
+                html = { comment = { conceal = false } },
+            },
+        },
+    },
+})
+
+-- The notebook filetype is Markdown to the parser, so highlighting and the
+-- python inside the fences work as they do in a note.
+vim.treesitter.language.register("markdown", "jupyter")
+vim.api.nvim_create_autocmd("FileType", {
+    pattern = "jupyter",
+    callback = function(args) pcall(vim.treesitter.start, args.buf, "markdown") end,
+    desc = "Highlight notebooks as Markdown",
 })
 
 

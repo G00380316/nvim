@@ -1722,7 +1722,7 @@ vim.fn["lexima#add_rule"]({
 -- when the menu is closed.
 vim.api.nvim_create_autocmd("FileType", {
     group = vim.api.nvim_create_augroup("MarkdownLists", { clear = true }),
-    pattern = "markdown",
+    pattern = { "markdown", "jupyter" },
     callback = function(args)
         require("markdown_lists").attach(args.buf)
         vim.keymap.set("n", "<leader>m", function() require("markdown_hints").toggle() end, {
@@ -1769,7 +1769,9 @@ local jupytext_ok, jupytext_err = pcall(function()
     require("jupytext").setup({
         style = "markdown",
         output_extension = "md",
-        force_ft = "markdown",
+        -- Its own filetype, so notebooks can be drawn differently from notes
+        -- (see render-markdown's overrides). It is Markdown to everything else.
+        force_ft = "jupyter",
     })
 end)
 if not jupytext_ok then
