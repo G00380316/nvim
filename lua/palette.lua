@@ -34,8 +34,8 @@ local project_actions = {
 -- its group or label to match; earlier entries rank higher.
 local relevance = {
     oil = {
-        groups = { "File", "Project", "Search", "Buffers" },
-        labels = { "xplorer", "Extract", "Reveal", "default app", "Recent", "folder", "project", "workspace" },
+        groups = { "File", "Project", "Hint", "Search", "Buffers" },
+        labels = { "xplorer", "Oil", "with arguments", "Extract", "Reveal", "default app", "Recent", "folder", "project", "workspace" },
     },
     terminal = {
         groups = { "Terminal", "Run" },
@@ -46,7 +46,7 @@ local relevance = {
         labels = { "notebook", "cell", "kernel" },
     },
     markdown = {
-        groups = { "Markdown", "Notes", "Edit", "Hints" },
+        groups = { "Markdown", "Notes", "Edit", "Hint" },
         labels = { "note", "checkbox", "hint", "import", "surround" },
     },
     quickfix = {

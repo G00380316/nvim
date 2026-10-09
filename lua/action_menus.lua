@@ -291,6 +291,19 @@ local menus = {
             { label = "Extract archive", detail = "Unpack this archive next to itself", run = command("Extract") },
         },
     },
+    run = {
+        -- No key of its own beyond <leader>e / <leader>xr: reached from the
+        -- palette (group "Run"), or :ActionMenu run. The file is the one in the
+        -- editor, or the entry under the cursor in the explorer.
+        title = "Run Actions",
+        icon = "󰐊",
+        actions = {
+            { label = "Run file", detail = "Through the zsh run function (<leader>e)", run = command("Run") },
+            { label = "Test file", detail = "Through the zsh runtest function (<leader>xr)", run = command("RunTest") },
+            { label = "Run with arguments", detail = "Asks for them; <C-x> does this from a file picker", run = command("RunWith") },
+            { label = "Test with arguments", detail = "Asks for them, then runs runtest", run = command("RunTestWith") },
+        },
+    },
     hints = {
         -- No key of its own: reached from the palette (group "Tools"), or
         -- :ActionMenu hints. Every hint popup and cheat sheet in one place.
@@ -303,6 +316,13 @@ local menus = {
             { label = "Window commands (<C-w>) hints", detail = "Native window keys", run = function() require("which-key").show({ keys = "<C-w>", mode = "n" }) end },
             { label = "Registers hints", detail = "What is in each register (\")", run = function() require("which-key").show({ keys = '"', mode = "n" }) end },
             { label = "Marks hints", detail = "Jump to a mark (')", run = function() require("which-key").show({ keys = "'", mode = "n" }) end },
+            { label = "Explorer (Oil) keys", detail = "Every key available in the file explorer", at_origin = true, run = function()
+                if vim.bo.filetype ~= "oil" then
+                    vim.notify("Open the explorer first (<C-e>), then ask again", vim.log.levels.INFO, { title = "Hints" })
+                    return
+                end
+                require("oil.actions").show_help.callback()
+            end },
             { label = "Search every keymap", detail = "Every active mapping, searchable", run = function() Snacks.picker.keymaps() end },
             { label = "Vim's own keys", detail = "Motions, operators and text objects, and what this config changed", run = function() require("vim_keymaps").open() end },
             { label = "Note-taking hints", detail = "Markdown cheat sheet beside the note", run = command("MarkdownHints") },

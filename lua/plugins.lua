@@ -241,6 +241,24 @@ require("snacks").setup({
     picker = {
         ui_select = true,
 
+        actions = {
+            -- Run the highlighted file with arguments, from any file picker.
+            run_with_args = function(picker, item)
+                if not item then return end
+                local path = Snacks.picker.util.path(item)
+                if not path then return end
+                picker:close()
+                vim.schedule(function() require("runner").run("run", { path = path, ask = true }) end)
+            end,
+            test_with_args = function(picker, item)
+                if not item then return end
+                local path = Snacks.picker.util.path(item)
+                if not path then return end
+                picker:close()
+                vim.schedule(function() require("runner").run("runtest", { path = path, ask = true }) end)
+            end,
+        },
+
         layout = {
             cycle = true,
             style = "modern",
@@ -255,10 +273,12 @@ require("snacks").setup({
                     ["q"] = { function() end, mode = "n", desc = "Use Ctrl-Q to close" },
                     ["<Space>l"] = { "flash", mode = { "n", "i" } },
                     ["s"] = { "flash" },
+                    ["<C-x>"] = { "run_with_args", mode = { "n", "i" }, desc = "Run the highlighted file with arguments" },
                 },
             },
             list = {
                 keys = {
+                    ["<C-x>"] = { "run_with_args", desc = "Run the highlighted file with arguments" },
                     ["<C-c>"] = "cancel",
                     ["<C-q>"] = { "cancel", desc = "Close picker" },
                     ["<Esc>"] = "focus_input",
