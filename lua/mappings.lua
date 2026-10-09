@@ -428,12 +428,15 @@ local function close_current()
         -- Another terminal takes this one's place and the focus, so closing one
         -- of several leaves you in the terminal section. Only when it was the
         -- last does focus go back to the editor.
-        local stayed = filetype == "floaterm"
-            and require("terminals").close(buf, { insert = was_typing })
-        if not stayed then
+        local stayed
+        if filetype == "floaterm" then
+            stayed = require("terminals").close(buf, { insert = was_typing })
+        else
             local job_id = vim.b[buf].terminal_job_id
             if job_id then pcall(vim.fn.jobstop, job_id) end
             pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        end
+        if not stayed then
             local editor = require("ide_layout").find_editor_window()
             if editor then vim.api.nvim_set_current_win(editor) end
         end

@@ -93,6 +93,35 @@ function M.list(project)
     end, bufnrs)
 end
 
+---The terminal you were last in, remembered so that running something goes to
+---the shell you were already using rather than another one.
+local last_focused
+
+local function live_terminal(bufnr)
+    return type(bufnr) == "number"
+        and vim.api.nvim_buf_is_valid(bufnr)
+        and vim.bo[bufnr].filetype == "floaterm"
+        and vim.b[bufnr].terminal_job_id ~= nil
+end
+
+---Where a command should be sent: the terminal you are in, else the last one
+---you used in this project, else any in this project, else the last one used
+---anywhere. nil only when there is no terminal to use.
+---@return integer?
+function M.target()
+    local current = vim.api.nvim_get_current_buf()
+    if live_terminal(current) then return current end
+
+    local project = M.list()
+    if live_terminal(last_focused) and vim.tbl_contains(project, last_focused) then
+        return last_focused
+    end
+    for _, bufnr in ipairs(project) do
+        if live_terminal(bufnr) then return bufnr end
+    end
+    if live_terminal(last_focused) then return last_focused end
+end
+
 local function sample_cwd(bufnr)
     local pid = terminal_pid(bufnr)
     if not pid then return end
@@ -204,12 +233,9 @@ function M.send(command, opts)
     opts = opts or {}
     local origin = vim.api.nvim_get_current_win()
 
-    -- Prefer the terminal being looked at, so a split panel runs where you are
-    -- rather than jumping to whichever shell happens to be first.
-    local bufnr = vim.api.nvim_get_current_buf()
-    if vim.bo[bufnr].filetype ~= "floaterm" then
-        bufnr = M.list()[1]
-    end
+    -- The terminal you are in, else the one you used last: a new shell is only
+    -- made when there is none to use.
+    local bufnr = M.target()
 
     local fresh = not bufnr
     if not bufnr then
@@ -396,6 +422,15 @@ function M.close(bufnr, opts)
         M.focus(successor, { insert = opts.insert })
         return true
     end
+
+    -- No spare terminal to promote, but a sibling may be on screen (the panel
+    -- was split): that half is the terminal section now.
+    local sibling = any_terminal_window()
+    if sibling then
+        vim.api.nvim_set_current_win(sibling)
+        if opts.insert then vim.cmd("startinsert") end
+        return true
+    end
     return false
 end
 
@@ -576,9 +611,12 @@ function M.setup()
     vim.api.nvim_create_autocmd({ "BufEnter", "TermEnter", "TermLeave", "WinEnter" }, {
         group = group,
         callback = function(args)
-            if vim.bo[args.buf].filetype == "floaterm" then M.refresh() end
+            if vim.bo[args.buf].filetype == "floaterm" then
+                last_focused = args.buf
+                M.refresh()
+            end
         end,
-        desc = "Track the working directory of terminals",
+        desc = "Track the working directory and last-used terminal",
     })
 
     if refresh_timer then refresh_timer:stop() end
