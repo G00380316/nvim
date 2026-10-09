@@ -176,6 +176,24 @@ function M.setup()
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })
     end
 
+    -- render-markdown redraws the fence lines with its own overlay, and that
+    -- covers the output molten draws right under a cell. Notebooks are shown as
+    -- plain Markdown so the results stay visible.
+    vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
+        group = vim.api.nvim_create_augroup("NotebookPlain", { clear = true }),
+        pattern = { "*.ipynb" },
+        callback = function(args)
+            -- After jupytext has set the filetype and render-markdown has
+            -- attached to it, or it just switches itself back on.
+            vim.defer_fn(function()
+                if vim.api.nvim_buf_is_valid(args.buf) then
+                    vim.api.nvim_buf_call(args.buf, function() pcall(vim.cmd, "RenderMarkdown buf_disable") end)
+                end
+            end, 300)
+        end,
+        desc = "Keep Markdown rendering off in notebooks so cell output is visible",
+    })
+
     -- Opening one shows what it printed last time.
     vim.api.nvim_create_autocmd("BufWinEnter", {
         group = vim.api.nvim_create_augroup("NotebookOpen", { clear = true }),
