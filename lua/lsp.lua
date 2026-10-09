@@ -28,6 +28,42 @@ vim.lsp.enable({
     "sqruff",                 -- SQL linter / formatter
     "docker_language_server", -- Dockerfile
     "yamlls",                 -- YAML
+    "copilot",                -- GitHub Copilot inline suggestions (:LspCopilotSignIn once)
+})
+
+-- ============================================================
+-- AI inline completion (GitHub Copilot)
+-- Grey ghost text after the cursor, using Neovim's built-in inline completion.
+-- Sign in once with :LspCopilotSignIn. Insert-mode keys:
+--   <C-l> accept   <C-j> next suggestion   <C-k> previous suggestion
+-- ============================================================
+
+vim.api.nvim_create_autocmd("LspAttach", {
+    group = vim.api.nvim_create_augroup("CopilotInline", { clear = true }),
+    callback = function(args)
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        if not (client and client.name == "copilot") then return end
+        -- Prose and notes are written, not completed; suggestions stay in code.
+        local ft = vim.bo[args.buf].filetype
+        if ft == "markdown" or ft == "text" or ft == "gitcommit" then
+            vim.lsp.inline_completion.enable(false, { bufnr = args.buf })
+            return
+        end
+
+        vim.lsp.inline_completion.enable(true, { bufnr = args.buf })
+        local map = function(lhs, rhs, desc)
+            vim.keymap.set("i", lhs, rhs, { buffer = args.buf, desc = desc })
+        end
+        map("<C-l>", function()
+            -- With nothing suggested, the key falls through to what it normally does.
+            if not vim.lsp.inline_completion.get() then
+                vim.api.nvim_feedkeys(vim.keycode("<C-l>"), "n", false)
+            end
+        end, "AI: accept suggestion")
+        map("<C-j>", function() vim.lsp.inline_completion.select({ count = 1 }) end, "AI: next suggestion")
+        map("<C-k>", function() vim.lsp.inline_completion.select({ count = -1 }) end, "AI: previous suggestion")
+    end,
+    desc = "Turn on Copilot inline suggestions in code buffers",
 })
 
 
