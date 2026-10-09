@@ -1,15 +1,25 @@
--- The explorer can be widened, wraps only when asked, and can give up its git-marks column.
-vim.cmd("edit " .. T.file("a.txt", "x\n"))
+-- The explorer wraps by itself when a name is too long, and can be forced either way.
+vim.cmd("edit " .. T.file("proj/a.txt", "x\n"))
+T.file("proj/this_is_an_extremely_long_file_name_that_cannot_possibly_fit_in_the_panel.txt", "x\n")
+vim.cmd("cd " .. vim.env.TEST_DIR .. "/proj")
 vim.cmd("FocusTree")
-vim.wait(500)
+vim.wait(800)
 local oil
 for _, w in ipairs(vim.api.nvim_list_wins()) do
     if vim.bo[vim.api.nvim_win_get_buf(w)].filetype == "oil" then oil = w end
 end
 T.ok(oil, "explorer open")
-T.eq(vim.wo[oil].wrap, false, "names on one line to begin with")
-vim.cmd("ExplorerWrap"); T.eq(vim.wo[oil].wrap, true, "wrap on")
-vim.cmd("ExplorerWrap"); T.eq(vim.wo[oil].wrap, false, "wrap off")
+vim.cmd("doautocmd WinResized")
+vim.wait(300)
+T.eq(vim.wo[oil].wrap, true, "a long name turns wrapping on by itself")
+
+vim.cmd("ExplorerWrap") -- always
+vim.cmd("ExplorerWrap") -- never
+T.eq(vim.wo[oil].wrap, false, "never: one line even with a long name")
+vim.cmd("ExplorerWrap") -- auto
+vim.wait(300)
+T.eq(vim.wo[oil].wrap, true, "auto again: wraps for the long name")
+
 vim.cmd("ExplorerMarks"); T.eq(vim.wo[oil].signcolumn, "no", "marks column hidden")
 vim.cmd("ExplorerMarks"); T.eq(vim.wo[oil].signcolumn, "yes:3", "marks column back")
 

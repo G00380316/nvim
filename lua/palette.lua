@@ -27,6 +27,88 @@ local project_actions = {
     { "Mobile device hub", "Boot, run and watch simulators and emulators", "MobileDevices", "Tools" },
 }
 
+-- Where the palette was opened decides what comes first. Opened from the
+-- explorer, the file and project actions lead; from a terminal, the terminal
+-- ones; in a note, the note-taking ones. Everything else stays below, in its
+-- usual order, so nothing is hidden -- only moved. A row ranks by the first of
+-- its group or label to match; earlier entries rank higher.
+local relevance = {
+    oil = {
+        groups = { "File", "Project", "Search", "Buffers" },
+        labels = { "xplorer", "Extract", "Reveal", "default app", "Recent", "folder", "project", "workspace" },
+    },
+    terminal = {
+        groups = { "Terminal", "Run" },
+        labels = { "terminal", "shell" },
+    },
+    notebook = {
+        groups = { "Notebook", "Markdown", "Run" },
+        labels = { "notebook", "cell", "kernel" },
+    },
+    markdown = {
+        groups = { "Markdown", "Notes", "Edit" },
+        labels = { "note", "checkbox", "hint", "import", "surround" },
+    },
+    quickfix = {
+        groups = { "Search", "Problems" },
+        labels = { "result", "quickfix", "problem" },
+    },
+    code = {
+        groups = { "Code", "Edit", "Run", "Git", "Debug" },
+        labels = {},
+    },
+}
+
+---What the palette was opened from, as a key of `relevance`.
+local function context_kind(context)
+    local win = context and context.win
+    if not (win and vim.api.nvim_win_is_valid(win)) then return nil end
+
+    local ok, layout = pcall(require, "ide_layout")
+    local panel = ok and layout.panel_kind(win) or nil
+    if panel == "oil" then return "oil" end
+    if panel == "terminal" then return "terminal" end
+    if panel == "quickfix" then return "quickfix" end
+    if panel then return nil end
+
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.api.nvim_buf_get_name(buf):match("%.ipynb$") then return "notebook" end
+    local filetype = vim.bo[buf].filetype
+    if filetype == "markdown" or filetype == "text" then return "markdown" end
+    if filetype == "" or filetype == "snacks_dashboard" then return nil end
+    return "code"
+end
+
+---Move the rows that matter here to the top, keeping the rest in order.
+local function rank_for(items, context)
+    local rules = relevance[context_kind(context) or ""]
+    if not rules then return items end
+
+    local function score(item)
+        local best = math.huge
+        for i, group in ipairs(rules.groups) do
+            if item.group == group then best = math.min(best, i) end
+        end
+        for i, needle in ipairs(rules.labels) do
+            if item.label:find(needle, 1, true) then best = math.min(best, i + 0.5) end
+        end
+        return best
+    end
+
+    local ranked = {}
+    for index, item in ipairs(items) do
+        ranked[#ranked + 1] = { item = item, index = index, score = score(item) }
+    end
+    table.sort(ranked, function(a, b)
+        if a.score ~= b.score then return a.score < b.score end
+        return a.index < b.index
+    end)
+    return vim.tbl_map(function(r) return r.item end, ranked)
+end
+
+M.context_kind = context_kind
+M.rank_for = rank_for
+
 local function build(context)
     local items = {}
     local seen = {}
@@ -123,7 +205,7 @@ local function build(context)
         })
     end
 
-    return items
+    return rank_for(items, context)
 end
 
 ---Everything the palette would list, for checking and for other tools.

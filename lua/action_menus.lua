@@ -255,7 +255,7 @@ local menus = {
         actions = {
             { label = "Toggle column ruler", detail = "Show or hide the vertical line at column 80 / 120", run = command("RulerToggle") },
             { label = "Widen or narrow the explorer", detail = "Switch the file explorer between normal and wide, to read long names", run = command("ExplorerWiden") },
-            { label = "Wrap long names in the explorer", detail = "Toggle: a long name continues on the next line", run = command("ExplorerWrap") },
+            { label = "Explorer wrapping", detail = "Cycle: automatic (default), always, never", run = command("ExplorerWrap") },
             { label = "Explorer git marks", detail = "Toggle the git marks column; off gives the names more room", run = command("ExplorerMarks") },
             { label = "Switch ruler 80 / 120", detail = "Move the vertical line between column 80 and 120", run = command("RulerWidth") },
         },
