@@ -281,16 +281,24 @@ require("blink.cmp").setup({
         -- the words already written: the snippets first (headings, tasks,
         -- tables), then every word in the open buffers.
         per_filetype = {
-            markdown = { "snippets", "buffer", "path", "lsp" },
-            jupyter = { "snippets", "buffer", "path", "lsp" },
-            text = { "snippets", "buffer", "path" },
-            gitcommit = { "buffer" },
+            -- No "lsp": a Markdown server only adds noise to prose. Snippets,
+            -- then words already written, then the dictionary.
+            markdown = { "snippets", "buffer", "words", "path" },
+            jupyter = { "snippets", "buffer", "words", "path" },
+            text = { "snippets", "buffer", "words", "path" },
+            gitcommit = { "buffer", "words" },
         },
 
         providers = {
             -- Templates are the fastest way to type, so they rank above the
             -- rest; loose words come last and only after two letters.
             snippets = { score_offset = 4 },
+            words = {
+                name = "Words",
+                module = "blink_words",
+                min_keyword_length = 3,
+                score_offset = -2,
+            },
             lsp = { score_offset = 2 },
             path = { score_offset = 1 },
             buffer = {
