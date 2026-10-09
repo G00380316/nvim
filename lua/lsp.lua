@@ -321,8 +321,16 @@ require("blink.cmp").setup({
     },
 
     completion = {
-        -- The first match is already chosen, so <CR> or <Tab> takes it.
-        list = { selection = { preselect = true, auto_insert = false } },
+                -- The first match is already chosen in code, so <CR> or <Tab> takes it.
+        -- Not in prose: there <CR> ends a line, a list item or a task, and a
+        -- suggestion popping up as you finish a word must not swallow it. A
+        -- suggestion is taken on purpose (<C-n> to pick it, then <CR>, or <C-y>).
+        list = {
+            selection = {
+                preselect = function() return not prose_filetype() end,
+                auto_insert = false,
+            },
+        },
         keyword = { range = "full" },
         accept = { auto_brackets = { enabled = true } },
         trigger = { show_on_trigger_character = true, show_on_keyword = true },
