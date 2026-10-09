@@ -325,6 +325,75 @@ function M.status_text(buf)
     return ("%d/%d cells ran"):format(ran, total)
 end
 
+---Split one table row into its trimmed cells, or nil if it is not a row.
+local function row_cells(line)
+    if not line:match("^%s*|") then return nil end
+    local body = line:gsub("^%s*|", ""):gsub("|%s*$", "")
+    local cells, current, escaped = {}, "", false
+    for char in body:gmatch(".") do
+        if char == "|" and not escaped then
+            cells[#cells + 1] = vim.trim(current)
+            current = ""
+        else
+            current = current .. char
+        end
+        escaped = char == "\\" and not escaped
+    end
+    cells[#cells + 1] = vim.trim(current)
+    return cells
+end
+
+---Rewrite every Markdown table in the buffer with its padding removed. Cells
+---in a notebook are often padded out to the widest one -- hundreds of spaces --
+---so a table is wider than any window and the renderer cannot draw it. The
+---table says the same afterwards; only the spaces change. Done when asked, never
+---on its own, because it edits the notebook's text.
+---@param buf? integer
+---@return integer tables changed
+function M.tidy_tables(buf)
+    buf = buf or vim.api.nvim_get_current_buf()
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    local out, changed, i = {}, 0, 1
+    while i <= #lines do
+        local header = row_cells(lines[i])
+        local divider = header and lines[i + 1] and row_cells(lines[i + 1])
+        local is_table = divider ~= nil
+        if is_table then
+            for _, cell in ipairs(divider) do
+                if not cell:match("^:?%-+:?$") then is_table = false end
+            end
+        end
+        if is_table then
+            local first = i
+            local rows = { header }
+            local j = i + 2
+            while lines[j] and row_cells(lines[j]) do
+                rows[#rows + 1] = row_cells(lines[j])
+                j = j + 1
+            end
+            local function join(cells) return "| " .. table.concat(cells, " | ") .. " |" end
+            local tidy = { join(header) }
+            local rule = {}
+            for k, cell in ipairs(divider) do
+                local left, right = cell:sub(1, 1) == ":", cell:sub(-1) == ":"
+                rule[k] = (left and ":" or "") .. "---" .. (right and ":" or "")
+            end
+            tidy[2] = join(rule)
+            for k = 2, #rows do tidy[#tidy + 1] = join(rows[k]) end
+            for k, line in ipairs(tidy) do
+                if line ~= lines[first + k - 1] then changed = changed + 1 end
+                out[#out + 1] = line
+            end
+            i = j
+        else
+            out[#out + 1] = lines[i]
+            i = i + 1
+        end
+    end
+    if changed > 0 then vim.api.nvim_buf_set_lines(buf, 0, -1, false, out) end
+    return changed
+end
+
 local marker_ns = vim.api.nvim_create_namespace("notebook_markers")
 
 ---Hide jupytext's `<!-- #region ... -->` / `<!-- #endregion -->` lines. They are
@@ -360,6 +429,10 @@ function M.setup()
         { "NotebookRunAll", M.run_all, "Run every code cell, in order" },
         { "NotebookLoadOutputs", function() M.import_outputs() end, "Show the outputs saved in this notebook" },
         { "NotebookSaveOutputs", function() M.save_outputs() end, "Write the cell outputs into the .ipynb file" },
+        { "NotebookTidyTables", function()
+            local n = M.tidy_tables()
+            notify(n > 0 and ("Tidied %d table lines"):format(n) or "Tables are already tidy")
+        end, "Remove the padding from Markdown tables so they fit and render" },
         { "NotebookView", M.view_in_browser, "Open this notebook as a finished page in the browser" },
         { "NotebookOutputMode", M.toggle_output_mode, "Switch results between a window under the cell and inline text" },
         { "NotebookRunAbove", M.run_above, "Run every cell up to and including this one" },
