@@ -53,11 +53,29 @@ local function xcode_debug(method)
     end
 end
 
+---What the menu was opened from, as the palette names it (oil, terminal,
+---notebook, markdown, quickfix, code), plus the file's name for menus that care
+---about its type.
+local function origin_kind(origin)
+    if not (origin and origin.win and vim.api.nvim_win_is_valid(origin.win)) then return nil, "" end
+    local name = vim.api.nvim_buf_get_name(origin.buf or vim.api.nvim_win_get_buf(origin.win))
+    return require("palette").context_kind({ win = origin.win }), name
+end
+
 -- Refine grouped actions here. A menu owns one memorable mapping; adding,
 -- removing or renaming an action does not create another global keymap.
 local menus = {
     terminal = {
         lhs = "<leader>t",
+        -- Rows that suit where it was opened come first; see `relevant`.
+        relevant = function(kind)
+            if kind == "terminal" then
+                return { "Edit terminal output", "Split terminal", "Choose terminal", "New terminal" }
+            elseif kind == "oil" then
+                return { "New terminal here", "Open or focus" }
+            end
+            return { "Open or focus", "New terminal here", "New terminal" }
+        end,
         title = "Terminal Actions",
         icon = "",
         actions = {
@@ -71,6 +89,12 @@ local menus = {
     },
     git = {
         lhs = "zg",
+        relevant = function(kind)
+            if kind == "oil" or kind == "terminal" then
+                return { "Open LazyGit", "Review changed files", "Browse repository history" }
+            end
+            return { "Preview hunk", "Stage hunk", "Next hunk", "Blame line", "Open LazyGit", "Review changed files" }
+        end,
         title = "Git Actions",
         icon = "",
         actions = {
@@ -93,6 +117,9 @@ local menus = {
     },
     debug = {
         lhs = "zd",
+        relevant = function(kind)
+            if kind == "code" then return { "Toggle breakpoint", "Start or continue", "Step over", "Step into" } end
+        end,
         title = "Debug Actions",
         icon = "",
         actions = {
@@ -237,6 +264,18 @@ local menus = {
     files = {
         -- No key of its own: reached from the palette (group "Tools", "Files
         -- Actions"), or :ActionMenu files.
+        relevant = function(kind, name)
+            local ext = name:match("%.([%w]+)$")
+            ext = ext and ext:lower() or ""
+            if kind == "oil" then
+                return { "Reveal", "Open in default app", "Extract archive", "Recent files" }
+            elseif ext == "html" or ext == "htm" then
+                return { "Open HTML file in browser", "Open in default app", "Reveal" }
+            elseif vim.tbl_contains({ "zip", "gz", "tgz", "tar", "bz2", "xz", "7z", "rar" }, ext) then
+                return { "Extract archive", "Reveal" }
+            end
+            return { "Recent files", "Open in default app", "Reveal" }
+        end,
         title = "File Actions",
         icon = "󰈔",
         actions = {
@@ -250,6 +289,10 @@ local menus = {
     view = {
         -- No key of its own: reached from the palette (group "Tools", "View
         -- Actions"), or :ActionMenu view.
+        relevant = function(kind)
+            if kind == "oil" then return { "explorer", "Explorer" } end
+            return { "ruler", "Toggle column ruler" }
+        end,
         title = "View Actions",
         icon = "󰍉",
         actions = {
@@ -293,14 +336,52 @@ M.capture_origin = capture_origin
 function M.run_action(menu, action, origin)
     if menu.prepare then menu.prepare() end
     if action.at_origin then return_to_origin(origin) end
+    local recent = require("recent_actions")
+    recent.record(recent.key(menu.title, action.label))
 
     local ok, err = pcall(action.run)
     if not ok then vim.notify(tostring(err), vim.log.levels.ERROR, { title = menu.title }) end
 end
 
-function M.pick(menu)
-    local items = {}
+---The menu's rows in the order they should be offered: first the ones that suit
+---where it was opened (see `relevant`), then the ones you ran most recently,
+---then the rest as written. Nothing is dropped.
+function M.ranked_actions(menu, origin)
+    local recent = require("recent_actions")
+    local needles
+    if menu.relevant then
+        local kind, name = origin_kind(origin)
+        needles = menu.relevant(kind, name)
+    end
+
+    local function relevance(action)
+        for i, needle in ipairs(needles or {}) do
+            if action.label:find(needle, 1, true) then return i end
+        end
+        return math.huge
+    end
+
+    local ranked = {}
     for index, action in ipairs(menu.actions) do
+        ranked[#ranked + 1] = {
+            action = action,
+            index = index,
+            relevance = relevance(action),
+            used = recent.last_used(recent.key(menu.title, action.label)),
+        }
+    end
+    table.sort(ranked, function(a, b)
+        if a.relevance ~= b.relevance then return a.relevance < b.relevance end
+        if a.used ~= b.used then return a.used > b.used end
+        return a.index < b.index
+    end)
+    return vim.tbl_map(function(r) return r.action end, ranked)
+end
+
+function M.pick(menu)
+    local origin = capture_origin()
+    local items = {}
+    for index, action in ipairs(M.ranked_actions(menu, origin)) do
         items[index] = {
             text = table.concat({ action.label, action.detail or "" }, " "),
             label = action.label,
@@ -308,8 +389,6 @@ function M.pick(menu)
             action = action,
         }
     end
-
-    local origin = capture_origin()
 
     require("snacks").picker.pick({
         title = menu.title .. "  ·  type to filter  ·  Ctrl-Q closes",

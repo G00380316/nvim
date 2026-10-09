@@ -81,8 +81,8 @@ end
 
 ---Move the rows that matter here to the top, keeping the rest in order.
 local function rank_for(items, context)
-    local rules = relevance[context_kind(context) or ""]
-    if not rules then return items end
+    local rules = relevance[context_kind(context) or ""] or { groups = {}, labels = {} }
+    local recent = require("recent_actions")
 
     local function score(item)
         local best = math.huge
@@ -97,10 +97,17 @@ local function rank_for(items, context)
 
     local ranked = {}
     for index, item in ipairs(items) do
-        ranked[#ranked + 1] = { item = item, index = index, score = score(item) }
+        ranked[#ranked + 1] = {
+            item = item,
+            index = index,
+            score = score(item),
+            used = recent.last_used(recent.key(item.group, item.label)),
+        }
     end
+    -- Related to here first, then what you ran lately, then the usual order.
     table.sort(ranked, function(a, b)
         if a.score ~= b.score then return a.score < b.score end
+        if a.used ~= b.used then return a.used > b.used end
         return a.index < b.index
     end)
     return vim.tbl_map(function(r) return r.item end, ranked)
@@ -243,6 +250,8 @@ local function open_picker(context, pattern)
             picker:close()
             if not item then return end
 
+            local recent = require("recent_actions")
+            recent.record(recent.key(item.group, item.label))
             vim.schedule(function()
                 local ok, err = pcall(item.run)
                 if not ok then
