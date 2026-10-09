@@ -68,8 +68,78 @@ function M.run_cell()
         notify("The cursor is not in a code cell", vim.log.levels.WARN)
         return
     end
-    with_kernel(function() evaluate(cell) end)
+    with_kernel(function()
+        evaluate(cell)
+        watch(buf)
+    end)
 end
+
+local progress_ns = vim.api.nvim_create_namespace("notebook_progress")
+local SIGNS = {
+    queued = { "…", "DiagnosticHint" },
+    running = { "▶", "DiagnosticWarn" },
+    done = { "✓", "DiagnosticOk" },
+    error = { "✗", "DiagnosticError" },
+}
+
+---A mark beside each cell's first line showing where it stands, redrawn as it
+---changes. Cells that have not been run have none.
+local function refresh_signs(buf)
+    if not vim.api.nvim_buf_is_valid(buf) then return end
+    vim.api.nvim_buf_clear_namespace(buf, progress_ns, 0, -1)
+    local cells = M.cells(buf)
+    for index, state in pairs(M.cell_states(buf)) do
+        local cell, sign = cells[index], SIGNS[state]
+        if cell and sign then
+            pcall(vim.api.nvim_buf_set_extmark, buf, progress_ns, cell.first - 1, 0, {
+                sign_text = sign[1],
+                sign_hl_group = sign[2],
+            })
+        end
+    end
+end
+
+local watching = {}
+
+---Follow a run as it goes: every moment, redraw the marks beside the cells and
+---the statusline ("running 2/5"), until nothing is left running. With
+---`announce`, say so once at the end.
+---@param buf integer
+---@param announce? boolean
+local function watch(buf, announce)
+    if watching[buf] then
+        watching[buf].announce = watching[buf].announce or announce
+        return
+    end
+    local job = { announce = announce, started = vim.uv.hrtime(), seen = false }
+    watching[buf] = job
+
+    local timer = vim.uv.new_timer()
+    local function stop()
+        watching[buf] = nil
+        if not timer:is_closing() then timer:stop(); timer:close() end
+    end
+
+    timer:start(200, 300, vim.schedule_wrap(function()
+        if not vim.api.nvim_buf_is_valid(buf) then return stop() end
+        if (vim.uv.hrtime() - job.started) > 10 * 60 * 1e9 then return stop() end
+
+        refresh_signs(buf)
+        vim.cmd("redrawstatus!")
+
+        local text = M.status_text(buf)
+        if text ~= "" then job.seen = true end
+        if job.seen and text ~= "" and not text:find("running", 1, true) then
+            stop()
+            if job.announce then
+                local level = text:find("✗", 1, true) and vim.log.levels.WARN or vim.log.levels.INFO
+                notify(text, level)
+            end
+        end
+    end))
+end
+
+M.refresh_signs = refresh_signs
 
 function M.run_all()
     local buf = vim.api.nvim_get_current_buf()
@@ -80,6 +150,7 @@ function M.run_all()
     end
     with_kernel(function()
         for _, cell in ipairs(cells) do evaluate(cell) end
+        watch(buf, true)
     end)
 end
 
@@ -90,6 +161,7 @@ function M.run_above()
         for _, cell in ipairs(M.cells(buf)) do
             if cell.first <= line then evaluate(cell) end
         end
+        watch(buf, true)
     end)
 end
 
@@ -146,11 +218,12 @@ function M.import_outputs(buf)
     end)
 end
 
-local output_mode = "window"
+local output_mode = "inline"
 
----Where results are shown. "window": a floating window under the cell, opened
----when the cursor is in the cell -- it cannot be covered by anything else on
----the screen. "inline": text under the cell that stays put as you move about.
+---Where results are shown. "inline": text under the cell that stays put as you
+---move about -- and the only style that shows every cell's state at a glance,
+---which the status indicator reads. "window": a floating window under the cell,
+---opened when the cursor is in the cell.
 local function apply_output_mode()
     vim.g.molten_virt_text_output = output_mode == "inline"
     vim.g.molten_auto_open_output = output_mode == "window"
@@ -200,6 +273,76 @@ function M.view_in_browser()
     end, 800)
 end
 
+-- ------------------------------------------------------- run state, markers
+
+---Each code cell's state from the line molten draws under it:
+---"done", "running", "error" or "queued"; a cell that has not been run has none.
+---@param buf integer
+---@return table<integer, string> by cell index
+function M.cell_states(buf)
+    local states = {}
+    local cells = M.cells(buf)
+    for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(buf, -1, 0, -1, { details = true })) do
+        local lines = mark[4].virt_lines
+        local first = lines and lines[1] and lines[1][1] and lines[1][1][1]
+        if first and first:find("Out%[") then
+            local row = mark[2] + 1
+            for index, cell in ipairs(cells) do
+                if row >= cell.first and row <= cell.last + 1 then
+                    local state = "running"
+                    if first:find("Done", 1, true) then state = "done"
+                    elseif first:find("Error", 1, true) or first:find("✗", 1, true) then state = "error"
+                    elseif first:find("On Hold", 1, true) then state = "queued" end
+                    states[index] = state
+                end
+            end
+        end
+    end
+    return states
+end
+
+---One line for the statusline: how far a run has got, and when it is finished.
+---Empty for a notebook nothing has been run in.
+---@param buf? integer
+---@return string
+function M.status_text(buf)
+    buf = buf or vim.api.nvim_get_current_buf()
+    local total = #M.cells(buf)
+    if total == 0 then return "" end
+
+    local counts = { done = 0, running = 0, error = 0, queued = 0 }
+    for _, state in pairs(M.cell_states(buf)) do counts[state] = counts[state] + 1 end
+    local ran = counts.done + counts.error
+    if ran + counts.running + counts.queued == 0 then return "" end
+
+    if counts.running + counts.queued > 0 then
+        return ("󰑮 running %d/%d"):format(ran, total)
+    elseif counts.error > 0 then
+        return ("✗ %d error%s · %d/%d cells ran"):format(counts.error, counts.error == 1 and "" or "s", ran, total)
+    elseif ran == total then
+        return ("✓ all %d cells ran"):format(total)
+    end
+    return ("%d/%d cells ran"):format(ran, total)
+end
+
+local marker_ns = vim.api.nvim_create_namespace("notebook_markers")
+
+---Hide jupytext's `<!-- #region ... -->` / `<!-- #endregion -->` lines. They are
+---bookkeeping for the file format, not part of the notebook; any other comment
+---is left alone. Whole lines are concealed, so they take no row.
+local function hide_markers(buf)
+    if not vim.api.nvim_buf_is_valid(buf) then return end
+    vim.api.nvim_buf_clear_namespace(buf, marker_ns, 0, -1)
+    for i, line in ipairs(vim.api.nvim_buf_get_lines(buf, 0, -1, false)) do
+        if line:match("^<!%-%- #region.*%-%->%s*$") or line:match("^<!%-%- #endregion%s*%-%->%s*$") then
+            pcall(vim.api.nvim_buf_set_extmark, buf, marker_ns, i - 1, 0, { conceal_lines = "" })
+        end
+    end
+    for _, win in ipairs(vim.fn.win_findbuf(buf)) do
+        if vim.wo[win].conceallevel < 1 then vim.wo[win].conceallevel = 2 end
+    end
+end
+
 function M.setup()
     apply_output_mode()
     vim.g.molten_virt_lines_off_by_1 = true
@@ -230,6 +373,15 @@ function M.setup()
     for _, c in ipairs(commands) do
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })
     end
+
+    vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType", "TextChanged", "InsertLeave" }, {
+        group = vim.api.nvim_create_augroup("NotebookMarkers", { clear = true }),
+        pattern = { "*.ipynb" },
+        callback = function(args)
+            vim.defer_fn(function() hide_markers(args.buf) end, 150)
+        end,
+        desc = "Hide jupytext's region marker lines",
+    })
 
     -- The jupytext header (jupyter: / jupytext: / kernelspec: ...) is a dozen
     -- lines nobody reads; fold it shut so the first cell is at the top.

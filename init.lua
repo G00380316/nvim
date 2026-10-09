@@ -387,6 +387,18 @@ local cwd_component = {
     },
 }
 
+-- How far a notebook run has got: "running 2/5", then "✓ all 5 cells ran".
+local notebook_component = {
+    function() return require("notebook").status_text() end,
+    cond = function() return vim.bo.filetype == "jupyter" end,
+    color = function()
+        local text = require("notebook").status_text()
+        if text:find("✗", 1, true) then return { fg = "#e46876" } end
+        if text:find("✓", 1, true) then return { fg = "#98bb6c" } end
+        return { fg = "#e6c384" }
+    end,
+}
+
 local floaterm_component = {
     floaterm_tabline,
     cond = function()
@@ -471,6 +483,7 @@ lualine.setup({
         },
 
         lualine_x = {
+            notebook_component,
             {
                 "diagnostics",
                 sources = {
