@@ -42,6 +42,14 @@ for _, command in ipairs({
 end
 vim.g.this_obsession = nil
 
+-- molten-nvim is a Python remote plugin: Neovim needs a Python with pynvim and
+-- the Jupyter client libraries. Kept in its own venv so no project's
+-- environment has to carry them.
+do
+    local host = vim.fn.expand("~/.local/share/nvim/python-host/bin/python")
+    if vim.fn.executable(host) == 1 then vim.g.python3_host_prog = host end
+end
+
 vim.pack.add({
     -- Navigation
     { src = "https://github.com/stevearc/oil.nvim" },
@@ -99,8 +107,10 @@ vim.pack.add({
     { src = "https://github.com/G00380316/ssh-launcher.nvim" },
     { src = "https://github.com/G00380316/live-server.nvim" },
 
-    -- Notebooks: .ipynb opens as Markdown cells (needs `pipx install jupytext`)
+    -- Notebooks: .ipynb opens as Markdown cells (needs `pipx install jupytext`);
+    -- molten runs the cells in a Jupyter kernel (needs the python-host venv)
     { src = "https://github.com/GCBallesteros/jupytext.nvim" },
+    { src = "https://github.com/benlubas/molten-nvim" },
     { src = "https://github.com/wojciech-kulik/xcodebuild.nvim" },
 
     -- Shows what the next key does when you pause after a prefix

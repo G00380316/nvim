@@ -1773,6 +1773,8 @@ if not jupytext_ok then
     vim.notify("jupytext setup failed: " .. tostring(jupytext_err), vim.log.levels.WARN)
 end
 
+require("notebook").setup()
+
 require("ssh_launcher").setup()
 require("rip-substitute").setup({
     popupWin = {

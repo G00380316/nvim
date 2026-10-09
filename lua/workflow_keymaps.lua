@@ -68,6 +68,7 @@ local entries = {
     { "Markdown", "<leader>i", "n", "Import a PDF, Word file, web page or image as a new note" },
     { "Markdown", "<CR>", "n/x", "Tick or untick the checkbox on this line; a plain bullet becomes one" },
     { "Markdown", "o", "n", "Open a new list item below (O for above)" },
+    { "Markdown", "<leader>n", "n", "Run the notebook cell under the cursor (in a .ipynb)" },
     { "Markdown", "<leader>m", "n", "Show or hide the note-taking hints beside the note" },
     { "Markdown", "<leader>M", "n", "Pick from the hints and insert it; j/k, Enter, q to leave" },
 

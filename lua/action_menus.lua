@@ -177,6 +177,23 @@ local menus = {
             { label = "Reset solution", detail = "Reset the current problem buffer", run = command("Leet Reset") },
         },
     },
+    notebook = {
+        -- No key of its own beyond <leader>n (run this cell, in a notebook):
+        -- reached from the palette (group "Tools"), or :ActionMenu notebook.
+        title = "Notebook Actions",
+        icon = "󰠮",
+        actions = {
+            { label = "Run cell", detail = "Run the code cell under the cursor (<leader>n)", run = command("NotebookRunCell") },
+            { label = "Run all cells", detail = "Run every code cell, top to bottom", run = command("NotebookRunAll") },
+            { label = "Run cells above", detail = "Run every cell up to and including this one", run = command("NotebookRunAbove") },
+            { label = "Show output", detail = "Open the cell's output to read or scroll it", run = command("NotebookOutput") },
+            { label = "Clear outputs", detail = "Remove every cell's output", run = command("NotebookClearOutput") },
+            { label = "Interrupt", detail = "Stop the cell that is running", run = command("NotebookInterrupt") },
+            { label = "Restart kernel", detail = "Fresh kernel, outputs cleared", run = command("NotebookRestart") },
+            { label = "Choose kernel", detail = "Pick which Jupyter kernel runs this notebook", run = command("NotebookKernel") },
+            { label = "Stop kernel", detail = "Shut the notebook's kernel down", run = command("NotebookStop") },
+        },
+    },
     ssh = {
         -- No key of its own: reached from the palette (<leader><leader>, group
         -- "Tools"), or :ActionMenu ssh.
