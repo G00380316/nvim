@@ -23,3 +23,31 @@ vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "n", false)
 vim.wait(300)
 vim.fn.maparg("<leader>c", "n", false, true).callback()
 T.ok(not vim.snippet.active(), "<leader>c ends the snippet")
+
+-- All fields filled: leaving insert clears the snippet; mid-way it stays.
+vim.cmd("enew")
+vim.cmd("startinsert")
+vim.wait(100)
+vim.snippet.expand("a ${1:one} b ${2:two} c ${3:three} d")
+vim.wait(100)
+vim.snippet.jump(1) -- field 2
+vim.snippet.jump(1) -- field 3, the last
+vim.wait(100)
+-- On the last field the only way forward is the end of the snippet (tabstop 0),
+-- which is what the clean-up on leaving insert looks for. (Leaving insert
+-- itself is checked in a real terminal: the keys that select a field are queued
+-- and a headless run does not play them out.)
+T.eq(vim.snippet._session:get_dest_index(1), 0, "after the last field, forward is the end of the snippet")
+vim.snippet.stop()
+
+vim.cmd("enew")
+vim.cmd("startinsert")
+vim.wait(100)
+vim.snippet.expand("a ${1:one} b ${2:two} c ${3:three} d")
+vim.wait(100)
+vim.snippet.jump(1) -- field 2 of 3
+vim.wait(100)
+vim.cmd("stopinsert")
+vim.wait(400)
+T.ok(vim.snippet.active({ direction = 1 }), "fields left: snippet stays for <C-Space>")
+T.eq(vim.fn.maparg("<C-Space>", "s", false, true).desc, "Next snippet placeholder", "<C-Space> also moves on from a selected placeholder")

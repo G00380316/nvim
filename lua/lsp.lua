@@ -206,6 +206,21 @@ end, {
     desc = "Fill the next snippet placeholder; otherwise change the word and show blink",
 })
 
+-- While a placeholder is selected, <C-Space> moves to the next one too, so a
+-- whole snippet can be filled with the same key from first field to last.
+vim.keymap.set("s", "<C-Space>", function()
+    if vim.snippet.active({ direction = 1 }) then
+        vim.snippet.jump(1)
+    else
+        -- Nothing left to jump to: leave the selection and carry on typing.
+        vim.api.nvim_feedkeys(vim.keycode("<C-g>c"), "n", false)
+    end
+end, {
+    noremap = true,
+    silent = true,
+    desc = "Next snippet placeholder",
+})
+
 vim.keymap.set("x", "<C-Space>", function()
     vim.api.nvim_input('"_c')
 
@@ -374,7 +389,15 @@ require("blink.cmp").setup({
     keymap = {
         preset = "default",
 
+        -- In a snippet with placeholders left, <C-Space> is <Tab>: on to the next
+        -- one. Otherwise it is the suggestion menu, as before.
         ["<C-Space>"] = {
+            function()
+                if vim.snippet.active({ direction = 1 }) then
+                    vim.snippet.jump(1)
+                    return true
+                end
+            end,
             "show",
             "show_documentation",
             "hide_documentation",
@@ -403,15 +426,25 @@ require("blink.cmp").setup({
 --
 -- Checked a tick later: jumping to a placeholder passes through normal mode
 -- on the way into select mode, and that must not count as leaving.
+---Whether the snippet has a field left to fill. A jump forward from the last
+---field only reaches the end of the snippet (tabstop 0), which is not a field:
+---once there is nothing else, the snippet is finished and its highlights go.
+local function snippet_has_fields_left()
+    if not vim.snippet.active({ direction = 1 }) then return false end
+    local session = vim.snippet._session
+    local ok, dest = pcall(function() return session and session:get_dest_index(1) end)
+    -- Cannot tell: keep the session rather than clear one that is not done.
+    if not ok then return true end
+    return dest ~= nil and dest ~= 0
+end
+
 vim.api.nvim_create_autocmd("ModeChanged", {
     group = vim.api.nvim_create_augroup("EndSnippetOnEscape", { clear = true }),
     pattern = "*:n",
     callback = function()
         if not vim.snippet.active() then return end
         vim.schedule(function()
-            if vim.snippet.active() and vim.fn.mode() == "n"
-                and not vim.snippet.active({ direction = 1 })
-            then
+            if vim.snippet.active() and vim.fn.mode() == "n" and not snippet_has_fields_left() then
                 vim.snippet.stop()
             end
         end)

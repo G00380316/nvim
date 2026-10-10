@@ -1,15 +1,15 @@
 {
   "plugins": {
     "SchemaStore.nvim": {
-      "rev": "a652fcc01bf03946ab94b815be8c80ee157cbe1a",
+      "rev": "b463a5e79f84fd9ca22dd47f41754387d8fe7af4",
       "src": "https://github.com/b0o/SchemaStore.nvim"
     },
     "blink.cmp": {
-      "rev": "cba53eff1948109ec0f47cbead4f07494d1e25c9",
+      "rev": "8219b58f1c11a2fb1644d3c7116c509fa8348ec0",
       "src": "https://github.com/saghen/blink.cmp"
     },
     "blink.lib": {
-      "rev": "8b04d0e0acc8565cfa4dd291a89a9212b7262633",
+      "rev": "fd9a48ebbe6ec30d5dfcc5b42c243941ccdca1aa",
       "src": "https://github.com/saghen/blink.lib"
     },
     "bufferline.nvim": {
@@ -25,19 +25,19 @@
       "src": "https://github.com/folke/flash.nvim"
     },
     "friendly-snippets": {
-      "rev": "6cd7280adead7f586db6fccbd15d2cac7e2188b9",
+      "rev": "b4d01b0fdf3c9a549961c2f9ffe8dc09be166219",
       "src": "https://github.com/rafamadriz/friendly-snippets"
     },
     "gitsigns.nvim": {
-      "rev": "31d6fb2d618bca1482b9f274751ead5f03461408",
+      "rev": "851a051e2bd2caba97e23314c68d69f1b1cf5d19",
       "src": "https://github.com/lewis6991/gitsigns.nvim"
     },
     "image.nvim": {
-      "rev": "88351f1f7d9dbae286e671ce3690a49660dd8a5c",
+      "rev": "365e2ace0f619164ae6fd2f6f1d2807775dd6849",
       "src": "https://github.com/3rd/image.nvim"
     },
     "indent-blankline.nvim": {
-      "rev": "d28a3f70721c79e3c5f6693057ae929f3d9c0a03",
+      "rev": "f1e186e44d3b7f9ae918008e2c28ce37c6023d2d",
       "src": "https://github.com/lukas-reineke/indent-blankline.nvim"
     },
     "jupytext.nvim": {
@@ -81,7 +81,7 @@
       "src": "https://github.com/MunifTanjim/nui.nvim"
     },
     "nvim-dap": {
-      "rev": "9e848e09a697ee95302a3ef2dd43fd6eb709e570",
+      "rev": "cfa2d58f4537aca6ca83e2de1a0d9f1491121264",
       "src": "https://github.com/mfussenegger/nvim-dap"
     },
     "nvim-dap-ui": {
@@ -97,11 +97,11 @@
       "src": "https://github.com/mfussenegger/nvim-jdtls"
     },
     "nvim-lspconfig": {
-      "rev": "43ed3797b266e1ee8d222e491379ad471c9d3146",
+      "rev": "c59fc922f718fa055f69f5f3bc888f23211571eb",
       "src": "https://github.com/neovim/nvim-lspconfig"
     },
     "nvim-navic": {
-      "rev": "f5eba192f39b453675d115351808bd51276d9de5",
+      "rev": "455808fd0fae06e6d70fadfd61432275db8f34ce",
       "src": "https://github.com/SmiteshP/nvim-navic"
     },
     "nvim-nio": {
@@ -113,11 +113,11 @@
       "src": "https://github.com/chrisgrieser/nvim-rip-substitute"
     },
     "nvim-treesitter": {
-      "rev": "3d3321b560a63ff92a8692401f303a5123336b86",
+      "rev": "e289100ff98969e118c702199d88b764ce9e7fdf",
       "src": "https://github.com/nvim-treesitter/nvim-treesitter"
     },
     "nvim-web-devicons": {
-      "rev": "2ae6958df7ced50baac5035cec0c15799eedfbf7",
+      "rev": "58447c1fca354bbf184425e4a8d01deecbd6f3c4",
       "src": "https://github.com/nvim-tree/nvim-web-devicons"
     },
     "oil-git-status.nvim": {
@@ -141,7 +141,7 @@
       "src": "https://github.com/stevearc/quicker.nvim"
     },
     "render-markdown.nvim": {
-      "rev": "f422cb5c6855f150e2ddcfaf44e7157b98b34f6a",
+      "rev": "245956d67572c137df375dbf256e96bdb07e0937",
       "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim"
     },
     "snacks.nvim": {
@@ -149,7 +149,7 @@
       "src": "https://github.com/folke/snacks.nvim"
     },
     "ssh-launcher.nvim": {
-      "rev": "6a208cc5fdf0b7a70729f0186e05c371f552709f",
+      "rev": "59ad66214acce7e1679037ffcf5c1d6c3c3ad952",
       "src": "https://github.com/G00380316/ssh-launcher.nvim"
     },
     "ts-autotag.nvim": {
@@ -161,7 +161,7 @@
       "src": "https://github.com/chomosuke/typst-preview.nvim"
     },
     "vim-floaterm": {
-      "rev": "bb4ba7952e906408e1f83b215f55ffe57efcade6",
+      "rev": "7712701c5d20a0f9c935fbc2a6334083ce89b558",
       "src": "https://github.com/voldikss/vim-floaterm"
     },
     "vim-suda": {
@@ -173,7 +173,7 @@
       "src": "https://github.com/folke/which-key.nvim"
     },
     "xcodebuild.nvim": {
-      "rev": "633eb71c0b354581837025581b7261dbe5361226",
+      "rev": "45cd4a8daabcc1c4716388fadc036e06732756bd",
       "src": "https://github.com/wojciech-kulik/xcodebuild.nvim"
     }
   }

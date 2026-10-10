@@ -36,7 +36,7 @@ local entries = {
     { "Code", "gd", "n", "Go to definition" },
     { "Code", "gr", "n", "Find references" },
     { "Code", "gi", "n", "Go to implementation" },
-    { "Code", "<C-Space>", "n/x", "Normal: fill the next snippet placeholder, else change the word and suggest; visual: change the selection" },
+    { "Code", "<C-Space>", "n/i/s/x", "Snippets: on to the next placeholder, like <Tab>. Otherwise normal: change the word and suggest; insert: open suggestions; visual: change the selection" },
     { "Code", "<leader>dd", "n", "Show diagnostics for this buffer" },
     { "Code", "<leader>dw", "n", "Show diagnostics for the project" },
     { "Code", "g]d", "n", "Jump to the next diagnostic" },
