@@ -355,7 +355,9 @@ function M.refresh()
     if vim.api.nvim_win_get_config(win).relative ~= "" then return end
 
     local buf = vim.api.nvim_win_get_buf(win)
-    if enabled and vim.bo[buf].buftype == "" and vim.bo[buf].filetype == "markdown" then
+    -- A notebook is Markdown with code cells, and takes notes the same way.
+    local filetype = vim.bo[buf].filetype
+    if enabled and vim.bo[buf].buftype == "" and (filetype == "markdown" or filetype == "jupyter") then
         show_for(win)
     else
         close()

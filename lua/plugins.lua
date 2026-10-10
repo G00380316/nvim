@@ -1807,6 +1807,7 @@ if not jupytext_ok then
 end
 
 require("notebook").setup()
+require("pack_actions").setup()
 
 require("ssh_launcher").setup()
 require("rip-substitute").setup({

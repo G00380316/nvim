@@ -304,6 +304,23 @@ local menus = {
             { label = "Test with arguments", detail = "Asks for them, then runs runtest", run = command("RunTestWith") },
         },
     },
+    plugins = {
+        -- No key of its own: reached from the palette (group "Plugin"), or
+        -- :ActionMenu plugins. Neovim's built-in plugin manager, vim.pack.
+        title = "Plugin Actions",
+        icon = "󰏖",
+        actions = {
+            { label = "Update plugins", detail = "Check for updates and review them first (:w applies, :q discards)", run = command("PackUpdate") },
+            { label = "Update plugins now", detail = "Apply every update without the review", run = command("PackUpdateNow") },
+            { label = "Update one plugin", detail = "Pick a plugin and update just that", run = command("PackUpdateOne") },
+            { label = "Plugin status", detail = "What each plugin is on now; nothing is fetched", run = command("PackStatus") },
+            { label = "List plugins", detail = "Every installed plugin and its version; Enter opens its page", run = command("PackList") },
+            { label = "Restore from lockfile", detail = "Put every plugin back to the locked version", run = command("PackRestore") },
+            { label = "Remove unused plugins", detail = "Delete plugins the config no longer asks for", run = command("PackClean") },
+            { label = "Open the lockfile", detail = "nvim-pack-lock.json: the exact version of each plugin", run = command("PackLockfile") },
+            { label = "Update Treesitter parsers", detail = "Refresh the syntax parsers", run = command("ParsersUpdate") },
+        },
+    },
     hints = {
         -- No key of its own: reached from the palette (group "Tools"), or
         -- :ActionMenu hints. Every hint popup and cheat sheet in one place.
