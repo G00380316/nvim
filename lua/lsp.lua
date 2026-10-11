@@ -323,6 +323,23 @@ require("blink.cmp").setup({
             lsp = { score_offset = 2 },
             path = { score_offset = 1 },
             buffer = {
+                -- Words only: the open files hold ids, hashes and base64 blobs, and
+                -- offering "BhmyIodzHagxrTf_ddb..." as a suggestion helps nobody.
+                transform_items = function(_, items)
+                    local strict = prose_filetype()
+                    return vim.tbl_filter(function(item)
+                        local word = item.label or ""
+                        if #word > 24 then return false end
+                        if word:find("%d") and word:find("%a") and (strict or #word > 12) then return false end
+                        if strict then
+                            if word:find("[^%a'%-]") then return false end
+                            local _, inner_upper = word:sub(2):gsub("%u", "")
+                            -- ALL CAPS is an acronym; camelCase in prose is not a word.
+                            if inner_upper >= 1 and word:find("%l", 2) then return false end
+                        end
+                        return true
+                    end, items)
+                end,
                 -- In code, loose words are noise except where prose is being
                 -- written: inside a comment. Prose files take them everywhere.
                 enabled = function() return prose_filetype() or in_comment() end,
