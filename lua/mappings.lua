@@ -1198,41 +1198,77 @@ vim.keymap.set("n", "/", function() find_in_buffer() end, {
 -- Project / Directory Navigation
 -- ============================================================
 
-local function choose_workspace_folder()
-    Snacks.picker.explorer({
-        title = "Choose Folder as Workspace  ·  l expand  ·  Enter choose",
-        cwd = vim.fn.expand("~/"),
-        hidden = true,
-        ignored = true,
-        follow_file = false,
-        auto_close = true,
-        layout = { preset = "vertical", preview = false },
-        actions = {
-            choose_workspace = function(picker, item)
-                if not item or not item.file then return end
-
-                local path = vim.fs.normalize(item.file)
-                if vim.fn.isdirectory(path) == 0 then
-                    path = vim.fn.fnamemodify(path, ":h")
-                end
-
-                picker:close()
-                vim.schedule(function()
-                    require("workspace").open(path, { exact = true })
-                end)
-            end,
-        },
-        win = {
-            list = {
-                keys = {
-                    ["<CR>"] = "choose_workspace",
-                },
+---The directories under a root, as a flat list to search: one input, always
+---focused, no tree to expand. Typing narrows by folder name or any part of the
+---path ("labs w03"), so a project deep in iCloud Drive is a few letters away.
+---@param root string
+local function folder_finder(root)
+    return function(opts, ctx)
+        return require("snacks.picker.source.proc").proc(ctx:opts({
+            cmd = "fd",
+            cwd = root,
+            args = {
+                "--type", "d", "--hidden", "--follow", "--color", "never", "--max-depth", "9",
+                "--exclude", ".git", "--exclude", "node_modules", "--exclude", ".cache",
+                "--exclude", ".Trash", "--exclude", ".npm", "--exclude", ".venv", "--exclude", "venv",
+                "--exclude", "__pycache__", "--exclude", ".build", "--exclude", "DerivedData",
+                "--exclude", "Library/Caches", "--exclude", "Library/Application Support",
+                "--exclude", "Library/Containers", "--exclude", "Library/Developer",
+                "--exclude", "Library/Group Containers", "--exclude", "Library/Logs",
+                "--exclude", "Library/Preferences", "--exclude", "Library/Saved Application State",
+                "--exclude", ".local/share", "--exclude", ".rustup", "--exclude", ".cargo",
             },
-        },
+            transform = function(item)
+                -- fd lists directories with a trailing slash.
+                local rel = item.text:gsub("/$", "")
+                item.file = rel
+                item.cwd = root
+                item.dir = true
+                item.text = rel
+            end,
+        }), ctx)
+    end
+end
+
+local function choose_workspace_folder(root)
+    root = root or vim.fn.expand("~")
+    Snacks.picker.pick({
+        title = "Choose Workspace Folder  \u{b7}  type to search  \u{b7}  Enter chooses  \u{b7}  Ctrl-Q closes",
+        source = "workspace_folders",
+        finder = folder_finder(root),
+        format = function(item)
+            local home = vim.fn.expand("~")
+            local full = vim.fs.normalize(root .. "/" .. item.file)
+            local parent = vim.fn.fnamemodify(full, ":h"):gsub("^" .. vim.pesc(home), "~")
+            return {
+                { "󰉋  ", "Directory" },
+                { vim.fn.fnamemodify(full, ":t"), "SnacksPickerFile" },
+                { "  " },
+                { parent, "SnacksPickerDesc" },
+            }
+        end,
+        preview = false,
+        layout = { preset = "vscode" },
+        -- The search box is where typing goes, always: the list has nothing to
+        -- type into.
+        focus = "input",
+        confirm = function(picker, item)
+            picker:close()
+            if not item then return end
+            local path = vim.fs.normalize(root .. "/" .. item.file)
+            vim.schedule(function()
+                require("workspace").open(path, { exact = true })
+            end)
+        end,
     })
 end
 
-vim.keymap.set("n", "<leader>w", choose_workspace_folder, {
+-- With a folder, searches under that instead of home.
+vim.api.nvim_create_user_command("WorkspaceChoose", function(opts)
+    choose_workspace_folder(opts.args ~= "" and vim.fn.expand(opts.args) or nil)
+end, { nargs = "?", complete = "dir", desc = "Choose a workspace folder by searching (optionally under a folder)" })
+
+vim.keymap.set("n", "<leader>w", function() choose_workspace_folder() end, {
     desc = "Choose folder as workspace",
 })
 
