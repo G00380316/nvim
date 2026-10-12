@@ -441,6 +441,12 @@ local function focus_terminal()
     oil_focus_generation = oil_focus_generation + 1
     ide_layout.note_explicit_focus()
     local current = vim.api.nvim_get_current_win()
+    -- Full screen is not a place to go from, it is a view of the terminal:
+    -- the key that opens the terminal puts it back in its panel.
+    if require("terminals").full_active() and vim.w[current].terminal_full then
+        require("terminals").toggle_full()
+        return
+    end
     if window_filetype(current) == "floaterm" then
         focus_editor()
         return
@@ -1342,7 +1348,12 @@ vim.keymap.set("t", "<C-a>", from_terminal(new_terminal),
 vim.keymap.set("t", "<C-t>", function()
     vim.cmd("stopinsert")
     focus_terminal()
-end, { silent = true, desc = "Return to the editor from the terminal" })
+end, { silent = true, desc = "Return to the editor from the terminal (or leave full screen)" })
+
+-- Full screen from inside a program: <C-]> is rarely wanted by one. The same
+-- key leaves full screen again.
+vim.keymap.set("t", "<C-]>", from_terminal(function() require("terminals").toggle_full() end),
+    { noremap = true, silent = true, desc = "Toggle the terminal full screen" })
 
 vim.keymap.set("t", "<C-e>", function()
     vim.cmd("stopinsert")

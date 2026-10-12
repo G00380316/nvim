@@ -212,6 +212,120 @@ function M.focus(bufnr, opts)
     end
 end
 
+-- ------------------------------------------------------ full screen, app mode
+
+local full_win
+
+---Whether a terminal is currently shown full screen.
+function M.full_active()
+    return full_win ~= nil and vim.api.nvim_win_is_valid(full_win)
+end
+
+---Terminal programs that are applications -- opencode, vim, htop -- need every
+---key, and Neovim's own normal-mode keys get in the way: <Tab> switches buffer
+---instead of reaching the program. A terminal marked as an app is always in
+---terminal mode when you are in it, and <Tab> / <S-Tab> pressed in its normal
+---mode still go to the program.
+---@param bufnr integer
+---@param on? boolean default true
+function M.mark_app(bufnr, on)
+    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+    on = on ~= false
+    vim.b[bufnr].terminal_app = on or nil
+
+    local function send_key(sequence)
+        return function()
+            local job = vim.b[bufnr].terminal_job_id
+            if job then vim.fn.chansend(job, sequence) end
+            vim.cmd("startinsert")
+        end
+    end
+
+    if on then
+        vim.keymap.set("n", "<Tab>", send_key("\t"), { buffer = bufnr, desc = "Send <Tab> to the program" })
+        vim.keymap.set("n", "<S-Tab>", send_key("\27[Z"), { buffer = bufnr, desc = "Send <S-Tab> to the program" })
+    else
+        pcall(vim.keymap.del, "n", "<Tab>", { buffer = bufnr })
+        pcall(vim.keymap.del, "n", "<S-Tab>", { buffer = bufnr })
+    end
+end
+
+---Toggle app mode on the terminal you are in.
+function M.toggle_app()
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.bo[buf].filetype ~= "floaterm" then
+        vim.notify("Go to a terminal first", vim.log.levels.INFO, { title = "Terminal" })
+        return
+    end
+    local on = not vim.b[buf].terminal_app
+    M.mark_app(buf, on)
+    if on then vim.cmd("startinsert") end
+    vim.notify(on and "App mode: every key goes to the program" or "App mode off", vim.log.levels.INFO, { title = "Terminal" })
+end
+
+local function full_size()
+    -- The global statusline is the last row; the command line sits below it.
+    return vim.o.columns, math.max(5, vim.o.lines - vim.o.cmdheight - 1)
+end
+
+---Show the terminal over the whole editor, or put it back in its panel.
+---Running something big -- opencode, a long log -- does not fit in the panel;
+---this is the same terminal at full size, and toggling again returns to the
+---layout exactly as it was, because the layout was never touched.
+---@param bufnr? integer
+function M.toggle_full(bufnr)
+    if M.full_active() then
+        local buf = vim.api.nvim_win_get_buf(full_win)
+        pcall(vim.api.nvim_win_close, full_win, true)
+        full_win = nil
+        local panel = terminal_window(buf)
+        if panel then
+            vim.api.nvim_set_current_win(panel)
+            if vim.b[buf].terminal_app then vim.cmd("startinsert") end
+        end
+        return
+    end
+
+    bufnr = bufnr
+    if not bufnr then
+        local current = vim.api.nvim_get_current_buf()
+        bufnr = vim.bo[current].filetype == "floaterm" and current or M.target()
+    end
+    if not bufnr then
+        vim.notify("No terminal to show full screen", vim.log.levels.WARN, { title = "Terminal" })
+        return
+    end
+
+    local width, height = full_size()
+    full_win = vim.api.nvim_open_win(bufnr, true, {
+        relative = "editor",
+        row = 0,
+        col = 0,
+        width = width,
+        height = height,
+        style = "minimal",
+        border = "none",
+        zindex = 80,
+    })
+    vim.w[full_win].terminal_full = true
+    -- Full screen is for an application: it gets every key.
+    M.mark_app(bufnr, true)
+    vim.cmd("startinsert")
+end
+
+---A new terminal running opencode, full screen.
+function M.opencode()
+    if vim.fn.executable("opencode") == 0 then
+        vim.notify("opencode is not installed (brew install anomalyco/tap/opencode)", vim.log.levels.WARN, { title = "Terminal" })
+        return
+    end
+    vim.cmd("TerminalNew")
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.bo[buf].filetype ~= "floaterm" then return end
+    M.send("opencode", { focus = false, wait = true })
+    M.toggle_full(buf)
+end
+
 ---Run a command line in this project's terminal panel, opening one if there
 ---is none.
 ---
@@ -264,7 +378,7 @@ function M.send(command, opts)
     -- A shell that is still starting up swallows or garbles what arrives before
     -- its first prompt (the first run after opening a terminal failed that way),
     -- so wait for the prompt to be drawn.
-    if fresh then
+    if fresh or opts.wait then
         vim.wait(3000, function()
             if not vim.api.nvim_buf_is_valid(bufnr) then return true end
             for _, l in ipairs(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)) do
@@ -610,6 +724,43 @@ function M.setup()
             end)
         end,
         desc = "Hand a closed terminal's slot to the next terminal",
+    })
+
+    -- An app terminal is always typed into: arriving in it enters terminal
+    -- mode, and a full-screen one follows the window when it is resized.
+    vim.api.nvim_create_autocmd({ "BufEnter", "WinEnter" }, {
+        group = group,
+        callback = function(args)
+            if vim.bo[args.buf].buftype == "terminal" and vim.b[args.buf].terminal_app then
+                vim.schedule(function()
+                    if vim.api.nvim_get_current_buf() == args.buf and vim.fn.mode() ~= "t" then
+                        vim.cmd("startinsert")
+                    end
+                end)
+            end
+        end,
+        desc = "Keep app terminals in terminal mode",
+    })
+    vim.api.nvim_create_autocmd("VimResized", {
+        group = group,
+        callback = function()
+            if M.full_active() then
+                local width, height = full_size()
+                pcall(vim.api.nvim_win_set_config, full_win, {
+                    relative = "editor", row = 0, col = 0, width = width, height = height,
+                })
+            end
+        end,
+        desc = "Keep the full-screen terminal full screen",
+    })
+    vim.api.nvim_create_user_command("TerminalFull", function() M.toggle_full() end, {
+        desc = "Show the terminal full screen, or back in its panel",
+    })
+    vim.api.nvim_create_user_command("TerminalApp", M.toggle_app, {
+        desc = "Toggle app mode: every key, <Tab> included, goes to the program",
+    })
+    vim.api.nvim_create_user_command("OpenCode", M.opencode, {
+        desc = "Open opencode in a new full-screen terminal",
     })
 
     -- Sample on the events that change which terminal you are looking at, and
