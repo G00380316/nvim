@@ -29,3 +29,10 @@ local map = vim.fn.maparg("<Tab>", "n", false, true)
 vim.api.nvim_set_current_buf(buf)
 map = vim.fn.maparg("<Tab>", "n", false, true)
 T.ok(map.buffer == 1 and (map.desc or ""):find("program", 1, true), "<Tab> is sent to the program in an app terminal")
+
+-- An app terminal pages its program with <C-Up> / <C-Down>, as the mouse is off.
+vim.api.nvim_set_current_buf(buf)
+for _, lhs in ipairs({ "<C-Up>", "<C-Down>" }) do
+    local m = vim.fn.maparg(lhs, "t", false, true)
+    T.ok(m.buffer == 1 and (m.desc or ""):find("Scroll the program", 1, true), lhs .. " pages the program")
+end

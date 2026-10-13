@@ -242,12 +242,30 @@ function M.mark_app(bufnr, on)
         end
     end
 
+    -- A program that scrolls with the mouse wheel cannot be scrolled here: the
+    -- mouse is off in this config, so the wheel never reaches it. These send the
+    -- keys such programs scroll with instead -- opencode's chat takes PageUp and
+    -- PageDown, and Home / End for the first and last message.
+    local typed_keys = {
+        { "<C-Up>", "\27[5~", "Scroll the program up a page (PageUp)" },
+        { "<C-Down>", "\27[6~", "Scroll the program down a page (PageDown)" },
+        { "<C-PageUp>", "\27[H", "Send Home: the top of what the program shows" },
+        { "<C-PageDown>", "\27[F", "Send End: the bottom of what the program shows" },
+    }
+
     if on then
         vim.keymap.set("n", "<Tab>", send_key("\t"), { buffer = bufnr, desc = "Send <Tab> to the program" })
         vim.keymap.set("n", "<S-Tab>", send_key("\27[Z"), { buffer = bufnr, desc = "Send <S-Tab> to the program" })
+        for _, key in ipairs(typed_keys) do
+            vim.keymap.set("t", key[1], function()
+                local job = vim.b[bufnr].terminal_job_id
+                if job then vim.fn.chansend(job, key[2]) end
+            end, { buffer = bufnr, desc = key[3] })
+        end
     else
         pcall(vim.keymap.del, "n", "<Tab>", { buffer = bufnr })
         pcall(vim.keymap.del, "n", "<S-Tab>", { buffer = bufnr })
+        for _, key in ipairs(typed_keys) do pcall(vim.keymap.del, "t", key[1], { buffer = bufnr }) end
     end
 end
 
