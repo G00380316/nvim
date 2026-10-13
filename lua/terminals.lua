@@ -5,6 +5,7 @@ local M = {}
 -- the lookup costs ~100ms, far too slow to run during a statusline redraw.
 local cwd_cache = {}
 local refresh_timer
+local scan_timer
 
 local function terminal_pid(bufnr)
     local ok, job = pcall(function() return vim.b[bufnr].terminal_job_id end)
@@ -276,6 +277,15 @@ end
 function M.toggle_full(bufnr)
     if M.full_active() then
         local buf = vim.api.nvim_win_get_buf(full_win)
+        -- Asked for a different terminal while one is already full: show that
+        -- one, rather than putting the first back.
+        if bufnr and bufnr ~= buf and vim.api.nvim_buf_is_valid(bufnr) then
+            vim.api.nvim_win_set_buf(full_win, bufnr)
+            M.mark_app(bufnr, true)
+            vim.api.nvim_set_current_win(full_win)
+            vim.cmd("startinsert")
+            return
+        end
         pcall(vim.api.nvim_win_close, full_win, true)
         full_win = nil
         local panel = terminal_window(buf)
@@ -319,11 +329,116 @@ function M.opencode()
         vim.notify("opencode is not installed (brew install anomalyco/tap/opencode)", vim.log.levels.WARN, { title = "Terminal" })
         return
     end
+    -- From a full-screen terminal, TerminalNew would try to split the float.
+    if M.full_active() then M.toggle_full() end
     vim.cmd("TerminalNew")
     local buf = vim.api.nvim_get_current_buf()
     if vim.bo[buf].filetype ~= "floaterm" then return end
     M.send("opencode", { focus = false, wait = true })
     M.toggle_full(buf)
+    vim.b[buf].terminal_auto_full = true
+end
+
+-- ------------------------------------------------------- noticing programs
+
+-- Programs that take the whole screen. Typing `opencode` in any terminal -- not
+-- only through the OpenCode action -- puts it in app mode, and the ones in
+-- full_apps also go full screen, then back when the program exits.
+local app_programs = {
+    opencode = true, claude = true, codex = true, nvim = true, vim = true, vi = true,
+    htop = true, btop = true, top = true, less = true, man = true, lazygit = true,
+    ssh = false, node = false,
+}
+local full_programs = { opencode = true }
+
+---The names of the programs running under a shell, from one process listing.
+---@param shell_pid integer
+---@param rows { pid: integer, ppid: integer, names: string[] }[]
+---@return table<string, boolean>
+local function descendants(shell_pid, rows)
+    local children = {}
+    for _, row in ipairs(rows) do
+        children[row.ppid] = children[row.ppid] or {}
+        table.insert(children[row.ppid], row)
+    end
+    local found, stack = {}, { shell_pid }
+    while #stack > 0 do
+        local pid = table.remove(stack)
+        for _, row in ipairs(children[pid] or {}) do
+            for _, name in ipairs(row.names) do found[name] = true end
+            stack[#stack + 1] = row.pid
+        end
+    end
+    return found
+end
+
+local scanning = false
+
+---Look at what each terminal is running and act on programs that want the screen.
+function M.scan_programs()
+    if scanning then return end
+    local terminals = {}
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "floaterm" and terminal_pid(buf) then
+            terminals[#terminals + 1] = buf
+        end
+    end
+    if #terminals == 0 then return end
+
+    scanning = true
+    vim.system({ "ps", "-A", "-o", "pid=,ppid=,command=" }, { text = true }, function(result)
+        vim.schedule(function()
+            scanning = false
+            if result.code ~= 0 then return end
+            local rows = {}
+            for line in (result.stdout or ""):gmatch("[^\n]+") do
+                local pid, ppid, command = line:match("^%s*(%d+)%s+(%d+)%s+(.*)$")
+                if pid then
+                    -- The program is the first word, or the second when the first
+                    -- is an interpreter (node /path/to/opencode).
+                    local names = {}
+                    for word in command:gmatch("%S+") do
+                        names[#names + 1] = vim.fn.fnamemodify(word, ":t")
+                        if #names == 2 then break end
+                    end
+                    rows[#rows + 1] = { pid = tonumber(pid), ppid = tonumber(ppid), names = names }
+                end
+            end
+
+            for _, buf in ipairs(terminals) do
+                if vim.api.nvim_buf_is_valid(buf) then
+                    local running = descendants(terminal_pid(buf), rows)
+                    local wants_app, wants_full = false, false
+                    for name in pairs(running) do
+                        if app_programs[name] then wants_app = true end
+                        if full_programs[name] then wants_full = true end
+                    end
+
+                    if wants_app and not vim.b[buf].terminal_app then
+                        M.mark_app(buf, true)
+                        vim.b[buf].terminal_app_detected = true
+                    elseif not wants_app and vim.b[buf].terminal_app_detected then
+                        M.mark_app(buf, false)
+                        vim.b[buf].terminal_app_detected = nil
+                    end
+
+                    local showing = M.full_active() and vim.api.nvim_win_get_buf(full_win) == buf
+                    if wants_full and not showing and not vim.b[buf].terminal_auto_full_done then
+                        -- Once per run: if you put it back, it stays back.
+                        vim.b[buf].terminal_auto_full_done = true
+                        vim.b[buf].terminal_auto_full = true
+                        M.toggle_full(buf)
+                    elseif not wants_full then
+                        vim.b[buf].terminal_auto_full_done = nil
+                        if showing and vim.b[buf].terminal_auto_full then
+                            vim.b[buf].terminal_auto_full = nil
+                            M.toggle_full()
+                        end
+                    end
+                end
+            end
+        end)
+    end)
 end
 
 ---Run a command line in this project's terminal panel, opening one if there
@@ -782,6 +897,10 @@ function M.setup()
     refresh_timer:start(2000, 2000, vim.schedule_wrap(function()
         if any_terminal_window() then M.refresh() end
     end))
+
+    if scan_timer then scan_timer:stop() end
+    scan_timer = vim.uv.new_timer()
+    scan_timer:start(1500, 1500, vim.schedule_wrap(M.scan_programs))
 end
 
 return M
