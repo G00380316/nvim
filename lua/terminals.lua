@@ -354,7 +354,7 @@ function M.opencode()
     if vim.bo[buf].filetype ~= "floaterm" then return end
     M.send("opencode", { focus = false, wait = true })
     M.toggle_full(buf)
-    vim.b[buf].terminal_auto_full = true
+    vim.b[buf].terminal_full_program = true
 end
 
 -- ------------------------------------------------------- noticing programs
@@ -441,16 +441,22 @@ function M.scan_programs()
                     end
 
                     local showing = M.full_active() and vim.api.nvim_win_get_buf(full_win) == buf
+                    if wants_full then
+                        -- The full-screen view and the program are one thing: from
+                        -- here until it exits, leaving it quits the view too.
+                        vim.b[buf].terminal_full_program = true
+                    end
                     if wants_full and not showing and not vim.b[buf].terminal_auto_full_done then
                         -- Once per run: if you put it back, it stays back.
                         vim.b[buf].terminal_auto_full_done = true
-                        vim.b[buf].terminal_auto_full = true
                         M.toggle_full(buf)
                     elseif not wants_full then
                         vim.b[buf].terminal_auto_full_done = nil
-                        if showing and vim.b[buf].terminal_auto_full then
-                            vim.b[buf].terminal_auto_full = nil
-                            M.toggle_full()
+                        -- The program quit: back to the normal layout, however
+                        -- the full-screen view was opened.
+                        if vim.b[buf].terminal_full_program then
+                            vim.b[buf].terminal_full_program = nil
+                            if showing then M.toggle_full() end
                         end
                     end
                 end
@@ -918,7 +924,7 @@ function M.setup()
 
     if scan_timer then scan_timer:stop() end
     scan_timer = vim.uv.new_timer()
-    scan_timer:start(1500, 1500, vim.schedule_wrap(M.scan_programs))
+    scan_timer:start(1000, 700, vim.schedule_wrap(M.scan_programs))
 end
 
 return M
