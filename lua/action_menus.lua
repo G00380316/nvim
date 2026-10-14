@@ -229,7 +229,7 @@ local menus = {
             { label = "Switch result style", detail = "Results in a window under the cell, or as text beneath it", run = command("NotebookOutputMode") },
             { label = "Outputs to a Markdown file", detail = "Every cell's code and full output in one editable file beside the notebook", run = command("NotebookExportOutputs") },
             { label = "Copy cell output", detail = "Put the output of the cell under the cursor on the clipboard", run = command("NotebookCopyOutput") },
-            { label = "Show output", detail = "Open the cell's output to read or scroll it", run = command("NotebookOutput") },
+            { label = "Show output", detail = "The cell's output in a buffer you can move about in, search and edit (q closes)", run = command("NotebookOutput") },
             { label = "Load saved outputs", detail = "Show the outputs stored in the notebook file (done on open)", run = command("NotebookLoadOutputs") },
             { label = "Save outputs into the notebook", detail = "Also done every time the notebook is saved", run = command("NotebookSaveOutputs") },
             { label = "Clear outputs", detail = "Remove every cell's output", run = command("NotebookClearOutput") },

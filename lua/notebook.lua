@@ -290,12 +290,15 @@ end
 ---under a cell is wrapped to the window and clipped, and a copy of that would
 ---carry the line breaks. So the notebook is written first (which also saves the
 ---outputs into it), and the cell's outputs are read back whole.
-function M.copy_output()
+---The saved output of the cell under the cursor, whole.
+---@param verb string what the caller is about to do, for the "no output" message
+---@return string? text, integer? cell index
+local function output_under_cursor(verb)
     local buf = vim.api.nvim_get_current_buf()
     local file = vim.api.nvim_buf_get_name(buf)
     if not file:match("%.ipynb$") then
         notify("This is not a notebook", vim.log.levels.WARN)
-        return
+        return nil
     end
     local cells = M.cells(buf)
     local line = vim.api.nvim_win_get_cursor(0)[1]
@@ -305,7 +308,7 @@ function M.copy_output()
     end
     if not index then
         notify("The cursor is not in a code cell", vim.log.levels.WARN)
-        return
+        return nil
     end
 
     if vim.bo[buf].modified then vim.cmd("silent write") end
@@ -331,19 +334,48 @@ function M.copy_output()
     end, 150)
 
     if not outputs or #outputs == 0 then
-        notify("This cell has no output to copy: run it first", vim.log.levels.WARN)
-        return
+        notify("This cell has no output to " .. verb .. ": run it first", vim.log.levels.WARN)
+        return nil
     end
     local parts = {}
     for _, output in ipairs(outputs) do
         local text = output_text(output)
         if text then parts[#parts + 1] = text end
     end
-    local text = table.concat(parts, parts[1] and parts[1]:sub(-1) == "\n" and "" or "\n")
+    return table.concat(parts, parts[1] and parts[1]:sub(-1) == "\n" and "" or "\n"), index
+end
+
+function M.copy_output()
+    local text = output_under_cursor("copy")
+    if not text then return end
     vim.fn.setreg("+", text)
     vim.fn.setreg('"', text)
     local count = select(2, text:gsub("\n", "\n")) + (text:sub(-1) == "\n" and 0 or 1)
     notify(("Copied the output (%d line%s)"):format(count, count == 1 and "" or "s"))
+end
+
+---The output of the cell under the cursor in a buffer of its own: a real,
+---editable window under the notebook that you can move about in, search, select
+---and yank from like any text. (Molten's own output window is for looking at.)
+---It is not a file; `q` closes it, and "Outputs to a Markdown file" keeps one.
+function M.show_output()
+    local text, index = output_under_cursor("show")
+    if not text then return end
+
+    pcall(vim.cmd, "EditorFocus")
+    vim.cmd("belowright 14new")
+    local buf = vim.api.nvim_get_current_buf()
+    vim.bo[buf].buftype = "nofile"
+    vim.bo[buf].bufhidden = "wipe"
+    vim.bo[buf].swapfile = false
+    vim.bo[buf].filetype = "text"
+    pcall(vim.api.nvim_buf_set_name, buf, ("[output of cell %d]"):format(index))
+    vim.api.nvim_buf_set_lines(buf, 0, -1, false, vim.split((text:gsub("\n$", "")), "\n", { plain = true }))
+    vim.bo[buf].modified = false
+    vim.wo.wrap = true
+    vim.wo.number = true
+    vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = buf, nowait = true, desc = "Close the output" })
+    vim.api.nvim_win_set_cursor(0, { 1, 0 })
 end
 
 ---The notebook as saved just now, outputs included: written, the outputs
@@ -815,7 +847,7 @@ function M.setup()
         { "NotebookInterrupt", molten("MoltenInterrupt"), "Stop the cell that is running" },
         { "NotebookRestart", molten("MoltenRestart!"), "Restart the kernel and clear outputs" },
         { "NotebookClearOutput", molten("MoltenDelete!"), "Clear every cell's output" },
-        { "NotebookOutput", molten("noautocmd MoltenEnterOutput"), "Open the cell's output window to read or scroll it" },
+        { "NotebookOutput", M.show_output, "Open the cell's output in an editable buffer you can move about in" },
         { "NotebookStop", molten("MoltenDeinit"), "Shut this notebook's kernel down" },
     }
     for _, c in ipairs(commands) do
