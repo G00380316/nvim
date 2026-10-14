@@ -80,6 +80,8 @@ local function context_kind(context)
 end
 
 ---Move the rows that matter here to the top, keeping the rest in order.
+local RECENT_LEAD = 6
+
 local function rank_for(items, context)
     local rules = relevance[context_kind(context) or ""] or { groups = {}, labels = {} }
     local recent = require("recent_actions")
@@ -104,12 +106,28 @@ local function rank_for(items, context)
             used = recent.last_used(recent.key(item.group, item.label)),
         }
     end
-    -- Related to here first, then what you ran lately, then the usual order.
-    table.sort(ranked, function(a, b)
+    -- The few things you ran most recently lead, newest first, whatever is
+    -- related to here: they are what you are most likely to want again, and the
+    -- history they come from is kept on disk, so they are still there after
+    -- Neovim is closed and opened. Then what is related to here, then the rest.
+    local by_recency = vim.deepcopy(ranked)
+    table.sort(by_recency, function(a, b) return a.used > b.used end)
+    local lead, leading = {}, {}
+    for _, entry in ipairs(by_recency) do
+        if entry.used > 0 and #lead < RECENT_LEAD then
+            lead[#lead + 1] = entry
+            leading[entry.index] = true
+            entry.item.recent = true
+        end
+    end
+
+    local rest = vim.tbl_filter(function(entry) return not leading[entry.index] end, ranked)
+    table.sort(rest, function(a, b)
         if a.score ~= b.score then return a.score < b.score end
         if a.used ~= b.used then return a.used > b.used end
         return a.index < b.index
     end)
+    ranked = vim.list_extend(lead, rest)
     return vim.tbl_map(function(r) return r.item end, ranked)
 end
 
@@ -232,6 +250,7 @@ local function open_picker(context, pattern)
         format = function(item)
             local align = Snacks.picker.util.align
             local row = {
+                { item.recent and "󰋚 " or "  ", "SnacksPickerDesc" },
                 { align(item.group, 12), "SnacksPickerLabel" },
                 { "  " },
                 { align(item.label, 40), "SnacksPickerFile" },

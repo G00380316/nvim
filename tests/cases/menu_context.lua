@@ -28,3 +28,16 @@ local recent = require("recent_actions")
 recent.record(recent.key(ssh.title, last.label))
 T.eq(menus.ranked_actions(ssh, oil_origin)[1], last, "a row just used leads the menu")
 T.eq(recent.key("Git Actions", "x"), recent.key("Git", "x"), "menu title and palette group share one key")
+
+-- The palette leads with what was run most recently, whatever the context, and the
+-- history lives on disk so a new session still has it.
+local palette = require("palette")
+local recent = require("recent_actions")
+local rows = palette.items({})
+local victim = rows[#rows] -- something at the very bottom
+recent.record(recent.key(victim.group, victim.label))
+local after = palette.items({})
+T.eq(after[1].label, victim.label, "the row just used now leads the palette")
+T.eq(after[1].recent, true, "and is marked as recent")
+local state = vim.fn.stdpath("state") .. "/recent-actions.json"
+T.eq(vim.fn.filereadable(state), 1, "the history is stored on disk")
