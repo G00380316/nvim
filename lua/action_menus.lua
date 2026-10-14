@@ -227,6 +227,7 @@ local menus = {
             { label = "Tidy tables", detail = "Strip the padding from tables so they fit the window and render well", run = command("NotebookTidyTables") },
             { label = "View in browser", detail = "The notebook as a finished page, with its outputs", run = command("NotebookView") },
             { label = "Switch result style", detail = "Results in a window under the cell, or as text beneath it", run = command("NotebookOutputMode") },
+            { label = "Outputs to a Markdown file", detail = "Every cell's code and full output in one editable file beside the notebook", run = command("NotebookExportOutputs") },
             { label = "Copy cell output", detail = "Put the output of the cell under the cursor on the clipboard", run = command("NotebookCopyOutput") },
             { label = "Show output", detail = "Open the cell's output to read or scroll it", run = command("NotebookOutput") },
             { label = "Load saved outputs", detail = "Show the outputs stored in the notebook file (done on open)", run = command("NotebookLoadOutputs") },

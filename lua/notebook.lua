@@ -346,6 +346,117 @@ function M.copy_output()
     notify(("Copied the output (%d line%s)"):format(count, count == 1 and "" or "s"))
 end
 
+---The notebook as saved just now, outputs included: written, the outputs
+---exported into it, then read back. Waits for the export, which runs on its own.
+---@param buf integer
+---@return table? data the decoded notebook
+local function fresh_notebook(buf)
+    local file = vim.api.nvim_buf_get_name(buf)
+    if vim.bo[buf].modified then vim.cmd("silent write") end
+    M.save_outputs(buf)
+
+    local data
+    vim.wait(4000, function()
+        local ok, decoded = pcall(vim.json.decode, table.concat(vim.fn.readfile(file), "\n"))
+        if not (ok and type(decoded) == "table" and decoded.cells) then return false end
+        data = decoded
+        for _, cell in ipairs(decoded.cells) do
+            if cell.cell_type == "code" and cell.outputs and #cell.outputs > 0 then return true end
+        end
+        return false
+    end, 150)
+    return data
+end
+
+---A code fence long enough that nothing inside it can close it early.
+local function fence_for(text)
+    local longest = 2
+    for run in text:gmatch("`+") do longest = math.max(longest, #run) end
+    return ("`"):rep(longest + 1)
+end
+
+---Write every cell's code and full output into a Markdown file beside the
+---notebook, and open it. It is an ordinary file: edit it, trim it, paste from it.
+---Running it again refreshes the file, unless you have started a different one
+---of the same name -- then it makes a new numbered file instead.
+function M.export_outputs()
+    local buf = vim.api.nvim_get_current_buf()
+    local file = vim.api.nvim_buf_get_name(buf)
+    if not file:match("%.ipynb$") then
+        notify("This is not a notebook", vim.log.levels.WARN)
+        return
+    end
+
+    local data = fresh_notebook(buf)
+    if not data then
+        notify("Could not read the notebook", vim.log.levels.ERROR)
+        return
+    end
+
+    local language = vim.tbl_get(data, "metadata", "kernelspec", "language") or "python"
+    local name = vim.fn.fnamemodify(file, ":t:r")
+    local lines = {
+        "<!-- notebook-outputs: generated from " .. vim.fn.fnamemodify(file, ":t") .. " -->",
+        "# " .. name .. ": cell outputs",
+        "",
+        ("_Exported %s from `%s`. This file is yours to edit._"):format(os.date("%Y-%m-%d %H:%M"), vim.fn.fnamemodify(file, ":t")),
+        "",
+    }
+
+    local n, with_output = 0, 0
+    for _, cell in ipairs(data.cells) do
+        if cell.cell_type == "code" then
+            n = n + 1
+            local outputs = {}
+            for _, output in ipairs(cell.outputs or {}) do
+                local text = output_text(output)
+                if text and text ~= "" then
+                    outputs[#outputs + 1] = text
+                elseif output.data then
+                    for mime in pairs(output.data) do
+                        if mime:match("^image/") then outputs[#outputs + 1] = ("[%s output not included]"):format(mime) end
+                    end
+                end
+            end
+            if #outputs > 0 then
+                with_output = with_output + 1
+                local source = type(cell.source) == "table" and table.concat(cell.source) or (cell.source or "")
+                local code_fence = fence_for(source)
+                vim.list_extend(lines, { "## Cell " .. n, "", code_fence .. language })
+                vim.list_extend(lines, vim.split(source, "\n", { plain = true }))
+                vim.list_extend(lines, { code_fence, "", "Output:", "" })
+                local body = table.concat(outputs, outputs[1]:sub(-1) == "\n" and "" or "\n")
+                local out_fence = fence_for(body)
+                lines[#lines + 1] = out_fence .. "text"
+                vim.list_extend(lines, vim.split((body:gsub("\n$", "")), "\n", { plain = true }))
+                vim.list_extend(lines, { out_fence, "" })
+            end
+        end
+    end
+
+    if with_output == 0 then
+        notify("No cell has any output yet: run the notebook first", vim.log.levels.WARN)
+        return
+    end
+
+    -- The file: ours to refresh, or a numbered one if you have made it your own.
+    local base = vim.fn.fnamemodify(file, ":r")
+    local target = base .. "-outputs.md"
+    local index = 1
+    while vim.fn.filereadable(target) == 1 do
+        local first = vim.fn.readfile(target, "", 1)[1] or ""
+        -- Still the generated file (its first line is ours): refresh it.
+        if first:find("notebook-outputs: generated from", 1, true) then break end
+        index = index + 1
+        target = ("%s-outputs-%d.md"):format(base, index)
+    end
+    vim.fn.writefile(lines, target)
+
+    pcall(vim.cmd, "EditorFocus")
+    vim.cmd("edit! " .. vim.fn.fnameescape(target))
+    notify(("Wrote the output of %d cell%s to %s"):format(with_output, with_output == 1 and "" or "s", vim.fn.fnamemodify(target, ":t")))
+end
+
 ---Whether the notebook file already holds any cell output.
 local function has_saved_outputs(file)
     local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(file), "\n"))
@@ -695,6 +806,7 @@ function M.setup()
             local n = M.tidy_tables()
             notify(n > 0 and ("Tidied %d table lines"):format(n) or "Tables are already tidy")
         end, "Remove the padding from Markdown tables so they fit and render" },
+        { "NotebookExportOutputs", M.export_outputs, "Write every cell's output, in full, to an editable Markdown file" },
         { "NotebookCopyOutput", M.copy_output, "Copy the output of the cell under the cursor to the clipboard" },
         { "NotebookView", M.view_in_browser, "Open this notebook as a finished page in the browser" },
         { "NotebookOutputMode", M.toggle_output_mode, "Switch results between a window under the cell and inline text" },
