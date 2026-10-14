@@ -1299,6 +1299,10 @@ local function cycle_terminal(direction)
     end
 end
 
+-- zT: the terminal you are in fills the whole panel (the split's other half stays
+-- behind it; zn / zp swap them), and again to put the split back.
+vim.keymap.set("n", "zT", function() require("terminals").toggle_zoom() end,
+    { noremap = true, silent = true, desc = "Zoom the terminal to fill the panel, or restore the split" })
 vim.keymap.set({ "n", "x" }, "zp", cycle_terminal(-1),
     { noremap = true, silent = true, desc = "Focus the previous terminal" })
 vim.keymap.set({ "n", "x" }, "zn", cycle_terminal(1),

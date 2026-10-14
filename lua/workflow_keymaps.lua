@@ -47,6 +47,7 @@ local entries = {
     { "Terminal", "<C-v> → <C-g>", "t", "Move through output like a buffer, then copy it with the cursor where you were", "terminal_normal" },
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable, saveable buffer", "terminal_edit" },
     { "Terminal", "<leader>t", "n", "Open terminal action selector (new terminal here lives there)" },
+    { "Terminal", "zT", "n", "Zoom the terminal to fill the whole panel (the split's other half waits behind it); again restores the split" },
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
     { "Git", "<leader>g", "n", "Open LazyGit straight away" },

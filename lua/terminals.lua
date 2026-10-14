@@ -674,6 +674,7 @@ function M.cycle(direction)
     end
 
     local current = vim.api.nvim_get_current_buf()
+    local in_full = M.full_active() and vim.api.nvim_get_current_win() == full_win
     local index = 0
     for i, bufnr in ipairs(bufnrs) do
         if bufnr == current then
@@ -688,7 +689,80 @@ function M.cycle(direction)
     else
         target = bufnrs[(index - 1 + direction) % #bufnrs + 1]
     end
+
+    -- Full screen is one window that shows one terminal at a time: the others
+    -- stay behind it like buffers, and zn / zp swap which one is on top.
+    if in_full then
+        vim.api.nvim_win_set_buf(full_win, target)
+        M.mark_app(target, true)
+        return
+    end
     M.focus(target)
+end
+
+-- ---------------------------------------------------------- zooming a split
+
+local zoom ---@type { win: integer, other: integer? }?
+
+---Whether the panel's split is currently collapsed to one terminal.
+function M.zoom_active()
+    return zoom ~= nil and vim.api.nvim_win_is_valid(zoom.win)
+end
+
+---The panel's terminal windows (not the full-screen float).
+local function panel_windows()
+    local wins = {}
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.api.nvim_win_get_config(win).relative == "" and vim.bo[buf].filetype == "floaterm" then
+            wins[#wins + 1] = win
+        end
+    end
+    return wins
+end
+
+---Make the terminal you are in take the whole panel, and put the split back.
+---The other terminals are not closed: they stay behind it like buffers, and
+---`zn` / `zp` swap which one fills the panel. Zooming again restores the split.
+function M.toggle_zoom()
+    if M.zoom_active() then
+        local win = zoom.win
+        local other = zoom.other
+        zoom = nil
+        local current = vim.api.nvim_win_get_buf(win)
+        -- The split's other half: the terminal that was beside it, if it is
+        -- still there and not the one on screen; else the next one.
+        if not (other and vim.api.nvim_buf_is_valid(other) and other ~= current) then
+            other = nil
+            for _, buf in ipairs(M.list()) do
+                if buf ~= current then other = buf break end
+            end
+        end
+        if not other then return end
+        vim.api.nvim_set_current_win(win)
+        vim.cmd("rightbelow vsplit")
+        vim.api.nvim_win_set_buf(0, other)
+        vim.api.nvim_set_current_win(win)
+        return
+    end
+
+    local wins = panel_windows()
+    if #wins < 2 then
+        vim.notify("The panel is not split", vim.log.levels.INFO, { title = "Terminal" })
+        return
+    end
+
+    local here = vim.api.nvim_get_current_win()
+    if not vim.tbl_contains(wins, here) then here = wins[1] end
+    local other
+    for _, win in ipairs(wins) do
+        if win ~= here then
+            other = other or vim.api.nvim_win_get_buf(win)
+            pcall(vim.api.nvim_win_close, win, true)
+        end
+    end
+    zoom = { win = here, other = other }
+    vim.api.nvim_set_current_win(here)
 end
 
 function M.pick()
@@ -1033,6 +1107,9 @@ function M.setup()
     })
     vim.api.nvim_create_user_command("TerminalFull", function() M.toggle_full() end, {
         desc = "Show the terminal full screen, or back in its panel",
+    })
+    vim.api.nvim_create_user_command("TerminalZoom", M.toggle_zoom, {
+        desc = "Make the terminal you are in fill the panel, or restore the split",
     })
     vim.api.nvim_create_user_command("TerminalApp", M.toggle_app, {
         desc = "Toggle app mode: every key, <Tab> included, goes to the program",
