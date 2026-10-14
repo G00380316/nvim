@@ -44,3 +44,18 @@ for _, item in ipairs(picker:items()) do names[#names + 1] = item.file end
 T.ok(vim.tbl_contains(names, "c.ipynb"), "the notebook is listed (" .. table.concat(names, ",") .. ")")
 T.ok(not vim.tbl_contains(names, "c.md"), "its copy is not")
 picker:close()
+
+-- A picker asks from a background thread: the check must not call Vim functions there.
+local ok, err = pcall(function()
+    local result
+    local timer = vim.uv.new_timer()
+    timer:start(0, 0, function()
+        -- A fast event: Vimscript functions are not allowed here.
+        local callok, callerr = pcall(require("notebook").notebook_for_copy, copy)
+        result = { callok, callerr }
+        timer:close()
+    end)
+    vim.wait(1000, function() return result ~= nil end, 10)
+    assert(result and result[1], "notebook_for_copy failed in a fast event: " .. tostring(result and result[2]))
+end)
+T.ok(ok, tostring(err))

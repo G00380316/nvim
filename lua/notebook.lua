@@ -467,17 +467,26 @@ end
 
 -- ---------------------------------------------------- the jupytext copy
 
+-- The notebooks that are open, by path. A plain table on purpose: a picker asks
+-- "is this file a copy?" from a background thread, where no Vim function (not
+-- even bufnr) may be called, so the answer has to come from Lua data alone.
+local open_notebooks = {} ---@type table<string, integer>
+
 ---The notebook a Markdown file is the working copy of: while `a.ipynb` is open,
 ---jupytext keeps `a.md` beside it and edits *that*. Two buffers on the one text
 ---is how a save ends in "E139: File is loaded in another buffer", so the copy is
 ---kept out of sight: never listed, never opened, only ever the notebook.
+---Safe to call from anywhere, including a fast event.
 ---@param path string
 ---@return string? ipynb path, integer? its buffer
 function M.notebook_for_copy(path)
     if type(path) ~= "string" or not path:match("%.md$") then return nil end
-    local ipynb = path:gsub("%.md$", ".ipynb")
-    local buf = vim.fn.bufnr(ipynb)
-    if buf > 0 and vim.api.nvim_buf_is_loaded(buf) then return ipynb, buf end
+    -- Real paths, so /tmp and /private/tmp, or a symlinked folder, are one place.
+    -- (uv calls are fine in a fast event; Vim functions are not.)
+    local real = vim.uv.fs_realpath(path) or path
+    local ipynb = real:gsub("%.md$", ".ipynb")
+    local buf = open_notebooks[ipynb]
+    if buf then return ipynb, buf end
 end
 
 ---Wipe a loaded copy, so that a write can put the notebook's text there.
@@ -622,6 +631,26 @@ function M.setup()
             vim.defer_fn(function() hide_markers(args.buf) end, 150)
         end,
         desc = "Hide jupytext's region marker lines",
+    })
+
+    -- Keep the set of open notebooks (see notebook_for_copy) current.
+    local open_group = vim.api.nvim_create_augroup("NotebookOpenSet", { clear = true })
+    vim.api.nvim_create_autocmd({ "BufReadPost", "BufEnter", "BufAdd" }, {
+        group = open_group,
+        pattern = "*.ipynb",
+        callback = function(args)
+            local name = vim.api.nvim_buf_get_name(args.buf)
+            if name ~= "" then open_notebooks[vim.uv.fs_realpath(name) or name] = args.buf end
+        end,
+    })
+    vim.api.nvim_create_autocmd({ "BufUnload", "BufWipeout", "BufDelete" }, {
+        group = open_group,
+        pattern = "*.ipynb",
+        callback = function(args)
+            local name = vim.api.nvim_buf_get_name(args.buf)
+            name = vim.uv.fs_realpath(name) or name
+            if open_notebooks[name] == args.buf then open_notebooks[name] = nil end
+        end,
     })
 
     -- Opening the copy by any route -- the explorer, a picker, recent files, a
