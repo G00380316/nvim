@@ -1512,9 +1512,10 @@ vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
 })
 
 -- Deliberately change the workspace instead of creating a temporary cwd.
--- Not under `zc`: that is Vim's close-fold key, and a mapping that starts with it
--- (zcd) made every plain `zc` wait out the timeout for a second key.
-vim.keymap.set("n", "zw", function()
+-- <leader>w chooses any folder; its capital takes the one you are already in.
+-- (Not under `zc`: that is Vim's close-fold key, and a mapping that starts with
+-- it made every plain `zc` wait out the timeout for a second key.)
+vim.keymap.set("n", "<leader>W", function()
     require("workspace").from_here()
 end, { desc = "Use this file's project, or the explorer's folder, as workspace" })
 

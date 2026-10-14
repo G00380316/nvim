@@ -7,7 +7,7 @@ local entries = {
     { "Project", "<C-e>", "switcher", "Name the project under the cursor, or clear its name" },
     { "Project", "<C-d>", "switcher", "Close the open project under the cursor; press again to forget it" },
     { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
-    { "Project", "zw", "n", "Use this file's project as the workspace; with no file open, the explorer's folder" },
+    { "Project", "<leader>W", "n", "Use this file's project as the workspace; with no file open, the explorer's folder" },
     { "Project", "<leader>f", "n", "Find a file anywhere under home" },
     { "Project", "<C-e>", "n/i/x", "Open or focus the Oil project tree" },
     { "Project", "<C-f>", "n/i/x", "Find a file in the current project" },
