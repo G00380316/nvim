@@ -43,6 +43,8 @@ local entries = {
     { "Operators", "gu{motion} / gU{motion}", "Lowercase / uppercase over a motion", "gu" },
     { "Operators", "g~{motion}", "Swap case over a motion", "g~" },
     { "Operators", "gq{motion}", "Wrap lines to textwidth", "gq" },
+    { "Operators", "gc{motion} / gcc", "Toggle comments over a motion / on the line", "gc" },
+    { "Operators", "gw{motion}", "Wrap lines to textwidth and keep the cursor where it is", "gw" },
     { "Operators", "!{motion}", "Filter lines through a shell command", "!" },
     { "Operators", "zf{motion}", "Make a fold over a motion", "zf" },
     { "Operators", "dd cc yy", "The same three on whole lines", "dd" },
@@ -152,6 +154,37 @@ local entries = {
     { "Insert", "<C-a>", "Insert whatever you typed last time", "i_CTRL-A" },
     { "Insert", "<C-v>{code}", "Insert a character literally, or by code", "i_CTRL-V" },
 
+    -- Undo
+    { "Undo", "u / <C-r>", "Undo / redo", "u" },
+    { "Undo", "U", "Undo every change on the line you last changed", "U" },
+    { "Undo", "g- / g+", "Step back / forward through the undo tree, branches included", "g-" },
+    { "Undo", ":earlier 10m", "Go back to how the buffer was ten minutes ago (:later forwards)", ":earlier" },
+    { "Undo", ":undolist", "Show the branches of the undo tree", ":undolist" },
+    { "Undo", ":e!", "Throw away every unsaved change and reload", ":edit!" },
+    { "Undo", ":changes", "Show where you made changes", ":changes" },
+
+    -- The command line
+    { "Command line", ":", "Start a command", ":" },
+    { "Command line", "@:", "Repeat the last command line", "@:" },
+    { "Command line", "q:", "Open the command history in a window to edit and run", "q:" },
+    { "Command line", "<C-r><C-w>", "On the command line: insert the word under the cursor", "c_CTRL-R_CTRL-W" },
+    { "Command line", "<C-f>", "On the command line: switch to the editable history window", "c_CTRL-F" },
+    { "Command line", ":%", "A range of every line: :%s, :%norm, :%!sort", "range" },
+    { "Command line", ":'<,'>", "A range of the selection (typed for you after v + :)", "'<" },
+    { "Command line", ":normal {keys}", "Run normal-mode keys on each line of a range", ":normal" },
+    { "Command line", ":r !cmd", "Insert a shell command's output", ":read!" },
+    { "Command line", ":{range}!cmd", "Pass lines through a shell command (:%!sort)", ":range!" },
+    { "Command line", ":t. / :m0 / :m$", "Copy the line below itself / move it to the top / the bottom", ":t" },
+    { "Command line", ":sort / :sort u", "Sort the lines / sort and drop duplicates", ":sort" },
+    { "Command line", ":w !sudo tee %", "Write a file you do not own", ":w_c" },
+
+    -- Counts
+    { "Counts", "{count}{key}", "Most keys take a number first: 5j, 3dd, 10x, 2p", "count" },
+    { "Counts", "d{count}w", "A count inside an operator: delete three words", "d" },
+    { "Counts", "{count}G / :{number}", "Go to a line by number", "G" },
+    { "Counts", "{count}.", "Repeat the last change that many times", "." },
+    { "Counts", "gn / cgn", "Select / change the next match of the last search, then . for the next", "gn" },
+
     -- Windows and tabs
     { "Windows", "<C-w>s / <C-w>v", "Split across / down", "CTRL-W_s" },
     { "Windows", "<C-w>w / <C-w>p", "Cycle windows / back to the last one", "CTRL-W_w" },
@@ -159,6 +192,8 @@ local entries = {
     { "Windows", "<C-w>H J K L", "Move this window to that edge", "CTRL-W_H" },
     { "Windows", "<C-w>c / <C-w>o", "Close this window / close all the others", "CTRL-W_c" },
     { "Windows", "<C-w>= / <C-w>_ / <C-w>|", "Equalise / maximise height / maximise width", "CTRL-W_=" },
+    { "Windows", "<C-w>x / <C-w>r", "Swap with the next window / rotate the windows", "CTRL-W_x" },
+    { "Windows", "<C-w>T", "Move this window into its own tab page", "CTRL-W_T" },
     { "Windows", "gt / gT", "Next / previous tab page", "gt" },
     { "Windows", ":tabnew", "Open a tab page", ":tabnew" },
 
@@ -191,6 +226,9 @@ local group_modes = {
     ["Macros"] = { "n", "x" },
     ["Insert"] = { "i" },
     ["Windows"] = { "n" },
+    ["Undo"] = { "n" },
+    ["Command line"] = { "n" },
+    ["Counts"] = { "n", "x" },
     ["Misc"] = { "n", "x" },
 }
 

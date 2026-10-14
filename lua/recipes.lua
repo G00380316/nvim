@@ -219,6 +219,43 @@ local entries = {
     { "Increment the number", "<C-a>", "Add one to the number at the cursor", "<C-a>" },
     { "Decrement the number", "<C-x>", "Subtract one", "<C-x>" },
 
+    -- Search and replace
+    { "Replace a word everywhere in the file", ":%s/\\<word\\>/new/g", "Whole-word replace through the file (<leader>r does it interactively)", ":%s/\\<" },
+    { "Change the next match, then repeat", "cgn then .", "Search with *, change the next match with cgn, press . for the next", "cgn" },
+    { "Replace only on some lines", ":10,20s/old/new/g", "A line range before the s: lines 10 to 20", ":10,20s/old/new/g" },
+    { "Delete every line containing a word", ":g/word/d", "Remove all lines that match", ":g/" },
+    { "Keep only the lines containing a word", ":v/word/d", "Remove all lines that do not match", ":v/" },
+    { "Add something to the end of every line", ":%norm A;", "Append ; (or anything) to each line", ":%norm A" },
+    { "Add something to the start of every line", ":%norm I// ", "Insert text at the start of each line", ":%norm I" },
+    { "Run a command on every matching line", ":g/pat/norm @q", "Play a macro (q) on each match", ":g/" },
+
+    -- More lines and blocks
+    { "Comment the selected lines", "V then gc", "Select lines with V, then gc toggles comments", "V" },
+    { "Insert on every line of a block", "<C-v> jj I text <Esc>", "Select a column with <C-v>, I inserts on all lines", "<C-v>" },
+    { "Append to every line of a block", "<C-v> jj $ A text <Esc>", "Select lines, $ reaches each end, A appends", "<C-v>" },
+    { "Number a list of lines", "select numbers, g<C-a>", "Make a column of 0s into 1, 2, 3 ...", "V" },
+    { "Copy the line to the top of the file", ":t0", "Duplicate this line at line 1", ":t0<CR>" },
+    { "Move the line to the top", ":m0", "Send this line to the start of the file", ":m0<CR>" },
+    { "Move the line to the bottom", ":m$", "Send this line to the end of the file", ":m$<CR>" },
+    { "Move the selected lines", ":'<,'>m +1", "With lines selected, shift them down one", "V" },
+    { "Duplicate a paragraph", "yapP", "Copy the paragraph and paste it above itself", "yapP" },
+    { "Join the paragraph into one line", "vipJ", "Select a paragraph, then join its lines", "vipJ" },
+    { "Reverse the lines", ":g/^/m0", "Flip the order of every line in the file", ":g/^/m0<CR>" },
+    { "Remove duplicate lines", ":sort u", "Sort and keep one of each", ":sort u<CR>" },
+    { "Line the columns of a table up", ":%!column -t", "Align whitespace-separated columns", ":%!column -t<CR>" },
+    { "Uppercase the line", "gUU", "Make the whole line capitals", "gUU" },
+    { "Swap the word with the next", "dawwP", "Delete a word, move on, paste it before", "daw" },
+
+    -- Tags, files, undo
+    { "Change a tag's content", "cit", "Replace what is inside an HTML tag", "cit" },
+    { "Delete a whole tag", "dat", "Remove an HTML tag with its content", "dat" },
+    { "Select to the matching bracket", "v%", "Select from a ( [ { to its partner", "v%" },
+    { "Insert the output of a command", ":r !date", "Put a command's output below the cursor", ":r !" },
+    { "Insert another file here", ":r other.txt", "Read a file in below the cursor", ":r " },
+    { "Undo what you did ten minutes ago", ":earlier 10m", "Time-travel the buffer back; :later forwards", ":earlier 10m" },
+    { "Revert the file to what is on disk", ":e!", "Throw away every unsaved change", ":e!<CR>" },
+    { "Close every other buffer", ":%bd|e#|bd#", "Keep only the one you are in", ":%bd|e#|bd#<CR>" },
+
     -- Whole file
     { "Select everything", "ggVG", "Select the whole file", "ggVG" },
     { "Re-indent the whole file", "gg=G", "Fix all the indentation", "gg=G" },
