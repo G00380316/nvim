@@ -170,6 +170,8 @@ function M.forget()
 end
 
 function M.setup()
+    -- A Neovim started inside a terminal for one purpose (LeetCode) is not a project.
+    if vim.env.NVIM_NESTED then return end
     local group = vim.api.nvim_create_augroup("Sessions", { clear = true })
     vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "BufDelete", "WinLeave" }, {
         group = group,

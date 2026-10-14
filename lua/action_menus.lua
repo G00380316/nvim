@@ -200,11 +200,7 @@ local menus = {
         title = "LeetCode Actions",
         icon = "󰘦",
         actions = {
-            { label = "Open LeetCode", detail = "Open the LeetCode workspace", run = command("Leet") },
-            { label = "Run solution", detail = "Test the current solution", run = command("Leet Run") },
-            { label = "Submit solution", detail = "Submit the current solution", run = command("Leet Submit") },
-            { label = "List problems", detail = "Choose another problem", run = command("Leet List") },
-            { label = "Reset solution", detail = "Reset the current problem buffer", run = command("Leet Reset") },
+            { label = "Open LeetCode", detail = "In a Neovim of its own, full screen; run it again to hide or show it (Exit inside it quits)", run = command("LeetCode") },
         },
     },
     ai = {

@@ -68,6 +68,8 @@ end
 
 local function remember(path)
     if excluded_history_roots[vim.fs.normalize(path)] then return end
+    -- A Neovim started in a terminal for one purpose (LeetCode) is not a project.
+    if vim.env.NVIM_NESTED then return end
 
     -- Merge selections made by other Neovim instances before promoting this
     -- workspace to entry one.

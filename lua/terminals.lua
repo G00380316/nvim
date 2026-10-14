@@ -378,6 +378,7 @@ function M.opencode()
     M.send("opencode", { focus = false, wait = true })
     M.toggle_full(buf)
     vim.b[buf].terminal_full_program = true
+    vim.b[buf].terminal_full_since = vim.uv.hrtime()
 end
 
 -- --------------------------------------------------------- closing cleanly
@@ -435,6 +436,45 @@ function M.stop_programs(shell_pid, wait_ms)
     end
 end
 
+---Run a program in a terminal of its own, full screen, and show it again if it
+---is already running.
+---@param command string what to type
+---@param marker string a name that identifies the running program
+---@param missing? string message if the program cannot run
+local function launch_full(command, marker, missing)
+    for _, buf in ipairs(M.list()) do
+        if vim.b[buf].terminal_job_id and vim.b[buf].terminal_launched == marker then
+            if M.full_active() and vim.api.nvim_win_get_buf(full_win) == buf then
+                M.toggle_full() -- already on screen: hide it
+            else
+                M.toggle_full(buf)
+            end
+            return
+        end
+    end
+
+    if M.full_active() then M.toggle_full() end
+    vim.cmd("TerminalNew")
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.bo[buf].filetype ~= "floaterm" then return end
+    vim.b[buf].terminal_launched = marker
+    M.send(command, { focus = false, wait = true })
+    M.toggle_full(buf)
+    vim.b[buf].terminal_full_program = true
+    vim.b[buf].terminal_full_since = vim.uv.hrtime()
+end
+
+---LeetCode in a Neovim of its own. The plugin refuses to start in a Neovim that
+---already has files open ("contains listed buffers"); it is meant to be the
+---whole editor. So it gets one: a second Neovim, using this same config, in a
+---full-screen terminal. Quitting it (its own Exit) returns here, and the
+---terminal view can be hidden and brought back like any other.
+function M.leetcode()
+    -- NVIM_NESTED: that instance must not record its folder as a workspace or
+    -- overwrite a project's saved session.
+    launch_full("NVIM_NESTED=1 nvim leetcode.nvim", "leetcode")
+end
+
 -- ------------------------------------------------------- noticing programs
 
 -- Programs that take the whole screen. Typing `opencode` in any terminal -- not
@@ -445,7 +485,7 @@ local app_programs = {
     htop = true, btop = true, top = true, less = true, man = true, lazygit = true,
     ssh = false, node = false,
 }
-local full_programs = { opencode = true }
+local full_programs = { opencode = true, ["leetcode.nvim"] = true }
 
 ---The names of the programs running under a shell, from one process listing.
 ---@param shell_pid integer
@@ -523,6 +563,7 @@ function M.scan_programs()
                         -- The full-screen view and the program are one thing: from
                         -- here until it exits, leaving it quits the view too.
                         vim.b[buf].terminal_full_program = true
+                        vim.b[buf].terminal_full_seen = true
                     end
                     if wants_full and not showing and not vim.b[buf].terminal_auto_full_done then
                         -- Once per run: if you put it back, it stays back.
@@ -532,8 +573,14 @@ function M.scan_programs()
                         vim.b[buf].terminal_auto_full_done = nil
                         -- The program quit: back to the normal layout, however
                         -- the full-screen view was opened.
-                        if vim.b[buf].terminal_full_program then
+                        -- Only once it has been seen running (or has had a few
+                        -- seconds to start): a program still starting up is not
+                        -- one that has quit.
+                        local started = vim.b[buf].terminal_full_seen
+                            or (vim.uv.hrtime() - (vim.b[buf].terminal_full_since or 0)) > 6e9
+                        if vim.b[buf].terminal_full_program and started then
                             vim.b[buf].terminal_full_program = nil
+                            vim.b[buf].terminal_full_seen = nil
                             if showing then M.toggle_full() end
                         end
                     end
@@ -989,6 +1036,9 @@ function M.setup()
     })
     vim.api.nvim_create_user_command("TerminalApp", M.toggle_app, {
         desc = "Toggle app mode: every key, <Tab> included, goes to the program",
+    })
+    vim.api.nvim_create_user_command("LeetCode", M.leetcode, {
+        desc = "Open LeetCode in its own Neovim, full screen",
     })
     vim.api.nvim_create_user_command("OpenCode", M.opencode, {
         desc = "Open opencode in a new full-screen terminal",
