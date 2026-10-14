@@ -307,6 +307,18 @@ local menus = {
             { label = "Test with arguments", detail = "Asks for them, then runs runtest", run = command("RunTestWith") },
         },
     },
+    session = {
+        -- No key of its own: reached from the palette (group "Session"), the
+        -- dashboard's `r`, or :ActionMenu session.
+        title = "Session Actions",
+        icon = "󰦛",
+        actions = {
+            { label = "Restore session", detail = "Reopen the files of this project's last session, or the last one anywhere", run = command("SessionRestore") },
+            { label = "Choose a session", detail = "Pick which project's session to reopen", run = command("SessionPick") },
+            { label = "Save session now", detail = "It is kept up to date as you work; this forces it", run = command("SessionSave") },
+            { label = "Forget this project's session", detail = "Delete what was saved for it", run = command("SessionForget") },
+        },
+    },
     plugins = {
         -- No key of its own: reached from the palette (group "Plugin"), or
         -- :ActionMenu plugins. Neovim's built-in plugin manager, vim.pack.

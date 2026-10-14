@@ -159,6 +159,7 @@ require("snacks").setup({
 ╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝]],
             keys = {
                 { icon = "󰉋 ", key = "o", desc = "Open Workspace", action = "<C-o>" },
+                { icon = "󰦛 ", key = "r", desc = "Restore Session", action = function() require("sessions").restore() end },
                 {
                     icon = " ",
                     key = "f",
@@ -1819,6 +1820,7 @@ end
 
 require("notebook").setup()
 require("pack_actions").setup()
+require("sessions").setup()
 
 require("ssh_launcher").setup()
 require("rip-substitute").setup({
