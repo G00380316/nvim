@@ -14,3 +14,7 @@ local ok, err = pcall(vim.cmd, "NotebookRunCell")
 T.ok(ok, "NotebookRunCell does not error (" .. tostring(err) .. ")")
 vim.wait(30000, function() return notebook.status_text():find("all 1 cells ran", 1, true) ~= nil end, 200)
 T.ok(notebook.status_text():find("all 1 cells ran", 1, true), "the cell ran (" .. notebook.status_text() .. ")")
+
+-- No error from the callback that follows the run (it fires after the kernel is ready).
+local messages = vim.api.nvim_exec2("messages", { output = true }).output
+T.ok(not messages:find("attempt to call", 1, true), "no Lua error while running a cell")
