@@ -1,0 +1,17 @@
+-- Hiding the full-screen terminal returns to where it was opened from.
+vim.cmd("edit " .. T.file("a.txt", "one\ntwo\n"))
+vim.api.nvim_win_set_cursor(0, { 2, 1 })
+local editor = vim.api.nvim_get_current_win()
+vim.cmd("TerminalNew")
+vim.wait(800)
+vim.api.nvim_set_current_win(editor)
+local terminals = require("terminals")
+
+vim.cmd("TerminalFull")
+vim.wait(300)
+T.ok(terminals.full_active(), "full screen")
+vim.cmd("TerminalFull")
+vim.wait(300)
+T.ok(not terminals.full_active(), "hidden")
+T.eq(vim.api.nvim_get_current_win(), editor, "back in the editor window it was opened from")
+T.eq(vim.api.nvim_win_get_cursor(0), { 2, 1 }, "cursor where it was")

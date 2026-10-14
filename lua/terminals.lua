@@ -216,6 +216,7 @@ end
 -- ------------------------------------------------------ full screen, app mode
 
 local full_win
+local full_origin
 
 ---Whether a terminal is currently shown full screen.
 function M.full_active()
@@ -306,10 +307,19 @@ function M.toggle_full(bufnr)
         end
         pcall(vim.api.nvim_win_close, full_win, true)
         full_win = nil
-        local panel = terminal_window(buf)
-        if panel then
-            vim.api.nvim_set_current_win(panel)
-            if vim.b[buf].terminal_app then vim.cmd("startinsert") end
+        -- Back to where you were: the window the full-screen view was opened
+        -- from, so hiding it is not also a trip to the panel.
+        local origin = full_origin
+        full_origin = nil
+        if origin and vim.api.nvim_win_is_valid(origin) and vim.api.nvim_win_get_config(origin).relative == "" then
+            vim.api.nvim_set_current_win(origin)
+            if vim.bo[vim.api.nvim_win_get_buf(origin)].buftype ~= "terminal" then vim.cmd("stopinsert") end
+        else
+            local panel = terminal_window(buf)
+            if panel then
+                vim.api.nvim_set_current_win(panel)
+                if vim.b[buf].terminal_app then vim.cmd("startinsert") end
+            end
         end
         return
     end
@@ -324,6 +334,7 @@ function M.toggle_full(bufnr)
         return
     end
 
+    full_origin = vim.api.nvim_get_current_win()
     local width, height = full_size()
     full_win = vim.api.nvim_open_win(bufnr, true, {
         relative = "editor",
@@ -347,6 +358,18 @@ function M.opencode()
         vim.notify("opencode is not installed (brew install anomalyco/tap/opencode)", vim.log.levels.WARN, { title = "Terminal" })
         return
     end
+    -- Already running: that is the one to show, not a second.
+    for _, buf in ipairs(M.list()) do
+        if vim.b[buf].terminal_full_program and vim.b[buf].terminal_job_id then
+            if M.full_active() and vim.api.nvim_win_get_buf(full_win) == buf then
+                M.toggle_full() -- already on screen: hide it
+            else
+                M.toggle_full(buf)
+            end
+            return
+        end
+    end
+
     -- From a full-screen terminal, TerminalNew would try to split the float.
     if M.full_active() then M.toggle_full() end
     vim.cmd("TerminalNew")
@@ -355,6 +378,61 @@ function M.opencode()
     M.send("opencode", { focus = false, wait = true })
     M.toggle_full(buf)
     vim.b[buf].terminal_full_program = true
+end
+
+-- --------------------------------------------------------- closing cleanly
+
+---Every process below `shell_pid`, deepest first.
+---@param shell_pid integer
+---@return integer[]
+local function descendant_pids(shell_pid)
+    local result = vim.system({ "ps", "-A", "-o", "pid=,ppid=" }, { text = true }):wait(2000)
+    if result.code ~= 0 then return {} end
+    local children = {}
+    for line in (result.stdout or ""):gmatch("[^\n]+") do
+        local pid, ppid = line:match("^%s*(%d+)%s+(%d+)")
+        if pid then
+            ppid = tonumber(ppid)
+            children[ppid] = children[ppid] or {}
+            table.insert(children[ppid], tonumber(pid))
+        end
+    end
+    local order, stack = {}, { shell_pid }
+    while #stack > 0 do
+        local pid = table.remove(stack)
+        for _, child in ipairs(children[pid] or {}) do
+            table.insert(order, 1, child) -- later finds go first: deepest ends up first
+            stack[#stack + 1] = child
+        end
+    end
+    return order
+end
+
+local function alive(pid)
+    return vim.uv.kill(pid, 0) == 0
+end
+
+---Stop everything a terminal started. Closing a terminal hangs up its shell, but
+---a program that ignores the hang-up -- opencode does, at times -- carries on
+---with nothing to show it on. Ask the programs to quit, wait a moment, then
+---make the ones still there stop.
+---@param shell_pid? integer
+---@param wait_ms? integer how long to give them before forcing it (default 800)
+function M.stop_programs(shell_pid, wait_ms)
+    if not shell_pid then return end
+    local pids = descendant_pids(shell_pid)
+    if #pids == 0 then return end
+
+    for _, pid in ipairs(pids) do pcall(vim.uv.kill, pid, "sigterm") end
+    vim.wait(wait_ms or 800, function()
+        for _, pid in ipairs(pids) do
+            if alive(pid) then return false end
+        end
+        return true
+    end, 50)
+    for _, pid in ipairs(pids) do
+        if alive(pid) then pcall(vim.uv.kill, pid, "sigkill") end
+    end
 end
 
 -- ------------------------------------------------------- noticing programs
@@ -675,6 +753,7 @@ function M.close(bufnr, opts)
     opts = opts or {}
     local win = terminal_window(bufnr)
     local job = vim.b[bufnr].terminal_job_id
+    M.stop_programs(terminal_pid(bufnr))
     if job then pcall(vim.fn.jobstop, job) end
 
     local successor = replace_closed(bufnr, win)
@@ -891,6 +970,19 @@ function M.setup()
             end
         end,
         desc = "Keep the full-screen terminal full screen",
+    })
+    -- Quitting Neovim hangs every shell up; programs that ignore that must not
+    -- be left running with no terminal.
+    vim.api.nvim_create_autocmd("VimLeavePre", {
+        group = group,
+        callback = function()
+            for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].filetype == "floaterm" then
+                    pcall(M.stop_programs, terminal_pid(buf), 600)
+                end
+            end
+        end,
+        desc = "Stop what the terminals started when Neovim quits",
     })
     vim.api.nvim_create_user_command("TerminalFull", function() M.toggle_full() end, {
         desc = "Show the terminal full screen, or back in its panel",
