@@ -261,6 +261,91 @@ function M.save_outputs(buf)
     if not ok then notify("Could not save outputs: " .. tostring(err), vim.log.levels.WARN) end
 end
 
+---The text of one cell's saved outputs, as it would print: what it wrote, its
+---result and any error, without colour codes.
+---@param output table one entry of a cell's `outputs`
+---@return string?
+local function output_text(output)
+    local function joined(value)
+        if type(value) == "table" then return table.concat(value) end
+        return value and tostring(value) or nil
+    end
+    local text
+    if output.output_type == "stream" then
+        text = joined(output.text)
+    elseif output.output_type == "error" then
+        local lines = { ("%s: %s"):format(output.ename or "Error", output.evalue or "") }
+        for _, line in ipairs(output.traceback or {}) do lines[#lines + 1] = line end
+        text = table.concat(lines, "\n")
+    elseif output.data then
+        text = joined(output.data["text/plain"])
+    end
+    if not text then return nil end
+    return (text:gsub("\27%[[%d;]*[A-Za-z]", ""))
+end
+
+---Copy the output of the cell under the cursor to the clipboard.
+---
+---The text comes from the notebook file, not from the screen: what is drawn
+---under a cell is wrapped to the window and clipped, and a copy of that would
+---carry the line breaks. So the notebook is written first (which also saves the
+---outputs into it), and the cell's outputs are read back whole.
+function M.copy_output()
+    local buf = vim.api.nvim_get_current_buf()
+    local file = vim.api.nvim_buf_get_name(buf)
+    if not file:match("%.ipynb$") then
+        notify("This is not a notebook", vim.log.levels.WARN)
+        return
+    end
+    local cells = M.cells(buf)
+    local line = vim.api.nvim_win_get_cursor(0)[1]
+    local index
+    for i, cell in ipairs(cells) do
+        if line >= cell.first - 1 and line <= cell.last + 1 then index = i end
+    end
+    if not index then
+        notify("The cursor is not in a code cell", vim.log.levels.WARN)
+        return
+    end
+
+    if vim.bo[buf].modified then vim.cmd("silent write") end
+    M.save_outputs(buf)
+
+    -- The export runs on its own; wait for the file to hold this cell's output.
+    local function read_outputs()
+        local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(file), "\n"))
+        if not (ok and type(data) == "table" and data.cells) then return nil end
+        local n = 0
+        for _, cell in ipairs(data.cells) do
+            if cell.cell_type == "code" then
+                n = n + 1
+                if n == index then return cell.outputs or {} end
+            end
+        end
+    end
+
+    local outputs
+    vim.wait(4000, function()
+        outputs = read_outputs()
+        return outputs ~= nil and #outputs > 0
+    end, 150)
+
+    if not outputs or #outputs == 0 then
+        notify("This cell has no output to copy: run it first", vim.log.levels.WARN)
+        return
+    end
+    local parts = {}
+    for _, output in ipairs(outputs) do
+        local text = output_text(output)
+        if text then parts[#parts + 1] = text end
+    end
+    local text = table.concat(parts, parts[1] and parts[1]:sub(-1) == "\n" and "" or "\n")
+    vim.fn.setreg("+", text)
+    vim.fn.setreg('"', text)
+    local count = select(2, text:gsub("\n", "\n")) + (text:sub(-1) == "\n" and 0 or 1)
+    notify(("Copied the output (%d line%s)"):format(count, count == 1 and "" or "s"))
+end
+
 ---Whether the notebook file already holds any cell output.
 local function has_saved_outputs(file)
     local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(file), "\n"))
@@ -610,6 +695,7 @@ function M.setup()
             local n = M.tidy_tables()
             notify(n > 0 and ("Tidied %d table lines"):format(n) or "Tables are already tidy")
         end, "Remove the padding from Markdown tables so they fit and render" },
+        { "NotebookCopyOutput", M.copy_output, "Copy the output of the cell under the cursor to the clipboard" },
         { "NotebookView", M.view_in_browser, "Open this notebook as a finished page in the browser" },
         { "NotebookOutputMode", M.toggle_output_mode, "Switch results between a window under the cell and inline text" },
         { "NotebookRunAbove", M.run_above, "Run every cell up to and including this one" },
