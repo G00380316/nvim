@@ -5,6 +5,7 @@
 local M = {}
 
 local initialized = {}
+local watch -- defined below; run_cell and friends need it first
 
 ---Code cells in a buffer: the lines between the fences, as {first, last}
 ---(1-based, inclusive), in order.
@@ -56,9 +57,69 @@ local function with_kernel(action)
     if not ok then notify("Could not start a kernel: " .. tostring(err), vim.log.levels.ERROR) end
 end
 
+-- What each cell said when it was run, so that a cell edited afterwards can be
+-- told from one that is still what produced its output. Keyed by an extmark that
+-- follows the cell as lines are added or removed above it.
+local runs_ns = vim.api.nvim_create_namespace("notebook_runs")
+local runs = {} ---@type table<integer, table<integer, string>> buf -> extmark id -> code
+
+local function cell_code(buf, first, last)
+    return table.concat(vim.api.nvim_buf_get_lines(buf, first - 1, last, false), "\n")
+end
+
 local function evaluate(cell)
     local ok, err = pcall(vim.fn.MoltenEvaluateRange, cell.first, cell.last)
-    if not ok then notify(tostring(err), vim.log.levels.ERROR) end
+    if not ok then
+        notify(tostring(err), vim.log.levels.ERROR)
+        return
+    end
+    local buf = vim.api.nvim_get_current_buf()
+    runs[buf] = runs[buf] or {}
+    -- One record per cell: running it again replaces the earlier one.
+    for id in pairs(runs[buf]) do
+        local pos = vim.api.nvim_buf_get_extmark_by_id(buf, runs_ns, id, {})
+        if pos[1] == cell.first - 1 then
+            vim.api.nvim_buf_del_extmark(buf, runs_ns, id)
+            runs[buf][id] = nil
+        end
+    end
+    local id = vim.api.nvim_buf_set_extmark(buf, runs_ns, cell.first - 1, 0, {})
+    runs[buf][id] = cell_code(buf, cell.first, cell.last)
+end
+
+---Drop the output of any cell whose code was edited after it ran. Molten matches
+---outputs to the notebook's cells by their code and gives up on the whole export
+---("No cell matching cell at line N ... Bailing") if one no longer matches; an
+---output that belongs to code that is gone is better left out than blocking all.
+---@return integer[] the lines that were dropped
+local function drop_stale_outputs(buf)
+    local dropped = {}
+    local win = vim.fn.bufwinid(buf)
+    if win == -1 or not runs[buf] then return dropped end
+
+    local cells = M.cells(buf)
+    for id, code in pairs(runs[buf]) do
+        local pos = vim.api.nvim_buf_get_extmark_by_id(buf, runs_ns, id, {})
+        local row = pos[1]
+        local current
+        for _, cell in ipairs(cells) do
+            if cell.first - 1 == row then current = cell_code(buf, cell.first, cell.last) end
+        end
+        if current ~= code then
+            -- Molten deletes the cell under the cursor.
+            vim.api.nvim_win_call(win, function()
+                local saved = vim.api.nvim_win_get_cursor(0)
+                pcall(vim.api.nvim_win_set_cursor, 0, { row + 1, 0 })
+                pcall(vim.cmd, "MoltenDelete")
+                pcall(vim.api.nvim_win_set_cursor, 0, saved)
+            end)
+            pcall(vim.api.nvim_buf_del_extmark, buf, runs_ns, id)
+            runs[buf][id] = nil
+            dropped[#dropped + 1] = row + 1
+        end
+    end
+    table.sort(dropped)
+    return dropped
 end
 
 function M.run_cell()
@@ -106,7 +167,7 @@ local watching = {}
 ---`announce`, say so once at the end.
 ---@param buf integer
 ---@param announce? boolean
-local function watch(buf, announce)
+watch = function(buf, announce)
     if watching[buf] then
         watching[buf].announce = watching[buf].announce or announce
         return
@@ -184,6 +245,16 @@ function M.save_outputs(buf)
         return
     end
     if not initialized[buf] then return end
+
+    local dropped = drop_stale_outputs(buf)
+    if #dropped > 0 then
+        notify(
+            ("Not saved: the output at line%s %s, because the code was edited after it ran. Run it again to keep it."):format(
+                #dropped == 1 and "" or "s", table.concat(dropped, ", ")),
+            vim.log.levels.WARN
+        )
+    end
+
     local ok, err = pcall(vim.api.nvim_buf_call, buf, function()
         vim.cmd("MoltenExportOutput! " .. vim.fn.fnameescape(file))
     end)
