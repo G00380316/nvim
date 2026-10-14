@@ -394,6 +394,79 @@ function M.tidy_tables(buf)
     return changed
 end
 
+-- ------------------------------------------------------------------- folds
+
+local fold_cache = {}
+
+---Fold level for every line: the jupytext header, each `<!-- #region -->` block
+---and each code cell are one fold apiece, so `za` folds the block the cursor is
+---in and `zM` / `zR` fold or open the lot. Computed once per change.
+local function fold_levels(buf)
+    local tick = vim.api.nvim_buf_get_changedtick(buf)
+    local cached = fold_cache[buf]
+    if cached and cached.tick == tick then return cached.levels end
+
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    local levels = {}
+    local i = 1
+
+    -- The YAML header: from the opening --- to the closing one.
+    if lines[1] == "---" then
+        for j = 2, math.min(#lines, 60) do
+            if lines[j] == "---" then
+                levels[1] = ">1"
+                for k = 2, j do levels[k] = "1" end
+                i = j + 1
+                break
+            end
+        end
+    end
+
+    local in_region, in_fence = false, false
+    while i <= #lines do
+        local line = lines[i]
+        if not in_fence and line:match("^<!%-%- #region") then
+            in_region = true
+            levels[i] = ">1"
+        elseif not in_fence and line:match("^<!%-%- #endregion") then
+            levels[i] = in_region and "1" or "0"
+            in_region = false
+        elseif not in_fence and line:match("^```%s*{?%s*[%w_+-]+") then
+            in_fence = true
+            levels[i] = in_region and ">2" or ">1"
+        elseif in_fence and line:match("^```%s*$") then
+            levels[i] = in_region and "2" or "1"
+            in_fence = false
+        else
+            levels[i] = in_fence and (in_region and "2" or "1") or (in_region and "1" or "0")
+        end
+        i = i + 1
+    end
+
+    fold_cache[buf] = { tick = tick, levels = levels }
+    return levels
+end
+
+---`foldexpr` for notebook windows.
+function M.foldexpr(lnum)
+    local buf = vim.api.nvim_get_current_buf()
+    return fold_levels(buf)[lnum] or "0"
+end
+
+---Switch a notebook window to those folds, with the header shut.
+local function setup_folds(win, buf)
+    vim.wo[win].foldmethod = "expr"
+    vim.wo[win].foldexpr = "v:lua.require'notebook'.foldexpr(v:lnum)"
+    vim.wo[win].foldlevel = 99
+    vim.wo[win].foldenable = true
+    vim.wo[win].foldtext = ""
+    vim.api.nvim_win_call(win, function()
+        if fold_levels(buf)[1] == ">1" and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == "---" then
+            vim.cmd("silent! 1foldclose")
+        end
+    end)
+end
+
 local marker_ns = vim.api.nvim_create_namespace("notebook_markers")
 
 ---Hide jupytext's `<!-- #region ... -->` / `<!-- #endregion -->` lines. They are
@@ -456,8 +529,8 @@ function M.setup()
         desc = "Hide jupytext's region marker lines",
     })
 
-    -- The jupytext header (jupyter: / jupytext: / kernelspec: ...) is a dozen
-    -- lines nobody reads; fold it shut so the first cell is at the top.
+    -- Folds: the jupytext header (jupyter: / jupytext: / kernelspec: ...) shut,
+    -- and every region and code cell foldable with the usual fold keys.
     vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
         group = vim.api.nvim_create_augroup("NotebookHeader", { clear = true }),
         pattern = { "*.ipynb" },
@@ -465,22 +538,10 @@ function M.setup()
             vim.defer_fn(function()
                 if not vim.api.nvim_buf_is_valid(args.buf) then return end
                 local win = vim.fn.bufwinid(args.buf)
-                if win == -1 then return end
-                local lines = vim.api.nvim_buf_get_lines(args.buf, 0, 40, false)
-                if lines[1] ~= "---" then return end
-                for i = 2, #lines do
-                    if lines[i] == "---" then
-                        vim.api.nvim_win_call(win, function()
-                            vim.wo.foldmethod = "manual"
-                            vim.cmd("silent! 1," .. i .. "fold")
-                            vim.cmd("silent! 1foldclose")
-                        end)
-                        return
-                    end
-                end
+                if win ~= -1 then setup_folds(win, args.buf) end
             end, 300)
         end,
-        desc = "Fold the jupytext header in notebooks",
+        desc = "Fold notebooks by header, region and cell",
     })
 
     -- Opening one shows what it printed last time.
