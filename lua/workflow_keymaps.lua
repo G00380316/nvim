@@ -49,6 +49,7 @@ local entries = {
     { "Terminal", "<leader>t", "n", "Open terminal action selector (new terminal here lives there)" },
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
+    { "Git", "<leader>g", "n", "Open LazyGit straight away" },
     { "Git", "zg", "n", "Open Git action selector (hunks, blame, LazyGit, Diffview)" },
     { "Git", "g]h", "n", "Jump to the next changed hunk" },
     { "Git", "g[h", "n", "Jump to the previous changed hunk" },

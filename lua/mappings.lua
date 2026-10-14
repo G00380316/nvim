@@ -274,6 +274,11 @@ local function save_current_file()
             pcall(vim.lsp.buf.format, { async = false })
         end
 
+        -- A notebook is written through its jupytext copy; a loaded copy is a
+        -- second buffer on the same file, and the write refuses (E139).
+        local name = vim.api.nvim_buf_get_name(bufnr)
+        if name:match("%.ipynb$") then require("notebook").release_copy(name) end
+
         local ok, err = pcall(vim.cmd, "write")
         if not ok then
             vim.notify(err, vim.log.levels.ERROR)
@@ -1512,6 +1517,13 @@ vim.api.nvim_create_autocmd({ "FileType", "BufEnter" }, {
 })
 
 -- Deliberately change the workspace instead of creating a temporary cwd.
+-- LazyGit straight away: the one git thing worth a key of its own. The rest of
+-- git (hunks, blame, history) is the menu on `zg`.
+vim.keymap.set("n", "<leader>g", "<cmd>GitPanel<CR>", {
+    silent = true,
+    desc = "Open LazyGit",
+})
+
 -- <leader>w chooses any folder; its capital takes the one you are already in.
 -- (Not under `zc`: that is Vim's close-fold key, and a mapping that starts with
 -- it made every plain `zc` wait out the timeout for a second key.)

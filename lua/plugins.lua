@@ -242,6 +242,14 @@ require("snacks").setup({
     picker = {
         ui_select = true,
 
+        -- A notebook's jupytext copy never shows up in a file list.
+        transform = function(item)
+            if type(item.file) == "string" and item.file:match("%.md$") then
+                local ok, path = pcall(Snacks.picker.util.path, item)
+                if ok and path and require("notebook").notebook_for_copy(path) then return false end
+            end
+        end,
+
         layout = {
             cycle = true,
             style = "modern",
@@ -534,7 +542,16 @@ oil.setup({
         -- macOS litters every folder it opens with these. They are hidden here
         -- even though dotfiles are shown, and not brought back by the toggle for
         -- hidden files either: there is never a reason to open one.
-        is_always_hidden = function(name) return name == ".DS_Store" end,
+        is_always_hidden = function(name, bufnr)
+            if name == ".DS_Store" then return true end
+            -- A notebook's jupytext copy (a.md beside an open a.ipynb) is not a
+            -- file to be seen or opened; it is the notebook.
+            if name:match("%.md$") then
+                local ok, dir = pcall(function() return require("oil").get_current_dir(bufnr) end)
+                if ok and dir and require("notebook").notebook_for_copy(dir .. name) then return true end
+            end
+            return false
+        end,
         natural_order = true,
         sort = {
             { "type", "asc" },

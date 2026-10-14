@@ -394,6 +394,30 @@ function M.tidy_tables(buf)
     return changed
 end
 
+-- ---------------------------------------------------- the jupytext copy
+
+---The notebook a Markdown file is the working copy of: while `a.ipynb` is open,
+---jupytext keeps `a.md` beside it and edits *that*. Two buffers on the one text
+---is how a save ends in "E139: File is loaded in another buffer", so the copy is
+---kept out of sight: never listed, never opened, only ever the notebook.
+---@param path string
+---@return string? ipynb path, integer? its buffer
+function M.notebook_for_copy(path)
+    if type(path) ~= "string" or not path:match("%.md$") then return nil end
+    local ipynb = path:gsub("%.md$", ".ipynb")
+    local buf = vim.fn.bufnr(ipynb)
+    if buf > 0 and vim.api.nvim_buf_is_loaded(buf) then return ipynb, buf end
+end
+
+---Wipe a loaded copy, so that a write can put the notebook's text there.
+---@param ipynb string
+function M.release_copy(ipynb)
+    local copy = vim.fn.bufnr((ipynb:gsub("%.ipynb$", ".md")))
+    if copy > 0 and vim.api.nvim_buf_is_valid(copy) and vim.bo[copy].buftype == "" then
+        pcall(vim.api.nvim_buf_delete, copy, { force = true })
+    end
+end
+
 -- ------------------------------------------------------------------- folds
 
 local fold_cache = {}
@@ -527,6 +551,25 @@ function M.setup()
             vim.defer_fn(function() hide_markers(args.buf) end, 150)
         end,
         desc = "Hide jupytext's region marker lines",
+    })
+
+    -- Opening the copy by any route -- the explorer, a picker, recent files, a
+    -- link -- lands in the notebook itself instead.
+    vim.api.nvim_create_autocmd({ "BufReadPost", "BufWinEnter" }, {
+        group = vim.api.nvim_create_augroup("NotebookCopy", { clear = true }),
+        pattern = "*.md",
+        callback = function(args)
+            local ipynb, notebook = M.notebook_for_copy(vim.api.nvim_buf_get_name(args.buf))
+            if not ipynb or args.buf == notebook then return end
+            vim.schedule(function()
+                if not vim.api.nvim_buf_is_valid(args.buf) then return end
+                for _, win in ipairs(vim.fn.win_findbuf(args.buf)) do
+                    pcall(vim.api.nvim_win_set_buf, win, notebook)
+                end
+                pcall(vim.api.nvim_buf_delete, args.buf, { force = true })
+            end)
+        end,
+        desc = "Open the notebook instead of its jupytext copy",
     })
 
     -- Folds: the jupytext header (jupyter: / jupytext: / kernelspec: ...) shut,
