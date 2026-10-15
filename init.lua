@@ -201,8 +201,10 @@ vim.o.wrapmargin = 0
 vim.o.textwidth = 0
 
 vim.opt.formatoptions:remove({ "t", "c", "r", "o" })
-vim.opt.iskeyword:append("-")
-vim.opt.iskeyword:append("_")
+-- Word characters: see word_motions.lua. _ and - are not part of a word, so w b e
+-- and the word text objects stop at them (snake_case and kebab-case are several
+-- words); WordJoin in the palette brings the old behaviour back.
+require("word_motions").setup()
 
 vim.cmd("set completeopt+=noselect")
 
