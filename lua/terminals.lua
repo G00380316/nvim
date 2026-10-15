@@ -633,6 +633,15 @@ function M.send(command, opts)
         -- was just created has also been entered; leaving it cancels the insert
         -- that creating one asks for.
         if not terminal_window(bufnr) then M.focus(bufnr) end
+        -- Visible means readable: a panel that was dragged down to a sliver, or
+        -- one the full-screen view left behind, shows nothing of the output.
+        local panel = terminal_window(bufnr)
+        if panel and not (M.full_active() and vim.api.nvim_win_get_buf(full_win) == bufnr) then
+            local want = math.min(vim.g.floaterm_height or 12, require("responsive").terminal_max_height())
+            if vim.api.nvim_win_get_height(panel) < math.min(want, 8) then
+                pcall(vim.api.nvim_win_set_height, panel, want)
+            end
+        end
         if vim.api.nvim_win_is_valid(origin) then pcall(vim.api.nvim_set_current_win, origin) end
         if vim.fn.mode():sub(1, 1) == "t" then vim.cmd("stopinsert") end
     else
@@ -657,12 +666,57 @@ function M.send(command, opts)
     -- command) would otherwise be glued onto the front of this one.
     vim.fn.chansend(job, "\21" .. command .. "\n")
 
-    -- A terminal follows new output only while its cursor is on the last line.
-    -- Scrolled up to read something, the command's output would arrive out of
-    -- sight; jump to the end so it is visible straight away.
-    for _, win in ipairs(vim.fn.win_findbuf(bufnr)) do
-        pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(bufnr), 0 })
+    -- The view is arranged so this run's prompt is the first line shown, with its
+    -- output under it; everything before stays above, a scroll away. (Not a
+    -- clear.) The line is found by the command it holds -- its number cannot be
+    -- noted beforehand, because a terminal's lines move as its screen scrolls.
+    -- The cursor goes to the end when the output runs past the window, so the
+    -- terminal keeps following it. Output arrives over a moment, so this is
+    -- applied again a few times as it does.
+    local needle = command:sub(1, 24)
+    local finished = false
+    local function snap()
+        if finished or not vim.api.nvim_buf_is_valid(bufnr) then return end
+        local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+        local last = #lines
+        local bottom, run_line = last, nil
+        for lnum = last, 1, -1 do
+            if lines[lnum]:match("%S") then bottom = lnum break end
+        end
+        for lnum = last, 1, -1 do
+            if lines[lnum]:find(needle, 1, true) then run_line = lnum break end
+        end
+        if not run_line then return end
+        -- A prompt that spends a line on the folder ("~/proj  main*") starts above
+        -- the command; keep that line with it.
+        local top = run_line
+        local above = lines[run_line - 1]
+        if above and above:match("^[~/]") then top = run_line - 1 end
+
+        for _, win in ipairs(vim.fn.win_findbuf(bufnr)) do
+            if vim.api.nvim_win_is_valid(win) then
+                pcall(vim.api.nvim_win_call, win, function()
+                    -- scrolloff keeps lines around the cursor and would drag the
+                    -- view off the prompt; a terminal has no use for it.
+                    vim.wo[win].scrolloff = 0
+                    local height = vim.api.nvim_win_get_height(win)
+                    local fits = (bottom - top) < height - 1
+                    -- With the cursor on the very last line a terminal pins its view
+                    -- to the end; one line short of it, the view stays where it is
+                    -- put. Once the output outgrows the window, following it is right,
+                    -- and this stops arranging the view.
+                    if fits then
+                        vim.fn.winrestview({ topline = top, lnum = math.max(top, last - 1), col = 0 })
+                    else
+                        finished = true
+                        vim.fn.winrestview({ topline = top, lnum = last, col = 0 })
+                    end
+                end)
+            end
+        end
     end
+    snap()
+    for _, delay in ipairs({ 80, 300, 900, 1800, 3500, 7000 }) do vim.defer_fn(snap, delay) end
     return true
 end
 
