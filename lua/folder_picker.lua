@@ -67,10 +67,12 @@ function M.pick(opts)
     })
 end
 
----Search the project's folders and open the one you pick in the explorer: the
----same explorer window, not a new one. From anywhere; it brings the explorer up
----if it is not showing.
----@param root? string where to search (default: the workspace)
+---Search folders and open the one you pick in the explorer: the same explorer
+---window, not a new one. From anywhere; it brings the explorer up if it is not
+---showing. The search covers your whole home folder -- other projects, nested
+---folders, iCloud Drive -- not only the project you are in; the workspace is
+---not changed by going there.
+---@param root? string where to search (default: home)
 function M.jump_oil(root)
     local origin = vim.api.nvim_get_current_win()
     if vim.bo.filetype ~= "oil" then
@@ -84,7 +86,7 @@ function M.jump_oil(root)
     end
 
     M.pick({
-        root = root or require("workspace").get(),
+        root = root or vim.fn.expand("~"),
         title = "Jump Explorer to Folder",
         confirm = function(path)
             if vim.api.nvim_win_is_valid(win) then
