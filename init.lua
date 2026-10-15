@@ -557,3 +557,28 @@ require("bufferline").setup({
         end,
     },
 })
+
+-- ============================================================
+-- MODE SAFETY
+-- A directory listing, the dashboard and the pickers are not places to type
+-- text by accident. Arriving in one while Neovim is still in insert mode (a mode
+-- change that was queued for a window that has since changed) is ended, and the
+-- statusline is told every time the mode changes so it never shows an old one.
+-- ============================================================
+
+vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+    group = vim.api.nvim_create_augroup("ModeSafety", { clear = true }),
+    callback = function(args)
+        local ft = vim.bo[args.buf].filetype
+        if (ft == "oil" or ft == "snacks_dashboard") and vim.fn.mode():sub(1, 1) == "i" then
+            vim.cmd("stopinsert")
+        end
+    end,
+    desc = "Never arrive in the explorer or dashboard in insert mode",
+})
+
+vim.api.nvim_create_autocmd("ModeChanged", {
+    group = vim.api.nvim_create_augroup("ModeStatus", { clear = true }),
+    callback = function() vim.cmd("redrawstatus") end,
+    desc = "Keep the statusline's mode current",
+})

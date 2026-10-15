@@ -592,11 +592,9 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll half-page up and center
 vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll half-page down and center" })
 vim.keymap.set("n", "J", "mzJ`z", { desc = "Join lines without moving cursor" })
 
-vim.keymap.set("n", "<BS>", "ge", {
-    noremap = true,
-    silent = true,
-    desc = "Go to previous end of word",
-})
+-- <BS> is left alone in normal mode. It used to be `ge`; a key that normal mode
+-- gives a command to, pressed while Neovim is in a state the screen does not show,
+-- types that command's letters into the buffer instead.
 
 vim.keymap.set("x", "<", "<gv", {
     noremap = true,

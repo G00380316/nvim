@@ -1072,15 +1072,14 @@ local function resize_terminal(delta)
     vim.notify("Terminal panel is hidden", vim.log.levels.INFO)
 end
 
--- Fed as a key rather than called as startinsert. With autoinsert off, floaterm
--- answers its own open event by feeding <C-\><C-n> to leave terminal mode, and
--- a startinsert from here loses to it; `i` queued behind it wins by arriving
--- after. In a terminal buffer `i` is the way in, and it is left unmapped there
--- on purpose.
+-- Into terminal mode once the window is settled, and only if it is still a
+-- terminal then. (This used to feed an `i` key: keys queue, and one that lands
+-- after focus has moved on is typed into whatever window is current by then --
+-- which is how a directory listing ended up in insert mode.)
 local function enter_terminal_insert()
     vim.schedule(function()
-        if window_filetype(vim.api.nvim_get_current_win()) == "floaterm" then
-            vim.api.nvim_feedkeys("i", "n", false)
+        if window_filetype(vim.api.nvim_get_current_win()) == "floaterm" and vim.fn.mode() ~= "t" then
+            vim.cmd("startinsert")
         end
     end)
 end

@@ -488,7 +488,16 @@ function M.set(path, opts)
         for _, oil_win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
             if vim.bo[vim.api.nvim_win_get_buf(oil_win)].filetype == "oil" then
                 vim.api.nvim_win_call(oil_win, function()
-                    require("oil").open(root)
+                    -- The explorer is a view of a folder. Text typed into it by
+                    -- accident leaves the buffer "modified", and switching it to
+                    -- another folder then fails with E37; there is nothing in it
+                    -- worth keeping, so the stray edits are dropped.
+                    local buf = vim.api.nvim_get_current_buf()
+                    if vim.bo[buf].modified then vim.bo[buf].modified = false end
+                    local ok, err = pcall(require("oil").open, root)
+                    if not ok then
+                        vim.notify("Explorer could not switch folder: " .. tostring(err), vim.log.levels.WARN)
+                    end
                 end)
             end
         end
