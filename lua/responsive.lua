@@ -68,6 +68,15 @@ end
 local drawn_width, drawn_header
 local redraw_timer
 
+---Whether the dashboard's logo is part of what is drawn *now*. It changes only
+---when the dashboard is redrawn, never mid-way: a dashboard re-renders itself on
+---every window resize, and if the number of lines changed between two of those
+---its saved cursor row pointed past the end ("Invalid cursor line").
+function M.header_drawn()
+    if drawn_header == nil then drawn_header = M.dashboard_header() end
+    return drawn_header
+end
+
 ---A dashboard keeps the width it was drawn with, so draw it again -- as a new
 ---buffer. Opening a second dashboard on the same buffer registers a second set
 ---of cleanup autocmds, and the two then fight over deleting one group when the
@@ -86,9 +95,15 @@ local function redraw_dashboards()
         if vim.bo[old].filetype == "snacks_dashboard" then
             local current = vim.api.nvim_get_current_win()
             vim.api.nvim_win_call(win, function()
-                if pcall(snacks.dashboard.open, { win = win }) then
-                    pcall(vim.api.nvim_buf_delete, old, { force = true })
-                end
+                -- The old dashboard is removed *first*, with a blank buffer holding the
+                -- window, so that no instance of it is left to re-render (and to
+                -- set a cursor row for the old layout) in the window the new one is
+                -- drawn in.
+                local blank = vim.api.nvim_create_buf(false, true)
+                vim.bo[blank].bufhidden = "wipe"
+                vim.api.nvim_win_set_buf(win, blank)
+                pcall(vim.api.nvim_buf_delete, old, { force = true })
+                pcall(snacks.dashboard.open, { win = win })
             end)
             if vim.api.nvim_win_is_valid(current) then pcall(vim.api.nvim_set_current_win, current) end
         end

@@ -14,3 +14,9 @@ T.ok(not r.dashboard_header(), "tiny: logo hidden")
 
 vim.o.lines = 20
 T.ok(r.terminal_max_height() <= 8 and r.terminal_max_height() >= 5, "short window: terminal capped at 40%")
+
+-- The logo is decided when the dashboard is drawn, not while it re-renders on resize.
+vim.o.columns = 200
+local first = r.header_drawn()
+vim.o.columns = 50
+T.eq(r.header_drawn(), first, "header_drawn does not change between redraws")

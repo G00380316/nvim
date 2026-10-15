@@ -181,7 +181,7 @@ require("snacks").setup({
             },
         },
         sections = {
-            { section = "header", padding = 1, enabled = function() return require("responsive").dashboard_header() end },
+            { section = "header", padding = 1, enabled = function() return require("responsive").header_drawn() end },
             -- Where you are, under the logo: the workspace you opened into.
             function()
                 local label = require("workspace").label()
