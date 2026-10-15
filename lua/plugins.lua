@@ -571,6 +571,13 @@ oil.setup({
     },
     keymaps = {
         ["g?"] = { "actions.show_help", mode = "n" },
+        -- Find a folder: search the project's folders and open the one you pick
+        -- right here, in this explorer. (gd is taken: reveal in Finder.)
+        ["gf"] = {
+            function() require("folder_picker").jump_oil() end,
+            mode = "n",
+            desc = "Jump to a folder (search the project's folders)",
+        },
         -- <C-x> runs the entry under the cursor with arguments, as it does in a
         -- file picker. Without this it is Vim's own: in insert mode it starts a
         -- completion sub-mode, which in a directory listing is just a trap.

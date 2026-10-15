@@ -147,6 +147,7 @@ function M.setup()
         { "PipxInstall", M.pipx_install, "pipx install a tool (asks which)" },
         { "OpenInBrowser", M.open_in_browser, "Open this HTML file in the browser, straight from disk" },
         { "ExplorerWiden", function() require("responsive").toggle_sidebar_width() end, "Switch the file explorer between normal and wide" },
+        { "FolderJump", function() require("folder_picker").jump_oil() end, "Search the project's folders and open one in the explorer" },
         { "RecentFiles", M.recent_files, "Files you opened recently, from every project" },
         { "OpenExternally", M.open_externally, "Open this file in its default app (CSV, SVG, anything)" },
         { "RevealInFinder", M.reveal, "Show this file in Finder" },

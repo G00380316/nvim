@@ -286,6 +286,7 @@ local menus = {
         title = "File Actions",
         icon = "󰈔",
         actions = {
+            { label = "Jump explorer to folder", detail = "Search the project's folders; the pick opens in the explorer (gf inside it)", run = command("FolderJump") },
             { label = "Recent files", detail = "Files you opened recently, from every project", run = command("RecentFiles") },
             { label = "Open in default app", detail = "This file, or the one under the cursor in the explorer", run = command("OpenExternally") },
             { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },

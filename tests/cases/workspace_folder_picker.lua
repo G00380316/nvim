@@ -13,7 +13,7 @@ workspace.open = function(path) opened = path end
 vim.cmd("WorkspaceChoose " .. root)
 local picker
 vim.wait(3000, function()
-    picker = Snacks.picker.get({ source = "workspace_folders" })[1]
+    picker = Snacks.picker.get({ source = "folders" })[1]
     return picker and #picker:items() >= 5
 end, 50)
 T.ok(picker, "chooser opened")
