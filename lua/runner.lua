@@ -13,9 +13,14 @@ M.runners = {
             md = true, mjs = true, mm = true, mts = true, php = true, py = true,
             rb = true, rs = true, sh = true, sql = true, swift = true,
             tex = true, ts = true, tsx = true, typ = true, zip = true, zsh = true,
+            -- archives and data files `run` unpacks or prints
+            tar = true, tgz = true, tbz2 = true, txz = true, gz = true, bz2 = true, xz = true,
+            json = true, csv = true,
         },
         names = {
             Containerfile = true,
+            ["requirements.txt"] = true,
+            ["package.json"] = true,
             Dockerfile = true,
             GNUmakefile = true,
             Makefile = true,
