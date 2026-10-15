@@ -592,9 +592,11 @@ vim.keymap.set("n", "<C-u>", "<C-u>zz", { desc = "Scroll half-page up and center
 vim.keymap.set("n", "<C-d>", "<C-d>zz", { desc = "Scroll half-page down and center" })
 vim.keymap.set("n", "J", "mzJ`z", { desc = "Join lines without moving cursor" })
 
--- <BS> is left alone in normal mode. It used to be `ge`; a key that normal mode
--- gives a command to, pressed while Neovim is in a state the screen does not show,
--- types that command's letters into the buffer instead.
+vim.keymap.set("n", "<BS>", "ge", {
+    noremap = true,
+    silent = true,
+    desc = "Go to previous end of word",
+})
 
 vim.keymap.set("x", "<", "<gv", {
     noremap = true,
@@ -1645,6 +1647,13 @@ end
 pcall(patch_flash_ffi)
 
 vim.keymap.set({ "x", "o" }, "s", function() require("flash").jump() end, { desc = "Flash" })
+
+-- Flash while typing: <C-]> in insert mode jumps to any visible spot and you stay
+-- in insert mode there. (In insert mode <C-]> only triggers an abbreviation, which
+-- nothing here uses; in a terminal the same key goes full screen.)
+vim.keymap.set("i", "<C-]>", function() require("flash").jump() end, {
+    desc = "Flash to a visible location, staying in insert mode",
+})
 
 -- Flash only ever sees the lines on screen, and gives up the moment what you
 -- have typed matches nothing there. In normal mode that is where `/` takes over:

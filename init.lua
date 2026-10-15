@@ -577,6 +577,28 @@ vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
     desc = "Never arrive in the explorer or dashboard in insert mode",
 })
 
+-- Insert mode that arrives a moment *after* the explorer was entered is the same
+-- mistake -- a mode change queued for the window you came from -- so it is ended
+-- too. Someone pressing `i` to rename a file does so well after arriving.
+local arrived_at = 0
+vim.api.nvim_create_autocmd({ "WinEnter", "BufEnter" }, {
+    group = "ModeSafety",
+    callback = function(args)
+        local ft = vim.bo[args.buf].filetype
+        if ft == "oil" or ft == "snacks_dashboard" then arrived_at = vim.uv.hrtime() end
+    end,
+})
+vim.api.nvim_create_autocmd("InsertEnter", {
+    group = "ModeSafety",
+    callback = function(args)
+        local ft = vim.bo[args.buf].filetype
+        if (ft == "oil" or ft == "snacks_dashboard") and (vim.uv.hrtime() - arrived_at) < 250e6 then
+            vim.schedule(function() vim.cmd("stopinsert") end)
+        end
+    end,
+    desc = "Ignore insert mode that arrives with the explorer",
+})
+
 vim.api.nvim_create_autocmd("ModeChanged", {
     group = vim.api.nvim_create_augroup("ModeStatus", { clear = true }),
     callback = function() vim.cmd("redrawstatus") end,

@@ -869,7 +869,13 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
 })
 
 vim.keymap.set({ "n", "i", "v" }, "<C-e>", function()
-    if vim.fn.mode():sub(1, 1) ~= "n" then
+    local mode = vim.fn.mode():sub(1, 1)
+    if mode == "i" then
+        -- Insert mode is left with stopinsert, which takes effect when this
+        -- mapping returns: a fed <Esc> does not reliably end it from inside a
+        -- mapping, and the explorer was then entered still inserting.
+        vim.cmd("stopinsert")
+    elseif mode ~= "n" then
         vim.api.nvim_feedkeys(vim.keycode("<Esc>"), "nx", false)
     end
     focus_tree()

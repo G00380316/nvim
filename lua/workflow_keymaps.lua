@@ -33,6 +33,7 @@ local entries = {
     { "Panes", "z=", "n", "Equalize editor panes" },
 
     { "Code", "s", "n/x/o", "Flash to a visible location" },
+    { "Code", "<C-]>", "i", "Flash to a visible location while typing, staying in insert mode" },
     { "Code", "gd", "n", "Go to definition" },
     { "Code", "gr", "n", "Find references" },
     { "Code", "gi", "n", "Go to implementation" },

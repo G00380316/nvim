@@ -1,4 +1,4 @@
--- The explorer is never entered in insert mode, stray text does not block it, and <BS> is plain.
+-- The explorer is never entered in insert mode, and stray text does not block it.
 vim.cmd("edit " .. T.file("proj/a.txt", "x\n"))
 vim.cmd("FocusTree")
 vim.wait(500)
@@ -20,9 +20,13 @@ local other = T.file("other/b.txt", "y\n")
 local ok = pcall(function() require("workspace").set(vim.fn.fnamemodify(other, ":h"), { exact = true }) end)
 T.ok(ok, "switching the workspace does not fail on a modified explorer")
 
--- <BS> is no longer a command in normal mode.
+-- <BS> keeps its normal-mode mapping.
 local global_bs
 for _, m in ipairs(vim.api.nvim_get_keymap("n")) do
     if m.lhs == "<BS>" then global_bs = m end
 end
-T.eq(global_bs, nil, "<BS> has no global mapping in normal mode")
+T.ok(global_bs and global_bs.rhs == "ge", "<BS> is still ge in normal mode")
+
+-- Flash is available while typing.
+local flash_map = vim.fn.maparg("<C-]>", "i", false, true)
+T.ok(flash_map.desc and flash_map.desc:find("Flash", 1, true), "<C-]> flashes in insert mode")
