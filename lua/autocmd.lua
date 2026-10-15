@@ -455,3 +455,45 @@ vim.api.nvim_create_autocmd("FileChangedShellPost", {
     end,
     desc = "Say which file was reloaded",
 })
+
+
+-- ============================================================
+-- Inside archives
+-- A zip opens as a listing; opening an entry shows the file in a buffer named
+-- zip:///path/x.zip/entry. Neither has a way back up, so `-` is it, as in the
+-- explorer: from an entry to the listing, from the listing to where you were.
+-- ============================================================
+
+local archive_group = vim.api.nvim_create_augroup("ArchiveUp", { clear = true })
+
+---The archive an entry buffer belongs to.
+local function archive_of(name)
+    return name:match("^zip://(.+%.%w+)/.+$")
+end
+
+vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+    group = archive_group,
+    pattern = "zip://*",
+    callback = function(args)
+        vim.keymap.set("n", "-", function()
+            local archive = archive_of(vim.api.nvim_buf_get_name(args.buf))
+            if archive then vim.cmd("edit " .. vim.fn.fnameescape(archive)) end
+        end, { buffer = args.buf, desc = "Back up to the archive's listing" })
+    end,
+})
+
+vim.api.nvim_create_autocmd("FileType", {
+    group = archive_group,
+    pattern = "zip",
+    callback = function(args)
+        vim.keymap.set("n", "-", function()
+            -- Where you were before the archive, if that was a file; else the explorer.
+            local alternate = vim.fn.bufnr("#")
+            if alternate > 0 and alternate ~= args.buf and vim.bo[alternate].buflisted then
+                vim.cmd("buffer #")
+            else
+                pcall(vim.cmd, "FocusTree")
+            end
+        end, { buffer = args.buf, desc = "Back out of the archive" })
+    end,
+})

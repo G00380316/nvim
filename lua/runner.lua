@@ -12,7 +12,7 @@ M.runners = {
             js = true, jsx = true, lua = true, m = true, markdown = true,
             md = true, mjs = true, mm = true, mts = true, php = true, py = true,
             rb = true, rs = true, sh = true, sql = true, swift = true,
-            tex = true, ts = true, tsx = true, typ = true, zsh = true,
+            tex = true, ts = true, tsx = true, typ = true, zip = true, zsh = true,
         },
         names = {
             Containerfile = true,
