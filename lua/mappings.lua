@@ -1395,8 +1395,25 @@ end, {
 -- Save / Source / Quit / Set Working Dir
 -- ============================================================
 
-vim.keymap.set("n", "<leader>o", ":update<CR>:source<CR>", {
-    desc = "Update and source current file",
+-- Sourcing runs a file as Vim script or Lua. Anything else -- a text file, a
+-- terminal transcript -- is not one, and sourcing it prints an "E492: Not an
+-- editor command" for every line.
+local function source_current_file()
+    local filetype = vim.bo.filetype
+    if filetype ~= "lua" and filetype ~= "vim" then
+        vim.notify(
+            "Only Lua and Vim script files can be sourced (<leader>e runs other files)",
+            vim.log.levels.WARN,
+            { title = "Source" }
+        )
+        return
+    end
+    if vim.bo.modified then vim.cmd("update") end
+    vim.cmd("source")
+end
+
+vim.keymap.set("n", "<leader>o", source_current_file, {
+    desc = "Update and source the current Lua or Vim file",
 })
 
 vim.keymap.set({ "n", "i", "v" }, "<C-s>", save_current_file, {

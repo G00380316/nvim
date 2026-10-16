@@ -80,7 +80,7 @@ local entries = {
     { "Daily", "S", "x", "Surround the selection: S\" quotes it, S( or Sb brackets it, S* makes it bold" },
     { "Daily", "<C-s>", "n/i/x", "Save and format" },
     { "Daily", "<leader>.", "n", "Play recorded strokes: then a number 1-9 (a count first repeats it). Record from the palette: Record strokes" },
-    { "Daily", "<leader>o", "n", "Save this file and source it" },
+    { "Daily", "<leader>o", "n", "Save and source this file (Lua or Vim script files only)" },
     { "Daily", "<leader>h", "n", "Search Neovim's help" },
     { "Daily", "<leader><leader>", "n", "Command palette: search every action by name" },
     { "Daily", "<C-\\>", "any", "Open this command guide from any mode" },
