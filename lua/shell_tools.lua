@@ -142,13 +142,13 @@ end
 
 function M.setup()
     local cmds = {
-        { "PythonEnv", M.python_env, "Create and activate a .venv in the project (zsh: setup python)" },
+        { "PythonEnv", M.python_env, "Create and activate a .venv in the workspace (zsh: setup python)" },
         { "PipInstall", M.pip_install, "pip install a package (asks which)" },
         { "PipxInstall", M.pipx_install, "pipx install a tool (asks which)" },
         { "OpenInBrowser", M.open_in_browser, "Open this HTML file in the browser, straight from disk" },
         { "ExplorerWiden", function() require("responsive").toggle_sidebar_width() end, "Switch the file explorer between normal and wide" },
         { "FolderJump", function() require("folder_picker").jump_oil() end, "Search every folder under home and open one in the explorer" },
-        { "RecentFiles", M.recent_files, "Files you opened recently, from every project" },
+        { "RecentFiles", M.recent_files, "Files you opened recently, from every workspace" },
         { "OpenExternally", M.open_externally, "Open this file in its default app (CSV, SVG, anything)" },
         { "RevealInFinder", M.reveal, "Show this file in Finder" },
         { "Extract", M.extract, "Extract the archive under the cursor or in this buffer" },

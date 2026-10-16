@@ -80,14 +80,14 @@ local menus = {
         icon = "",
         actions = {
             { label = "Open or focus terminal", detail = "Return to the editor when already there", run = command("FocusTerminal") },
-            { label = "New terminal", detail = "Another shell in the project root", run = command("TerminalNew") },
+            { label = "New terminal", detail = "Another shell in the workspace root", run = command("TerminalNew") },
             { label = "New terminal here", detail = "A shell in this file's own directory", run = command("TerminalHere"), at_origin = true },
             { label = "Split terminal panel", detail = "Add a side-by-side shell in the bottom row", run = command("TerminalSplit") },
             { label = "Zoom terminal split", detail = "Toggle: this terminal fills the panel, the other waits behind it (zn / zp swap; zT)", run = command("TerminalZoom") },
             { label = "Full-screen terminal", detail = "Toggle: this terminal over the whole window and back (<C-]> inside it)", run = command("TerminalFull") },
             { label = "App mode", detail = "Toggle: every key goes to the program; <C-Up>/<C-Down> page it (no mouse here)", run = command("TerminalApp") },
             { label = "Open opencode", detail = "Show the running one full screen (hide it again with the same action or <C-]>), or start one", run = command("OpenCode") },
-            { label = "Choose terminal", detail = "Search the current project's live shells", run = command("TerminalList") },
+            { label = "Choose terminal", detail = "Search the current workspace's live shells", run = command("TerminalList") },
             { label = "Edit terminal output", detail = "Copy output into an editable, saveable buffer", run = command("TerminalEdit"), at_origin = true },
         },
     },
@@ -102,7 +102,7 @@ local menus = {
         title = "Git Actions",
         icon = "",
         actions = {
-            { label = "Open LazyGit", detail = "Use this project's persistent LazyGit buffer", run = command("GitPanel") },
+            { label = "Open LazyGit", detail = "Use this workspace's persistent LazyGit buffer", run = command("GitPanel") },
             { label = "Review changed files", detail = "Open the repository Diffview", run = command("DiffviewOpen") },
             { label = "Browse repository history", detail = "Open Diffview file history", run = command("DiffviewFileHistory") },
             { label = "Close Git tools", detail = "Close LazyGit and Diffview", run = command("GitCloseAll") },
@@ -287,7 +287,7 @@ local menus = {
         icon = "󰈔",
         actions = {
             { label = "Jump explorer to folder", detail = "Search every folder under home, nested ones too; the pick opens in the explorer (gf inside it)", run = command("FolderJump") },
-            { label = "Recent files", detail = "Files you opened recently, from every project", run = command("RecentFiles") },
+            { label = "Recent files", detail = "Files you opened recently, from every workspace", run = command("RecentFiles") },
             { label = "Open in default app", detail = "This file, or the one under the cursor in the explorer", run = command("OpenExternally") },
             { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
             { label = "Reveal in Finder", detail = "Show this file in Finder", run = command("RevealInFinder") },
@@ -313,10 +313,10 @@ local menus = {
         title = "Session Actions",
         icon = "󰦛",
         actions = {
-            { label = "Restore session", detail = "Reopen the files of this project's last session, or the last one anywhere", run = command("SessionRestore") },
-            { label = "Choose a session", detail = "Pick which project's session to reopen", run = command("SessionPick") },
+            { label = "Restore session", detail = "Reopen the files of this workspace's last session, or the last one anywhere", run = command("SessionRestore") },
+            { label = "Choose a session", detail = "Pick which workspace's session to reopen", run = command("SessionPick") },
             { label = "Save session now", detail = "It is kept up to date as you work; this forces it", run = command("SessionSave") },
-            { label = "Forget this project's session", detail = "Delete what was saved for it", run = command("SessionForget") },
+            { label = "Forget this workspace's session", detail = "Delete what was saved for it", run = command("SessionForget") },
         },
     },
     plugins = {
@@ -386,7 +386,7 @@ local menus = {
         icon = "󰖟",
         actions = {
             { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
-            { label = "Start or stop server", detail = "Toggle this project's live server", run = command("LiveServer toggle") },
+            { label = "Start or stop server", detail = "Toggle this workspace's live server", run = command("LiveServer toggle") },
             { label = "Open server manager", detail = "Inspect all live-server instances", run = command("LiveServer") },
             { label = "Open page in browser", detail = "Open the current served page", run = command("LiveServer open") },
             { label = "Show server logs", detail = "Tail live-server output", run = command("LiveServer logs") },

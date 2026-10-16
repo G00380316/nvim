@@ -9,14 +9,14 @@ local function first_groups(context, n)
     return out
 end
 
--- From the explorer: File / Project rows lead.
+-- From the explorer: File / Workspace rows lead.
 vim.cmd("edit " .. T.file("a.txt", "x\n"))
 vim.cmd("FocusTree")
 vim.wait(500)
 local oil_win = vim.api.nvim_get_current_win()
 T.eq(palette.context_kind({ win = oil_win }), "oil", "explorer recognised")
 local top = first_groups({ win = oil_win }, 6)
-T.ok(vim.tbl_contains(top, "File") or vim.tbl_contains(top, "Project"), "explorer: file/project actions first (" .. table.concat(top, ",") .. ")")
+T.ok(vim.tbl_contains(top, "File") or vim.tbl_contains(top, "Workspace"), "explorer: file/workspace actions first (" .. table.concat(top, ",") .. ")")
 
 -- From a markdown note: Markdown rows lead.
 vim.cmd("edit " .. T.file("n.md", "# x\n"))

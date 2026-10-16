@@ -1260,7 +1260,7 @@ local function open_project_switcher()
     end
 
     Snacks.picker.pick({
-        title = "Switch Project  ·  Ctrl-E name  ·  Ctrl-D close, again to forget",
+        title = "Switch Workspace  ·  Ctrl-E name  ·  Ctrl-D close, again to forget",
         finder = projects,
         preview = false,
         layout = { preset = "vscode" },
@@ -1351,12 +1351,17 @@ local function open_project_switcher()
     })
 end
 
+-- The switcher is also a command, so the palette can open it.
+vim.api.nvim_create_user_command("WorkspaceSwitch", open_project_switcher, {
+    desc = "Switch to another workspace (open or recent)",
+})
+
 vim.keymap.set("n", "<leader>p", open_project_switcher, {
-    desc = "Switch live project context",
+    desc = "Switch live workspace context",
 })
 
 vim.keymap.set("n", "<C-o>", open_project_switcher, {
-    desc = "Switch live project context",
+    desc = "Switch live workspace context",
 })
 
 vim.keymap.set("n", "go", open_in_file_manager, {
@@ -1472,7 +1477,7 @@ vim.keymap.set("n", "<leader>g", "<cmd>GitPanel<CR>", {
 -- it made every plain `zc` wait out the timeout for a second key.)
 vim.keymap.set("n", "<leader>W", function()
     require("workspace").from_here()
-end, { desc = "Use this file's project, or the explorer's folder, as workspace" })
+end, { desc = "Use this file's workspace, or the explorer's folder, as workspace" })
 
 -- ============================================================
 -- Insert / Command / Terminal

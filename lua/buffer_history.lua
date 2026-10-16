@@ -139,7 +139,7 @@ function M.setup()
                 end
             end)
         end,
-        desc = "Forget the buffer history of a project that was closed",
+        desc = "Forget the buffer history of a workspace that was closed",
     })
 end
 

@@ -163,9 +163,9 @@ function M.forget()
     local path = root and file_for(root)
     if path and vim.fn.filereadable(path) == 1 then
         vim.fn.delete(path)
-        vim.notify("Forgot this project's session", vim.log.levels.INFO, { title = "Session" })
+        vim.notify("Forgot this workspace's session", vim.log.levels.INFO, { title = "Session" })
     else
-        vim.notify("This project has no saved session", vim.log.levels.INFO, { title = "Session" })
+        vim.notify("This workspace has no saved session", vim.log.levels.INFO, { title = "Session" })
     end
 end
 
@@ -176,7 +176,7 @@ function M.setup()
     vim.api.nvim_create_autocmd({ "BufEnter", "BufWritePost", "BufDelete", "WinLeave" }, {
         group = group,
         callback = save_soon,
-        desc = "Keep the project's session up to date",
+        desc = "Keep the workspace's session up to date",
     })
     vim.api.nvim_create_autocmd("VimLeavePre", {
         group = group,
@@ -185,10 +185,10 @@ function M.setup()
     })
 
     local commands = {
-        { "SessionRestore", function() M.restore() end, "Reopen the files of this project's last session (or the last one anywhere)" },
-        { "SessionPick", M.pick, "Choose which project's session to reopen" },
+        { "SessionRestore", function() M.restore() end, "Reopen the files of this workspace's last session (or the last one anywhere)" },
+        { "SessionPick", M.pick, "Choose which workspace's session to reopen" },
         { "SessionSave", M.save, "Save the session now" },
-        { "SessionForget", M.forget, "Delete this project's saved session" },
+        { "SessionForget", M.forget, "Delete this workspace's saved session" },
     }
     for _, c in ipairs(commands) do
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })

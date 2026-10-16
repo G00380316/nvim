@@ -3,16 +3,16 @@ local M = {}
 -- This is deliberately a short, opinionated list. <leader>K still exposes
 -- every mapping when something uncommon needs to be looked up.
 local entries = {
-    { "Project", "<leader>p", "n", "Switch project and preserve its open panes" },
-    { "Project", "<C-e>", "switcher", "Name the project under the cursor, or clear its name" },
-    { "Project", "<C-d>", "switcher", "Close the open project under the cursor; press again to forget it" },
-    { "Project", "<leader>w", "n", "Choose any folder as the workspace" },
-    { "Project", "<leader>W", "n", "Use this file's project as the workspace; with no file open, the explorer's folder" },
-    { "Project", "<leader>f", "n", "Find a file anywhere under home" },
-    { "Project", "<C-e>", "n/i/x", "Open or focus the Oil project tree" },
-    { "Project", "<C-f>", "n/i/x", "Find a file in the current project" },
-    { "Project", "<C-g>", "n/i/x", "Search text across the current project" },
-    { "Project", "<leader>l", "n/x", "Search the word or visual selection" },
+    { "Workspace", "<leader>p", "n", "Switch workspace and preserve its open panes" },
+    { "Workspace", "<C-e>", "switcher", "Name the workspace under the cursor, or clear its name" },
+    { "Workspace", "<C-d>", "switcher", "Close the open workspace under the cursor; press again to forget it" },
+    { "Workspace", "<leader>w", "n", "Choose any folder as the workspace" },
+    { "Workspace", "<leader>W", "n", "Use this file's workspace as the workspace; with no file open, the explorer's folder" },
+    { "Workspace", "<leader>f", "n", "Find a file anywhere under home" },
+    { "Workspace", "<C-e>", "n/i/x", "Open or focus the Oil workspace tree" },
+    { "Workspace", "<C-f>", "n/i/x", "Find a file in the current workspace" },
+    { "Workspace", "<C-g>", "n/i/x", "Search text across the current workspace" },
+    { "Workspace", "<leader>l", "n/x", "Search the word or visual selection" },
 
     { "Search", "/", "n", "Search within the current buffer" },
     { "Search", "<leader>s", "n/x", "Replace in the buffer or selection" },
@@ -39,7 +39,7 @@ local entries = {
     { "Code", "gi", "n", "Go to implementation" },
     { "Code", "<C-Space>", "n/i/s/x", "Snippets: on to the next placeholder, like <Tab>. Otherwise normal: change the word and suggest; insert: open suggestions; visual: change the selection" },
     { "Code", "<leader>dd", "n", "Show diagnostics for this buffer" },
-    { "Code", "<leader>dw", "n", "Show diagnostics for the project" },
+    { "Code", "<leader>dw", "n", "Show diagnostics for the workspace" },
     { "Code", "g]d", "n", "Jump to the next diagnostic" },
     { "Code", "g[d", "n", "Jump to the previous diagnostic" },
     { "Buffers", "[ / ]", "n", "Back / forward through the buffers you have been in" },
@@ -127,7 +127,7 @@ function M.activate(item, context)
     -- These keys exist only inside the project switcher's own window. Feeding
     -- one from here would press it somewhere else entirely.
     if item.mode == "switcher" then
-        vim.notify(item.lhs .. " works inside the project switcher (<leader>p)", vim.log.levels.INFO)
+        vim.notify(item.lhs .. " works inside the workspace switcher (<leader>p)", vim.log.levels.INFO)
         return
     end
 

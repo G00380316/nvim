@@ -333,7 +333,7 @@ function M.forget(path)
 
     if context_tab(directory) then
         vim.notify(
-            "Close this project's tab before forgetting it: " .. M.label(directory),
+            "Close this workspace's tab before forgetting it: " .. M.label(directory),
             vim.log.levels.WARN
         )
         return false
@@ -342,7 +342,7 @@ function M.forget(path)
     load_history()
     local kept = vim.tbl_filter(function(item) return item ~= directory end, history)
     if #kept == #history then
-        vim.notify("Not in the project list: " .. M.label(directory), vim.log.levels.WARN)
+        vim.notify("Not in the workspace list: " .. M.label(directory), vim.log.levels.WARN)
         return false
     end
 
@@ -358,7 +358,7 @@ function M.forget(path)
         labels = {}
     end
 
-    vim.notify("Forgot project: " .. name)
+    vim.notify("Forgot workspace: " .. name)
     return true
 end
 
@@ -388,7 +388,7 @@ function M.close(path)
     local directory = normalize(path or M.get())
     local tab = directory and context_tab(directory)
     if not tab then
-        vim.notify("That project has nothing open: " .. M.label(directory), vim.log.levels.WARN)
+        vim.notify("That workspace has nothing open: " .. M.label(directory), vim.log.levels.WARN)
         return false
     end
 
@@ -410,7 +410,7 @@ function M.close(path)
         local successor = successor_of(directory)
         if not successor then
             vim.notify(
-                "No other project to open. Add one with <leader>w before closing " .. name .. ".",
+                "No other workspace to open. Add one with <leader>w before closing " .. name .. ".",
                 vim.log.levels.WARN
             )
             return false
@@ -431,7 +431,7 @@ function M.close(path)
     end
 
     context_tabs[directory] = nil
-    vim.notify(landed and ("Closed project: " .. name .. "  \u{203a}  " .. landed) or ("Closed project: " .. name))
+    vim.notify(landed and ("Closed workspace: " .. name .. "  \u{203a}  " .. landed) or ("Closed workspace: " .. name))
     return true
 end
 
@@ -546,7 +546,7 @@ function M.open(path, opts)
     switching_context = false
 
     if not switched then
-        vim.notify("Could not open project context: " .. tostring(switch_error), vim.log.levels.ERROR)
+        vim.notify("Could not open workspace context: " .. tostring(switch_error), vim.log.levels.ERROR)
         return false
     end
 
@@ -640,7 +640,7 @@ function M.setup()
             M.set(start, { silent = true, exact = exact })
         end,
         once = true,
-        desc = "Initialize the first live project context",
+        desc = "Initialize the first live workspace context",
     })
 
     vim.api.nvim_create_autocmd("DirChanged", {
@@ -664,7 +664,7 @@ function M.setup()
                 vim.b[args.buf].workspace_root = root
             end
         end,
-        desc = "Associate new unnamed buffers with their project context",
+        desc = "Associate new unnamed buffers with their workspace context",
     })
 
     vim.api.nvim_create_autocmd("TabEnter", {
@@ -688,7 +688,7 @@ function M.setup()
                 })
             end
         end,
-        desc = "Activate the project context owned by this tab",
+        desc = "Activate the workspace context owned by this tab",
     })
 
     vim.api.nvim_create_autocmd({ "BufDelete", "BufWipeout" }, {
@@ -706,7 +706,7 @@ function M.setup()
                 end
             end)
         end,
-        desc = "Forget project contexts whose tabs were closed",
+        desc = "Forget workspace contexts whose tabs were closed",
     })
 
     vim.api.nvim_create_user_command("WorkspaceSet", function(args)
@@ -753,7 +753,7 @@ function M.setup()
         end)
     end, {
         nargs = "?",
-        desc = "Name the current project, or clear its name",
+        desc = "Name the current workspace, or clear its name",
     })
 
     vim.api.nvim_create_user_command("WorkspaceClose", function(args)
@@ -761,7 +761,7 @@ function M.setup()
     end, {
         nargs = "?",
         complete = "dir",
-        desc = "Close a project's tab, keeping it in the list",
+        desc = "Close a workspace's tab, keeping it in the list",
     })
 
     vim.api.nvim_create_user_command("WorkspaceForget", function(args)
@@ -769,7 +769,7 @@ function M.setup()
     end, {
         nargs = "?",
         complete = "dir",
-        desc = "Drop a project from the list you switch between",
+        desc = "Drop a workspace from the list you switch between",
     })
 end
 

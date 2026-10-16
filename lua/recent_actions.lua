@@ -12,7 +12,17 @@ local function load()
     cache = {}
     if vim.fn.filereadable(file) ~= 1 then return end
     local ok, data = pcall(vim.json.decode, table.concat(vim.fn.readfile(file), "\n"))
-    if ok and type(data) == "table" then cache = data end
+    if ok and type(data) == "table" then
+        -- The "Project" group became "Workspace": keep what was already run.
+        for key, when in pairs(data) do
+            local rest = key:match("^Project|(.*)$")
+            if rest then
+                data[key] = nil
+                data["Workspace|" .. rest] = math.max(when, data["Workspace|" .. rest] or 0)
+            end
+        end
+        cache = data
+    end
 end
 
 local function save()

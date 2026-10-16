@@ -872,7 +872,7 @@ vim.api.nvim_create_autocmd({ "FileType", "BufWinEnter" }, {
         end
 
     end,
-    desc = "Lock the project explorer to a compact sidebar width",
+    desc = "Lock the workspace explorer to a compact sidebar width",
 })
 
 vim.keymap.set({ "n", "i", "v" }, "<C-e>", function()
@@ -926,7 +926,7 @@ vim.api.nvim_create_autocmd("VimEnter", {
     callback = function()
         vim.defer_fn(open_ide_frame, 10)
     end,
-    desc = "Open the persistent project explorer sidebar",
+    desc = "Open the persistent workspace explorer sidebar",
 })
 
 vim.api.nvim_create_autocmd("TabNewEntered", {
@@ -1486,7 +1486,7 @@ vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
 vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Open or focus the file explorer" })
 vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Open or focus the terminal" })
 vim.api.nvim_create_user_command("TerminalNew", function() new_terminal() end,
-    { desc = "Open another bottom terminal in the project root" })
+    { desc = "Open another bottom terminal in the workspace root" })
 vim.api.nvim_create_user_command("TerminalHere", new_terminal_here,
     { desc = "Open a terminal in the focused file's own directory" })
 vim.api.nvim_create_user_command("TerminalSplit", split_terminal,
@@ -1942,7 +1942,7 @@ local function open_project_results(query)
             end
             if result.code ~= 0 then
                 local message = vim.trim(result.stderr or "")
-                vim.notify(message ~= "" and message or "Project search failed", vim.log.levels.ERROR)
+                vim.notify(message ~= "" and message or "Workspace search failed", vim.log.levels.ERROR)
                 return
             end
 
@@ -1962,13 +1962,13 @@ local function open_project_results(query)
     end)
 end
 
-vim.api.nvim_create_user_command("ProjectResults", function(opts)
+vim.api.nvim_create_user_command("WorkspaceResults", function(opts)
     if opts.args ~= "" then
         open_project_results(opts.args)
         return
     end
     vim.ui.input({
-        prompt = "Project search: ",
+        prompt = "Workspace search: ",
         default = vim.fn.expand("<cword>"),
     }, open_project_results)
 end, {
@@ -1990,7 +1990,7 @@ vim.api.nvim_create_user_command("ResultsFocus", function()
     -- quicker can fail to open (an option error from the list's own settings);
     -- the plain quickfix window is the fallback, and still takes focus.
     if not pcall(quicker.open, { focus = true }) then pcall(vim.cmd, "copen") end
-end, { desc = "Open or focus the editable project results" })
+end, { desc = "Open or focus the editable workspace results" })
 
 
 -- ============================================================

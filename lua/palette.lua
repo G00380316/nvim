@@ -17,10 +17,11 @@ local M = {}
 -- exactly as picking it from its own list does.
 
 local project_actions = {
-    { "Name this project", "Give the current project a name, or clear it", "WorkspaceAlias" },
-    { "Close this project", "Close its tab, splits and terminals; keep it listed", "WorkspaceClose" },
-    { "Forget this project", "Remove it from the project list; the folder stays", "WorkspaceForget" },
-    { "Show project folder", "Print where the current project lives", "WorkspaceRoot" },
+    { "Switch workspace", "Pick an open or recent workspace (also <C-o> or <leader>p)", "WorkspaceSwitch" },
+    { "Name this workspace", "Give the current workspace a name, or clear it", "WorkspaceAlias" },
+    { "Close this workspace", "Close its tab, splits and terminals; keep it listed", "WorkspaceClose" },
+    { "Forget this workspace", "Remove it from the workspace list; the folder stays", "WorkspaceForget" },
+    { "Show workspace folder", "Print where the current workspace lives", "WorkspaceRoot" },
     -- Takes an optional file, so the scan for argument-free commands skips it.
     { "Import a document as a note", "A PDF, Word file, web page or image becomes Markdown", "NoteImport", "Notes" },
     { "Show note hints", "The Markdown cheat sheet beside the note", "MarkdownHints", "Notes" },
@@ -34,8 +35,8 @@ local project_actions = {
 -- its group or label to match; earlier entries rank higher.
 local relevance = {
     oil = {
-        groups = { "File", "Project", "Hint", "Search", "Buffers" },
-        labels = { "xplorer", "Oil", "with arguments", "Extract", "Reveal", "default app", "Recent", "folder", "project", "workspace" },
+        groups = { "File", "Workspace", "Hint", "Search", "Buffers" },
+        labels = { "xplorer", "Oil", "with arguments", "Extract", "Reveal", "default app", "Recent", "folder", "workspace", "workspace" },
     },
     terminal = {
         groups = { "Terminal", "Run" },
@@ -201,7 +202,7 @@ local function build(context)
     for _, entry in ipairs(project_actions) do
         menus.covered_commands[entry[3]] = true
         add({
-            group = entry[4] or "Project",
+            group = entry[4] or "Workspace",
             label = entry[1],
             detail = entry[2],
             run = function() vim.cmd(entry[3]) end,
