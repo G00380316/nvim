@@ -53,6 +53,34 @@ end
 
 M.parse = parse
 
+---The list item a wrapped line belongs to: a line that is only the rest of an
+---item's text, indented to line up under it. Found by looking up through the
+---lines of the same item, stopping at a blank line or anything that is not text
+---under that indent.
+---@param row integer
+---@return markdown.ListItem?
+local function owner_of(row)
+    local line = vim.api.nvim_buf_get_lines(0, row - 1, row, false)[1]
+    if not line or not line:match("%S") or parse(line) then return nil end
+    local indent = #line:match("^(%s*)")
+    if indent == 0 then return nil end
+
+    for up = row - 1, math.max(1, row - 40), -1 do
+        local above = vim.api.nvim_buf_get_lines(0, up - 1, up, false)[1]
+        if not above or not above:match("%S") then return nil end
+        local item = parse(above)
+        if item then
+            -- Lined up under the item's text (or at least inside the item).
+            if indent >= #item.indent + 1 and indent <= item.prefix_len then return item end
+            return nil
+        end
+        if #above:match("^(%s*)") == 0 then return nil end
+    end
+    return nil
+end
+
+M.owner_of = owner_of
+
 ---Replace the current line's list syntax with nothing: the item was empty, so
 ---Enter on it is the way out of the list.
 local function end_list(row)
@@ -97,6 +125,15 @@ local function enter()
         return vim.keycode("<Cmd>lua require('markdown_lists').continue()<CR>")
     end
 
+    -- The end of a line that was wrapped from a list item: the item is over, so
+    -- Enter starts the next one rather than another line of the same text.
+    if not item and col >= #line then
+        local owner = owner_of(vim.api.nvim_win_get_cursor(0)[1])
+        if owner then
+            return vim.keycode("<Cmd>lua require('markdown_lists').next_after_wrapped()<CR>")
+        end
+    end
+
     -- lexima hands back key notation ("<CR>"), not key codes. Translated here
     -- because nothing downstream does it for us: a mapping that returns
     -- already-translated keys is the only form that behaves the same whether
@@ -104,11 +141,26 @@ local function enter()
     return vim.keycode(vim.fn["lexima#expand"]("<LT>CR>", "i"))
 end
 
+---Start the next item under a wrapped item's last line.
+function M.next_after_wrapped()
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    local owner = owner_of(row)
+    if not owner then
+        vim.api.nvim_feedkeys(vim.keycode("<CR>"), "n", false)
+        return
+    end
+    vim.api.nvim_buf_set_lines(0, row, row, false, { owner.next_prefix })
+    vim.api.nvim_win_set_cursor(0, { row + 1, #owner.next_prefix })
+end
+
 ---Open a new item below (or above) the current one and start typing in it.
 ---@param above boolean
 function M.open_item(above)
     local row = vim.api.nvim_win_get_cursor(0)[1]
     local item = parse(vim.api.nvim_get_current_line())
+    -- On a line wrapped from an item, `o` starts the next item, `O` goes above this
+    -- line (within the item), so only `o` looks up to the owner.
+    if not item and not above then item = owner_of(row) end
     if not item then return end
 
     local prefix = above and item.own_prefix or item.next_prefix
