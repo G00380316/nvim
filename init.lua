@@ -244,6 +244,7 @@ require("panel_titles").setup()
 require("responsive").setup()
 require("ruler").setup()
 require("explorer_view").setup()
+require("autosave").setup()
 
 
 -- ============================================================

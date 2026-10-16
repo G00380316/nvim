@@ -372,6 +372,7 @@ local menus = {
         title = "View Actions",
         icon = "󰍉",
         actions = {
+            { label = "Toggle auto-save", detail = "Saving the file when you leave insert mode: on or off (<C-s> always saves)", run = command("AutoSaveToggle") },
             { label = "Toggle column ruler", detail = "Show or hide the vertical line at column 80 / 120", run = command("RulerToggle") },
             { label = "Widen or narrow the explorer", detail = "Switch the file explorer between normal and wide, to read long names", run = command("ExplorerWiden") },
             { label = "Explorer wrapping", detail = "Cycle: automatic (default), always, never", run = command("ExplorerWrap") },

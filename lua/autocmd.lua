@@ -320,6 +320,9 @@ vim.api.nvim_create_autocmd("InsertLeave", {
     group = auto_save_group,
     pattern = "*",
     callback = function()
+        -- Toggled from the palette (AutoSaveToggle); see autosave.lua.
+        if not require("autosave").enabled() then return end
+
         local name = vim.api.nvim_buf_get_name(0)
 
         if name ~= ""
