@@ -144,6 +144,19 @@ end
 
 -- { title, keys shown, explanation, action }  -- action: function or key string
 local entries = {
+    -- Snippets: these explain the keys (there is nothing to run on its own)
+    { "Fill in a snippet's highlighted placeholders", "<Tab> / <S-Tab> / <C-Space>", "Type over the highlighted text; <Tab> or <C-Space> moves to the next, <S-Tab> back", function()
+        vim.notify("Type to replace the highlighted placeholder.\n<Tab> or <C-Space>: next placeholder\n<S-Tab>: previous one\n<Esc> then <C-Space>: carry on from normal mode\n<leader>c: drop the snippet", vim.log.levels.INFO, { title = "Snippets" })
+    end },
+    { "Carry on with a snippet after Escape", "<Esc> then <C-Space>", "From normal mode, <C-Space> jumps to the next placeholder and selects it", function()
+        if vim.snippet.active({ direction = 1 }) then vim.snippet.jump(1)
+        else vim.notify("No snippet with placeholders left", vim.log.levels.INFO, { title = "Snippets" }) end
+    end },
+    { "Abandon a snippet and clear its highlights", "<leader>c", "Ends an unfinished snippet so the highlighted placeholders go away", function()
+        if vim.snippet.active() then vim.snippet.stop() end
+        vim.notify("Snippet cleared", vim.log.levels.INFO, { title = "Snippets" })
+    end },
+
     -- Surround
     { "Surround word with double quotes", [[ciw"<C-r>""]], "Wraps the word in place, nothing is deleted: word becomes \"word\"", wrap_word('"', '"') },
     { "Surround word with single quotes", "ciw'<C-r>\"'", "Wraps the word in place: word becomes 'word'", wrap_word("'", "'") },
