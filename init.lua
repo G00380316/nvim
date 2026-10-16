@@ -246,6 +246,7 @@ require("ruler").setup()
 require("explorer_view").setup()
 require("autosave").setup()
 require("prose_wrap").setup()
+require("strokes").setup()
 
 
 -- ============================================================
@@ -403,6 +404,13 @@ local notebook_component = {
     end,
 }
 
+-- While recording strokes: which slot, and the keys that save or cancel.
+local strokes_component = {
+    function() return require("strokes").status() end,
+    cond = function() return require("strokes").recording() end,
+    color = { fg = "#e46876", gui = "bold" },
+}
+
 local floaterm_component = {
     floaterm_tabline,
     cond = function()
@@ -487,6 +495,7 @@ lualine.setup({
         },
 
         lualine_x = {
+            strokes_component,
             notebook_component,
             {
                 "diagnostics",

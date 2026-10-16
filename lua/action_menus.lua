@@ -307,6 +307,18 @@ local menus = {
             { label = "Test with arguments", detail = "Asks for them, then runs runtest", run = command("RunTestWith") },
         },
     },
+    strokes = {
+        -- No key of its own beyond <leader>. (play): reached from the palette
+        -- (group "Strokes"), or :ActionMenu strokes.
+        title = "Strokes Actions",
+        icon = "󰑊",
+        actions = {
+            { label = "Record strokes", detail = "Press 1-9, do it, <C-s> saves, <C-c> cancels; insert-mode typing is kept as pasted text", run = command("StrokesRecord") },
+            { label = "Play strokes", detail = "Press 1-9 to play that slot (<leader>. does the same; a count repeats)", run = command("StrokesPlay") },
+            { label = "Saved strokes", detail = "See what each slot does; pick one to play it", run = command("StrokesList") },
+            { label = "Clear a strokes slot", detail = "Press 1-9 to delete that recording", run = command("StrokesClear") },
+        },
+    },
     session = {
         -- No key of its own: reached from the palette (group "Session"), the
         -- dashboard's `r`, or :ActionMenu session.
