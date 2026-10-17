@@ -10,9 +10,9 @@ local entries = {
     { "Workspace", "<leader>W", "n", "Use this file's workspace as the workspace; with no file open, the explorer's folder" },
     { "Workspace", "<leader>f", "n", "Find a file anywhere under home" },
     { "Workspace", "<C-e>", "n/i/x", "Open or focus the Oil workspace tree" },
-    { "Workspace", "<C-f>", "n/i/x", "Find a file in the current workspace" },
-    { "Workspace", "<C-g>", "n/i/x", "Search text across the current workspace" },
-    { "Workspace", "<leader>l", "n/x", "Search the word or visual selection" },
+    { "Workspace", "<C-f>", "n/i/x", "Find a file in every open workspace (or the folder of a file that is in none); palette: current workspace only" },
+    { "Workspace", "<C-g>", "n/i/x", "Search text across every open workspace (same rule as <C-f>)" },
+    { "Workspace", "<leader>l", "n/x", "Search the word or selection across the open workspaces" },
 
     { "Search", "/", "n", "Search within the current buffer" },
     { "Search", "<leader>s", "n/x", "Replace in the buffer or selection" },

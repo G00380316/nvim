@@ -165,7 +165,7 @@ require("snacks").setup({
                     key = "f",
                     desc = "Find File",
                     action = function()
-                        Snacks.picker.files({ cwd = require("workspace").context() })
+                        require("search_scope").files("smart")
                     end,
                 },
                 {
@@ -173,7 +173,7 @@ require("snacks").setup({
                     key = "g",
                     desc = "Find Text",
                     action = function()
-                        Snacks.picker.grep({ cwd = require("workspace").context() })
+                        require("search_scope").grep("smart")
                     end,
                 },
                 { icon = " ", key = "n", desc = "New File", action = ":ene | startinsert" },

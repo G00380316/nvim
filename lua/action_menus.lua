@@ -9,6 +9,19 @@ local function command(value)
     return function() vim.cmd(value) end
 end
 
+---A command that needs something typed after it: asks, then runs `prefix <text>`.
+---@param prefix string the command so far, e.g. "Ssh upload"
+---@param prompt string what to ask for
+local function command_asking(prefix, prompt)
+    covered_commands[prefix:match("^%S+")] = true
+    return function()
+        vim.ui.input({ prompt = prompt .. ": " }, function(text)
+            text = text and vim.trim(text) or ""
+            if text ~= "" then vim.cmd(prefix .. " " .. text) end
+        end)
+    end
+end
+
 local function gitsigns(method, ...)
     local args = { ... }
     return function()
@@ -182,6 +195,8 @@ local menus = {
             { label = "Toggle logs", detail = "Show or hide build logs", run = command("XcodebuildToggleLogs") },
             { label = "Toggle code coverage", detail = "Enable or disable coverage", run = command("XcodebuildToggleCodeCoverage") },
             { label = "Show coverage report", detail = "Open the code coverage report", run = command("XcodebuildShowCodeCoverageReport") },
+            { label = "Generate SwiftUI preview and show", detail = "Build the current preview and open the image", run = command("XcodebuildPreviewGenerateAndShow") },
+            { label = "Generate SwiftUI preview", detail = "Build the current preview without opening it", run = command("XcodebuildPreviewGenerate") },
             { label = "Project manager", detail = "Manage project selection and settings", run = command("XcodebuildProjectManager") },
             { label = "Open in Xcode", detail = "Reveal this project in Xcode", run = command("XcodebuildOpenInXcode") },
             { label = "Code actions", detail = "Open Xcodebuild code actions", run = command("XcodebuildCodeActions") },
@@ -243,15 +258,33 @@ local menus = {
         -- No key of its own: reached from the palette (<leader><leader>, group
         -- "Tools"), or :ActionMenu ssh.
         title = "SSH Actions",
-        icon = "",
+        icon = "",
         actions = {
             { label = "Open SSH launcher", detail = "Browse and manage saved hosts", run = command("SshLauncher") },
             { label = "Connect to a host", detail = "Open a session on a saved host", run = command("SshConnect") },
             { label = "Show live sessions", detail = "List the connections that are open", run = command("SshSessions") },
+            { label = "Browse a host's files", detail = "Open a host's folders in the editor", run = command("Ssh browse") },
+            { label = "Transfer files (two panes)", detail = "This machine and a host side by side; select and copy across", run = command("Ssh transfer") },
+            { label = "Upload to a host", detail = "Type: {host} {local file}... [{remote path}]", run = command_asking("Ssh upload", "Upload (host, local file(s), optional remote path)") },
+            { label = "Download from a host", detail = "Type: {host} {remote path} [{local path}]", run = command_asking("Ssh download", "Download (host, remote path, optional local path)") },
+            { label = "Neovim on a host", detail = "Launch Neovim on a host with this configuration", run = command("Ssh workspace") },
+            { label = "Tunnels", detail = "List open tunnels, or raise or drop a host's forwards", run = command("Ssh tunnels") },
+            { label = "Run on every host", detail = "Type a command; add --tag=<tag> to limit it to tagged hosts", run = command_asking("Ssh fleet", "Command to run on every host") },
+            { label = "Connection history", detail = "The log of connections, for one host or all", run = command("Ssh history") },
+            { label = "List hosts", detail = "Every saved host", run = command("Ssh list") },
+            { label = "Add a host", detail = "Save a host, optionally from a pasted connection string", run = command("Ssh add") },
+            { label = "Edit a host", detail = "Change a saved host", run = command("Ssh edit") },
+            { label = "Delete a host", detail = "Type the host's name", run = command_asking("Ssh delete", "Host to delete") },
+            { label = "Import hosts", detail = "From ~/.ssh/config or a file", run = command("Ssh import") },
+            { label = "Export hosts", detail = "Write the saved hosts into ~/.ssh/config", run = command("Ssh export") },
+            { label = "Generate a key", detail = "Create a new key pair", run = command("Ssh keygen") },
             { label = "Start the agent", detail = "Run ssh-agent and load your keys", run = command("SshAgent") },
             { label = "Add a key", detail = "Register another key with the agent", run = command("SshAddKey") },
             { label = "Edit a key", detail = "Open a key file for editing", run = command("SshEditKey") },
             { label = "Diagnose", detail = "Check the SSH setup for problems", run = command("SshDiagnose") },
+            { label = "Find vanishing sessions", detail = "Diagnose session windows that open and then close", run = command("Ssh doctor") },
+            { label = "Reload hosts", detail = "Re-read the host database and ssh_config", run = command("Ssh reload") },
+            { label = "SSH health check", detail = "Run :checkhealth ssh_launcher", run = command("Ssh health") },
         },
     },
     typst = {
@@ -290,6 +323,7 @@ local menus = {
             { label = "Recent files", detail = "Files you opened recently, from every workspace", run = command("RecentFiles") },
             { label = "Open in default app", detail = "This file, or the one under the cursor in the explorer", run = command("OpenExternally") },
             { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
+            { label = "Save with sudo", detail = "Write a file you do not own, asking for your password", run = command("SudaWrite") },
             { label = "Reveal in Finder", detail = "Show this file in Finder", run = command("RevealInFinder") },
             { label = "Extract archive", detail = "Unpack this archive next to itself", run = command("Extract") },
         },
@@ -317,6 +351,21 @@ local menus = {
             { label = "Play strokes", detail = "Press 1-9 to play that slot (<leader>. does the same; a count repeats)", run = command("StrokesPlay") },
             { label = "Saved strokes", detail = "See what each slot does; pick one to play it", run = command("StrokesList") },
             { label = "Clear a strokes slot", detail = "Press 1-9 to delete that recording", run = command("StrokesClear") },
+        },
+    },
+    search = {
+        -- No key of its own beyond <C-f>, <C-g> and <leader>l (which use the open
+        -- workspaces when your file is in one): reached from the palette (group
+        -- "Search"), or :ActionMenu search.
+        title = "Search Actions",
+        icon = "󰍉",
+        actions = {
+            { label = "Find file in all workspaces", detail = "Every open workspace, whatever file you are in", run = command("FindFileAll") },
+            { label = "Search text in all workspaces", detail = "Every open workspace, whatever file you are in", run = command("SearchTextAll") },
+            { label = "Search word in all workspaces", detail = "The word under the cursor, in every open workspace", run = command("SearchWordAll") },
+            { label = "Find file in current workspace", detail = "Only the workspace marked current", run = command("FindFileCurrent") },
+            { label = "Search text in current workspace", detail = "Only the workspace marked current", run = command("SearchTextCurrent") },
+            { label = "Search word in current workspace", detail = "The word under the cursor, in the current workspace only", run = command("SearchWordCurrent") },
         },
     },
     session = {
@@ -385,6 +434,7 @@ local menus = {
         icon = "󰍉",
         actions = {
             { label = "Toggle auto-save", detail = "Saving the file when you leave insert mode: on or off (<C-s> always saves)", run = command("AutoSaveToggle") },
+            { label = "Toggle Markdown rendering", detail = "Rendered headings, tables and code blocks, or the raw text", run = command("RenderMarkdown toggle") },
             { label = "Toggle column ruler", detail = "Show or hide the vertical line at column 80 / 120", run = command("RulerToggle") },
             { label = "Widen or narrow the explorer", detail = "Switch the file explorer between normal and wide, to read long names", run = command("ExplorerWiden") },
             { label = "Explorer wrapping", detail = "Cycle: automatic (default), always, never", run = command("ExplorerWrap") },
@@ -400,10 +450,22 @@ local menus = {
         actions = {
             { label = "Open HTML file in browser", detail = "Open this file directly, no server needed", run = command("OpenInBrowser") },
             { label = "Start or stop server", detail = "Toggle this workspace's live server", run = command("LiveServer toggle") },
+            { label = "Start server", detail = "Start this workspace's server", run = command("LiveServer start") },
+            { label = "Stop server", detail = "Stop this workspace's server", run = command("LiveServer stop") },
             { label = "Open server manager", detail = "Inspect all live-server instances", run = command("LiveServer") },
             { label = "Open page in browser", detail = "Open the current served page", run = command("LiveServer open") },
             { label = "Show server logs", detail = "Tail live-server output", run = command("LiveServer logs") },
+            { label = "Server status", detail = "A one-line summary", run = command("LiveServer status") },
             { label = "Restart server", detail = "Restart on the same port", run = command("LiveServer restart") },
+            { label = "Move to another port", detail = "Type the port number", run = command_asking("LiveServer port", "New port") },
+            { label = "Pin this workspace to a port", detail = "Keep the same port every time", run = command("LiveServer pin") },
+            { label = "Remove the port pin", detail = "Let the port be chosen again", run = command("LiveServer unpin") },
+            { label = "List port pins", detail = "Every pinned workspace and its port", run = command("LiveServer pins") },
+            { label = "List apps in this repository", detail = "Each runnable app the server found", run = command("LiveServer apps") },
+            { label = "Expose on the network", detail = "Make the server reachable from other devices", run = command("LiveServer expose") },
+            { label = "Clean up stray servers", detail = "Stop servers left running with nothing to show them", run = command("LiveServer reap") },
+            { label = "Trust this repository", detail = "Allow its server configuration to run", run = command("LiveServer trust") },
+            { label = "Server health check", detail = "Report problems with the server setup", run = command("LiveServer health") },
         },
     },
 }

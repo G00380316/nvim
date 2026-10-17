@@ -247,6 +247,7 @@ require("explorer_view").setup()
 require("autosave").setup()
 require("prose_wrap").setup()
 require("strokes").setup()
+require("search_scope").setup()
 
 
 -- ============================================================

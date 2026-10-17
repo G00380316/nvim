@@ -1066,16 +1066,19 @@ end, {
 -- with it, so you can look through where it actually lives instead of
 -- searching a root that cannot even see it. Returning to one of the project's
 -- own files brings the scope back on its own.
+-- The scope (see search_scope.lua): every open workspace when the file you are in
+-- belongs to one, the file's own folder when it belongs to none. The palette has
+-- the explicit versions: all open workspaces, or the current one only.
 vim.keymap.set({ "n", "v", "i" }, "<C-f>", function()
-    Snacks.picker.files({ cwd = require("workspace").context() })
+    require("search_scope").files("smart")
 end, {
-    desc = "Find files",
+    desc = "Find files in the open workspaces",
 })
 
 vim.keymap.set({ "n", "v", "i" }, "<C-g>", function()
-    Snacks.picker.grep({ cwd = require("workspace").context() })
+    require("search_scope").grep("smart")
 end, {
-    desc = "Grep",
+    desc = "Search text in the open workspaces",
 })
 
 vim.keymap.set("n", "<leader>h", function()
@@ -1089,9 +1092,9 @@ vim.api.nvim_create_user_command("ConfigFiles", function()
 end, { desc = "Find a file in this Neovim config" })
 
 vim.keymap.set({ "n", "x" }, "<leader>l", function()
-    Snacks.picker.grep_word({ cwd = require("workspace").context() })
+    require("search_scope").grep_word("smart")
 end, {
-    desc = "Grep word or visual selection",
+    desc = "Search the word or selection in the open workspaces",
 })
 
 vim.keymap.set("n", "<leader>k", function()

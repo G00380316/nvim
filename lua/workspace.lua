@@ -190,6 +190,25 @@ function M.is_open(path)
     return M.context_tab(path) ~= nil
 end
 
+---The folders of every workspace that is open (one tab each), the current one
+---first.
+---@return string[]
+function M.open_roots()
+    local current = vim.fs.normalize(M.get())
+    local roots, seen = { current }, { [current] = true }
+    for _, tab in ipairs(vim.api.nvim_list_tabpages()) do
+        local path = tab_workspace(tab)
+        if path then
+            path = vim.fs.normalize(path)
+            if not seen[path] and vim.fn.isdirectory(path) == 1 then
+                seen[path] = true
+                roots[#roots + 1] = path
+            end
+        end
+    end
+    return roots
+end
+
 ---What a project is called on screen: the alias you gave it, otherwise the
 ---directory's own name.
 ---
