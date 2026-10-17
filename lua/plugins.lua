@@ -206,7 +206,9 @@ require("snacks").setup({
                     -- The first entry is the workspace Neovim just opened
                     -- into (the most recent is what starts), so it is the one
                     -- you are already in; the list is for going elsewhere.
-                    local recent = workspace.recent(6)
+                    -- Up to ten, fewer in a short window so the keys stay on screen.
+                    local limit = math.max(3, math.min(10, vim.o.lines - 24))
+                    local recent = workspace.recent(limit + 1)
                     table.remove(recent, 1)
 
                     for _, dir in ipairs(recent) do

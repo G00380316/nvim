@@ -1238,7 +1238,7 @@ local function open_project_switcher()
         local current = workspace.get()
         local items = {}
 
-        for _, path in ipairs(workspace.recent(20)) do
+        for _, path in ipairs(workspace.recent(50)) do
             local name = workspace.label(path)
             local is_current = path == current
             local is_open = workspace.is_open(path)

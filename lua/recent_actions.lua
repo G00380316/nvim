@@ -3,8 +3,8 @@
 local M = {}
 
 local file = vim.fn.stdpath("state") .. "/recent-actions.json"
-local MAX = 200
-local WINDOW = 30 * 24 * 3600 -- a month
+local MAX = 500
+local WINDOW = 90 * 24 * 3600 -- three months
 
 local cache
 

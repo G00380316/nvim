@@ -76,7 +76,7 @@ local function remember(path)
     load_history()
     history = vim.tbl_filter(function(item) return item ~= path end, history)
     table.insert(history, 1, path)
-    while #history > 20 do table.remove(history) end
+    while #history > 50 do table.remove(history) end
 
     vim.fn.mkdir(vim.fn.fnamemodify(history_file, ":h"), "p")
     pcall(vim.fn.writefile, { vim.json.encode(history) }, history_file)

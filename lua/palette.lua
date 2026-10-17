@@ -81,7 +81,7 @@ local function context_kind(context)
 end
 
 ---Move the rows that matter here to the top, keeping the rest in order.
-local RECENT_LEAD = 6
+local RECENT_LEAD = 20
 
 local function rank_for(items, context)
     local rules = relevance[context_kind(context) or ""] or { groups = {}, labels = {} }

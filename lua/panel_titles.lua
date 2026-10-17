@@ -32,7 +32,7 @@ end
 
 local function folder(path)
     if not path or path == "" then return "" end
-    local peers = require("workspace").recent(20)
+    local peers = require("workspace").recent(50)
     return require("names").label(path, peers)
 end
 

@@ -41,3 +41,16 @@ T.eq(after[1].label, victim.label, "the row just used now leads the palette")
 T.eq(after[1].recent, true, "and is marked as recent")
 local state = vim.fn.stdpath("state") .. "/recent-actions.json"
 T.eq(vim.fn.filereadable(state), 1, "the history is stored on disk")
+
+-- Twenty recent actions lead the palette, not six.
+local all = palette.items({})
+local stamp = os.time()
+for i = 1, 25 do
+    local row = all[#all - i]
+    recent.record(recent.key(row.group, row.label))
+end
+local marked = 0
+for _, row in ipairs(palette.items({})) do
+    if row.recent then marked = marked + 1 end
+end
+T.eq(marked, 20, "twenty rows are marked recent")
