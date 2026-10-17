@@ -37,22 +37,70 @@ end
 ---@field title string
 ---@field confirm fun(path: string) what choosing a folder does
 ---@param opts folder.PickOpts
+---The folder the explorer is showing now, if there is an explorer.
+---@return string?
+function M.explorer_dir()
+    local ok, oil = pcall(require, "oil")
+    if not ok then return nil end
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+        local buf = vim.api.nvim_win_get_buf(win)
+        if vim.bo[buf].filetype == "oil" then
+            local dir = oil.get_current_dir(buf)
+            if dir then return (vim.fs.normalize(dir):gsub("/$", "")) end
+        end
+    end
+end
+
 function M.pick(opts)
     local root = opts.root or vim.fn.expand("~")
+    local inner = folder_finder(root)
+
+    -- The folder you are in comes first, so choosing it again, or somewhere beside
+    -- it, is the shortest list. (Typing a search ranks by match, as usual.)
+    local current = opts.first ~= false and (opts.first or M.explorer_dir()) or nil
+    if type(current) ~= "string" then current = nil end
+    if current and vim.fn.isdirectory(current) ~= 1 then current = nil end
+
+    -- /tmp and /private/tmp are one place on macOS; comparing without a syscall
+    -- per folder (this runs for every folder found, in a background thread).
+    local function same_place(a, b)
+        return a:gsub("^/private", "") == b:gsub("^/private", "")
+    end
+
+    local function absolute(item)
+        return item.abs or vim.fs.normalize(root .. "/" .. item.file)
+    end
+
     Snacks.picker.pick({
         title = opts.title .. "  \u{b7}  type to search  \u{b7}  Enter chooses  \u{b7}  Ctrl-Q closes",
         source = "folders",
-        finder = folder_finder(root),
+        finder = function(finder_opts, ctx)
+            local run = inner(finder_opts, ctx)
+            return function(cb)
+                if current then
+                    cb({ text = current, file = current, abs = current, current = true })
+                end
+                return run(function(item)
+                    -- The same folder, listed again by the search, is not repeated.
+                    if current and same_place(vim.fs.normalize(root .. "/" .. item.file), current) then return end
+                    return cb(item)
+                end)
+            end
+        end,
         format = function(item)
             local home = vim.fn.expand("~")
-            local full = vim.fs.normalize(root .. "/" .. item.file)
+            local full = absolute(item)
             local parent = vim.fn.fnamemodify(full, ":h"):gsub("^" .. vim.pesc(home), "~")
-            return {
+            local row = {
                 { "󰉋  ", "Directory" },
                 { vim.fn.fnamemodify(full, ":t"), "SnacksPickerFile" },
                 { "  " },
                 { parent, "SnacksPickerDesc" },
             }
+            if item.current then
+                row[#row + 1] = { "  \u{b7} where the explorer is", "DiagnosticOk" }
+            end
+            return row
         end,
         preview = false,
         layout = { preset = "vscode" },
@@ -61,7 +109,7 @@ function M.pick(opts)
         confirm = function(picker, item)
             picker:close()
             if not item then return end
-            local path = vim.fs.normalize(root .. "/" .. item.file)
+            local path = absolute(item)
             vim.schedule(function() opts.confirm(path) end)
         end,
     })
