@@ -352,6 +352,18 @@ function M.toggle_full(bufnr)
     vim.cmd("startinsert")
 end
 
+---True while a full-screen program (opencode, LeetCode) is on screen. Buffer
+---navigation waits until it is hidden with <C-]>: the keys would otherwise
+---move a buffer you cannot see underneath it.
+---@return boolean
+function M.nav_locked()
+    if not M.full_active() then return false end
+    local buf = vim.api.nvim_win_get_buf(full_win)
+    if not vim.b[buf].terminal_full_program then return false end
+    vim.notify("Hide it first with <C-]> (opencode keys: <leader>k)", vim.log.levels.INFO, { title = "Full-screen program" })
+    return true
+end
+
 ---A new terminal running opencode, full screen.
 function M.opencode()
     if vim.fn.executable("opencode") == 0 then

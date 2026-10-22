@@ -43,6 +43,9 @@ local entries = {
     { "Code", "<leader>dw", "n", "Show diagnostics for the workspace" },
     { "Code", "g]d", "n", "Jump to the next diagnostic" },
     { "Code", "g[d", "n", "Jump to the previous diagnostic" },
+    { "Code", "<C-l>", "i", "Copilot: accept the whole suggestion" },
+    { "Code", "<C-Right> / <M-l>", "i", "Copilot: accept one word" },
+    { "Code", "<C-j> / <C-k>", "i", "Copilot: next / previous suggestion" },
     { "Buffers", "[ / ]", "n", "Back / forward through the buffers you have been in" },
 
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
@@ -50,6 +53,9 @@ local entries = {
     { "Terminal", "<C-g>", "t", "Copy terminal output into an editable, saveable buffer", "terminal_edit" },
     { "Terminal", "<leader>t", "n", "Open terminal action selector (new terminal here lives there)" },
     { "Terminal", "zT", "n", "Zoom the terminal to fill the whole panel (the split's other half waits behind it); again restores the split" },
+    { "Terminal", "<C-]>", "t/n", "Show / hide the terminal full screen (opencode lives there; buffer navigation is locked while it shows)" },
+    { "Terminal", "<C-Up> / <C-Down>", "t", "In a full-screen program: PageUp / PageDown (scroll the chat)" },
+    { "Terminal", "<C-PageUp> / <C-PageDown>", "t", "In a full-screen program: Home / End (first / last message)" },
     { "Terminal", "zn / zp", "n", "Focus the next / previous terminal" },
 
     { "Git", "<leader>g", "n", "Open LazyGit straight away" },

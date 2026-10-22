@@ -723,6 +723,7 @@ end, {
 -- ============================================================
 
 local function cycle_editor_buffer(direction)
+    if require("terminals").nav_locked() then return end
     require("buffers").cycle(direction)
 end
 
@@ -744,8 +745,14 @@ vim.keymap.set("n", "<S-Tab>", function() cycle_editor_buffer(-1) end, {
 -- lua/buffer_history.lua.
 require("buffer_history").setup()
 
-local function jump_back() require("buffer_history").back(vim.v.count1) end
-local function jump_forward() require("buffer_history").forward(vim.v.count1) end
+local function jump_back()
+    if require("terminals").nav_locked() then return end
+    require("buffer_history").back(vim.v.count1)
+end
+local function jump_forward()
+    if require("terminals").nav_locked() then return end
+    require("buffer_history").forward(vim.v.count1)
+end
 
 -- Not mapped globally. Only buffers that belong in the editor get them (below):
 -- pressed in a picker, the explorer, a terminal or a plugin's panel, they would
@@ -1070,12 +1077,14 @@ end, {
 -- belongs to one, the file's own folder when it belongs to none. The palette has
 -- the explicit versions: all open workspaces, or the current one only.
 vim.keymap.set({ "n", "v", "i" }, "<C-f>", function()
+    if require("terminals").nav_locked() then return end
     require("search_scope").files("smart")
 end, {
     desc = "Find files in the open workspaces",
 })
 
 vim.keymap.set({ "n", "v", "i" }, "<C-g>", function()
+    if require("terminals").nav_locked() then return end
     require("search_scope").grep("smart")
 end, {
     desc = "Search text in the open workspaces",
@@ -1152,6 +1161,7 @@ end, {
 -- instead -- dimmed for the current one, highlighted when it is somewhere
 -- else, so a buffer from another project is obvious rather than absent.
 vim.keymap.set({ "n", "v", "i" }, "<C-b>", function()
+    if require("terminals").nav_locked() then return end
     -- The buffer you are already in is the one result that can never be the
     -- answer. `current = false` alone does not remove it: the picker's own
     -- input buffer is the current one by the time its finder runs, so which
