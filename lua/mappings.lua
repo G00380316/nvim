@@ -1468,11 +1468,14 @@ local function enforce_close_key_contract(buf)
                 local map = vim.fn.maparg(lhs, mode, false, true)
                 if map.buffer == 1 then
                     local meaning = ((map.desc or "") .. " " .. (map.rhs or "")):lower()
-                    local closes = meaning:find("close", 1, true)
+                    -- ssh-launcher's windows are floats with no other way out of
+                    -- the keys help or the transfer panes: q and <Esc> stay theirs.
+                    local own = (map.desc or ""):find("^ssh%-launcher:") ~= nil
+                    local closes = not own and (meaning:find("close", 1, true)
                         or meaning:find("quit", 1, true)
                         or meaning:find("cancel", 1, true)
                         or meaning:find("bdelete", 1, true)
-                        or meaning:find("<cmd>bd", 1, true)
+                        or meaning:find("<cmd>bd", 1, true))
                     if closes and map.rhs ~= "<Nop>" then
                         vim.keymap.set(mode, lhs, "<Nop>", {
                             buffer = buf,
