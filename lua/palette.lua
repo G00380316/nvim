@@ -24,6 +24,9 @@ local project_actions = {
     { "Show workspace folder", "Print where the current workspace lives", "WorkspaceRoot" },
     -- Takes an optional file, so the scan for argument-free commands skips it.
     { "Import a document as a note", "A PDF, Word file, web page or image becomes Markdown", "NoteImport", "Notes" },
+    { "Save note as PDF", "Make a PDF of this Markdown note beside it, and open it", "MarkdownPdf", "Notes" },
+    { "Save note as web page", "A self-contained HTML file of this note, opened in the browser", "MarkdownHtml", "Notes" },
+    { "Preview note in browser", "Render this note in the browser; it updates when you save", "MarkdownBrowser", "Notes" },
     { "Show note hints", "The Markdown cheat sheet beside the note", "MarkdownHints", "Notes" },
     { "Mobile device hub", "Boot, run and watch simulators and emulators", "MobileDevices", "Tools" },
 }
