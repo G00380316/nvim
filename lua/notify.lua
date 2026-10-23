@@ -25,7 +25,7 @@ function M.setup()
         -- history = false for the shortened line; the full text is kept below.
         vim.api.nvim_echo({ { line, hl } }, false, {})
         if line ~= full then
-            vim.api.nvim_echo({ { full, hl } }, true, { err = false, verbose = true })
+            vim.api.nvim_echo({ { full, hl } }, true, { verbose = true })
         end
     end
 end
