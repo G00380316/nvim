@@ -142,6 +142,8 @@ require("nvim-treesitter").setup({
 -- Snacks
 -- ============================================================
 
+require("notify").setup()
+
 require("snacks").setup({
     bigfile = { enabled = true },
     dashboard = {
