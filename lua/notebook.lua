@@ -822,7 +822,11 @@ function M.setup()
     vim.g.molten_virt_lines_off_by_1 = true
     vim.g.molten_wrap_output = true
     vim.g.molten_output_win_max_height = 20
-    if pcall(require, "image") then vim.g.molten_image_provider = "image.nvim" end
+    if pcall(require, "image") then
+        vim.g.molten_image_provider = "image.nvim"
+        -- Plot outputs are drawn through image.nvim, which must be set up first.
+        pcall(function() require("image_setup").setup() end)
+    end
 
     vim.api.nvim_create_autocmd("User", {
         pattern = "MoltenDeinitPost",
