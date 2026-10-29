@@ -787,6 +787,39 @@ local function focus_tree()
     open_oil_sidebar({ focus = true })
 end
 
+---Jump to the file you are editing in the explorer: its folder opened, the
+---cursor on it, focus in the sidebar. <C-e> only focuses the explorer wherever
+---it was left; this brings it back to the file after you have browsed away.
+local function find_file_in_tree()
+    local buf = vim.api.nvim_get_current_buf()
+    local path = vim.api.nvim_buf_get_name(buf)
+    if vim.bo[buf].buftype ~= "" or path == "" or vim.fn.filereadable(path) ~= 1 then
+        vim.notify("This buffer is not a file on disk", vim.log.levels.INFO, { title = "Explorer" })
+        return
+    end
+    open_oil_sidebar({ focus = true })
+    local sidebar = find_oil_sidebar()
+    if not sidebar then return end
+    local directory = vim.fs.normalize(vim.fs.dirname(path))
+    local filename = vim.fs.basename(path)
+    -- The listing can still be filling in when oil reports the directory open,
+    -- so look for the file again a few times before giving up.
+    local function mark(attempt)
+        if not window_is_valid(sidebar) then return end
+        mark_oil_entry(sidebar, filename)
+        local oil_buf = vim.api.nvim_win_get_buf(sidebar)
+        local marks = vim.api.nvim_buf_get_extmarks(oil_buf, oil_follow_namespace, 0, -1, {})
+        if #marks == 0 and attempt < 5 then
+            vim.defer_fn(function() mark(attempt + 1) end, 60)
+        end
+    end
+    vim.api.nvim_win_call(sidebar, function()
+        oil.open(directory, nil, function()
+            vim.schedule(function() mark(1) end)
+        end)
+    end)
+end
+
 -- Exactly one explorer instance: oil may only ever live in the sidebar window.
 -- Anything that drops an oil buffer into an editor window instead -- the netrw
 -- hijack on `:edit <dir>`, a plugin calling oil.open(), a stray split -- would
@@ -1432,6 +1465,7 @@ vim.api.nvim_create_user_command("FocusEditor", focus_editor_or_last_panel, {
 vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
     desc = "Focus the center editor without toggling back to a panel",
 })
+vim.api.nvim_create_user_command("ExplorerFindFile", find_file_in_tree, { desc = "Show this file in the explorer and focus it" })
 vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Open or focus the file explorer" })
 vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Open or focus the terminal" })
 vim.api.nvim_create_user_command("TerminalNew", function() new_terminal() end,
