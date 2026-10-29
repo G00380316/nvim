@@ -1465,6 +1465,7 @@ vim.api.nvim_create_user_command("FocusEditor", focus_editor_or_last_panel, {
 vim.api.nvim_create_user_command("EditorFocus", focus_editor, {
     desc = "Focus the center editor without toggling back to a panel",
 })
+vim.keymap.set("n", "<leader>E", find_file_in_tree, { desc = "Find this file in the explorer" })
 vim.api.nvim_create_user_command("ExplorerFindFile", find_file_in_tree, { desc = "Show this file in the explorer and focus it" })
 vim.api.nvim_create_user_command("FocusTree", focus_tree, { desc = "Open or focus the file explorer" })
 vim.api.nvim_create_user_command("FocusTerminal", focus_terminal, { desc = "Open or focus the terminal" })

@@ -46,6 +46,7 @@ local entries = {
     { "Code", "<C-l>", "i", "Copilot: accept the whole suggestion" },
     { "Code", "<C-Right> / <M-l>", "i", "Copilot: accept one word" },
     { "Code", "<C-j> / <C-k>", "i", "Copilot: next / previous suggestion" },
+    { "Workspace", "<leader>E", "n", "Find this file in the explorer: its folder opened, cursor on it" },
     { "Buffers", "[ / ]", "n", "Back / forward through the buffers you have been in" },
 
     { "Terminal", "<C-t>", "n/i/x/t", "Open terminal or return to the editor", "terminal_or_editor" },
