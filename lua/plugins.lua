@@ -1800,6 +1800,7 @@ vim.api.nvim_create_autocmd("FileType", {
 require("markdown_hints").setup()
 require("note_import").setup()
 require("markdown_export").setup()
+require("ssh_jump").setup()
 
 vim.api.nvim_create_user_command("MarkdownToggleCheckbox", function(args)
     local first = args.range > 0 and args.line1 or nil

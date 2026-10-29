@@ -22,6 +22,7 @@ local project_actions = {
     { "Close this workspace", "Close its tab, splits and terminals; keep it listed", "WorkspaceClose" },
     { "Forget this workspace", "Remove it from the workspace list; the folder stays", "WorkspaceForget" },
     { "Find this file in the explorer", "Open its folder in the explorer with the cursor on it (<leader>E)", "ExplorerFindFile", "Files" },
+    { "Go to an ssh session", "Jump back to an open ssh session, in whichever tab it is", "SshJump", "Tools" },
     { "Show workspace folder", "Print where the current workspace lives", "WorkspaceRoot" },
     -- Takes an optional file, so the scan for argument-free commands skips it.
     { "Import a document as a note", "A PDF, Word file, web page or image becomes Markdown", "NoteImport", "Notes" },

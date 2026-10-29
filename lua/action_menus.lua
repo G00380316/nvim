@@ -262,6 +262,7 @@ local menus = {
         actions = {
             { label = "Open SSH launcher", detail = "Browse and manage saved hosts", run = command("SshLauncher") },
             { label = "Connect to a host", detail = "Open a session on a saved host", run = command("SshConnect") },
+            { label = "Go to an ssh session", detail = "Jump back to a session in another tab, ready to type", run = command("SshJump") },
             { label = "Show live sessions", detail = "List the connections that are open", run = command("SshSessions") },
             { label = "Browse a host's files", detail = "Open a host's folders in the editor", run = command("Ssh browse") },
             { label = "Transfer files (two panes)", detail = "This machine and a host side by side; select and copy across", run = command("Ssh transfer") },
