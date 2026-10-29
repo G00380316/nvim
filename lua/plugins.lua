@@ -266,7 +266,8 @@ require("snacks").setup({
                     ["<C-q>"] = { "cancel", mode = { "n", "i" }, desc = "Close picker" },
                     ["<Esc>"] = { "focus_list", mode = { "n", "i" } },
                     ["q"] = { function() end, mode = "n", desc = "Use Ctrl-Q to close" },
-                    ["<Space>l"] = { "flash", mode = { "n", "i" } },
+                    -- Not <Space>l: a space then l is ordinary typing in the search box.
+                    ["<C-]>"] = { "flash", mode = { "n", "i" }, desc = "Flash to a result" },
                     ["s"] = { "flash" },
                     ["<C-x>"] = { "run_with_args", mode = { "n", "i" }, desc = "Run the highlighted file with arguments" },
                 },
