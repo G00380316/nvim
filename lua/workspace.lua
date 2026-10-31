@@ -401,8 +401,9 @@ end
 ---somewhere to land. Neovim cannot close its last tab, and a refusal there
 ---would just be the picker declining to do what its key says.
 ---
----Refused while any of its buffers has unsaved changes, and when there is no
----other project to land on.
+---With unsaved changes it asks: save them all and close, close anyway (the
+---edits stay in their buffers), or cancel. It is refused when there is no other
+---project to land on.
 function M.close(path)
     local directory = normalize(path or M.get())
     local tab = directory and context_tab(directory)
@@ -411,13 +412,36 @@ function M.close(path)
         return false
     end
 
+    -- Unsaved work is the usual reason a close is refused, and in a workspace
+    -- you are not looking at it is easy not to know about. Say which files, and
+    -- let the answer be given here rather than by going over, saving and coming
+    -- back.
+    local unsaved = {}
     for _, win in ipairs(vim.api.nvim_tabpage_list_wins(tab)) do
         local buf = vim.api.nvim_win_get_buf(win)
-        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].modified then
-            vim.notify(
-                "Unsaved changes in " .. vim.fs.basename(vim.api.nvim_buf_get_name(buf)),
-                vim.log.levels.WARN
-            )
+        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].modified and not vim.tbl_contains(unsaved, buf) then
+            unsaved[#unsaved + 1] = buf
+        end
+    end
+    if #unsaved > 0 then
+        local names = vim.tbl_map(function(buf)
+            local file = vim.api.nvim_buf_get_name(buf)
+            return file ~= "" and vim.fs.basename(file) or "[No Name]"
+        end, unsaved)
+        local choice = vim.fn.confirm(
+            ("Unsaved changes in %s:\n%s"):format(M.label(directory), table.concat(names, "\n")),
+            "&Save all and close\n&Close anyway (changes stay in memory)\n&Cancel",
+            3
+        )
+        if choice == 1 then
+            for _, buf in ipairs(unsaved) do
+                local ok, err = pcall(vim.api.nvim_buf_call, buf, function() vim.cmd("silent write") end)
+                if not ok then
+                    vim.notify("Could not save " .. vim.api.nvim_buf_get_name(buf) .. ": " .. tostring(err), vim.log.levels.ERROR)
+                    return false
+                end
+            end
+        elseif choice ~= 2 then
             return false
         end
     end
