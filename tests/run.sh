@@ -5,6 +5,7 @@
 cd "$(dirname "$0")/.." || exit 1
 root=$(pwd)
 sandbox=$(mktemp -d /tmp/nvim-tests.XXXXXX)
+export NVIM_KEEP_TEMP=1 # the suites build their projects under /tmp
 failed=0
 for case in tests/cases/*${1}*.lua; do
     name=$(basename "$case" .lua)

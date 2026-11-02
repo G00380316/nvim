@@ -137,7 +137,10 @@ end
 
 ---Files opened recently, newest first, from every project.
 function M.recent_files()
-    Snacks.picker.recent({ title = "Recent Files" })
+    Snacks.picker.recent({
+        title = "Recent Files",
+        filter = { filter = function(item) return not require("workspace").is_temp(item.file) end },
+    })
 end
 
 function M.setup()

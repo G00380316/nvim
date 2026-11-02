@@ -45,6 +45,26 @@ local function normalize(path)
     return path and vim.fs.normalize(path) or nil
 end
 
+---Scratch places -- /tmp, the per-user folders under /var/folders, $TMPDIR --
+---hold throwaway files (pandoc output, scp staging, test runs). They are never
+---a project to come back to, so nothing remembers them.
+function M.is_temp(path)
+    if not path or path == "" or os.getenv("NVIM_KEEP_TEMP") then return false end
+    path = path:gsub("^oil://", "")
+    -- A file that is gone cannot be resolved, so its folder stands in for it.
+    local probe = path
+    while probe ~= "/" and not vim.uv.fs_realpath(probe) do probe = vim.fs.dirname(probe) end
+    local real = (vim.uv.fs_realpath(probe) or probe) .. path:sub(#probe + 1)
+    local roots = { "/tmp", "/private/tmp", "/var/folders", "/private/var/folders" }
+    local tmpdir = os.getenv("TMPDIR")
+    if tmpdir and tmpdir ~= "" then roots[#roots + 1] = tmpdir end
+    for _, root in ipairs(roots) do
+        root = (vim.uv.fs_realpath(root) or vim.fs.normalize(root)):gsub("/$", "")
+        if real == root or real:sub(1, #root + 1) == root .. "/" then return true end
+    end
+    return false
+end
+
 local function load_history()
     if vim.fn.filereadable(history_file) ~= 1 then return end
     local ok, decoded = pcall(vim.json.decode, table.concat(vim.fn.readfile(history_file), "\n"))
@@ -55,6 +75,7 @@ local function load_history()
             local directory = type(path) == "string" and normalize(path) or nil
             if directory
                 and not excluded_history_roots[directory]
+                and not M.is_temp(directory)
                 and not seen[directory]
                 and vim.fn.isdirectory(directory) == 1
             then
@@ -67,7 +88,7 @@ local function load_history()
 end
 
 local function remember(path)
-    if excluded_history_roots[vim.fs.normalize(path)] then return end
+    if excluded_history_roots[vim.fs.normalize(path)] or M.is_temp(path) then return end
     -- A Neovim started in a terminal for one purpose (LeetCode) is not a project.
     if vim.env.NVIM_NESTED then return end
 

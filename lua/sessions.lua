@@ -24,7 +24,7 @@ end
 local function snapshot()
     local workspace = require("workspace")
     local root = workspace.get()
-    if not root or root == "" then return nil end
+    if not root or root == "" or workspace.is_temp(root) then return nil end
 
     local buffers = require("buffers")
     local editor_win = require("ide_layout").find_editor_window()
