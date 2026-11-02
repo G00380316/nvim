@@ -264,6 +264,7 @@ local menus = {
             { label = "Connect to a host", detail = "Open a session on a saved host", run = command("SshConnect") },
             { label = "Go to an ssh session", detail = "Jump back to a session in another tab, ready to type", run = command("SshJump") },
             { label = "Show live sessions", detail = "List the connections that are open", run = command("SshSessions") },
+            { label = "Open a file from a host", detail = "Type: [{host}] {path}; in a session window the host is implied (gf on a path does it too)", run = command_asking("Ssh open", "Open (optional host, then path)") },
             { label = "Browse a host's files", detail = "Open a host's folders in the editor", run = command("Ssh browse") },
             { label = "Transfer files (two panes)", detail = "This machine and a host side by side; select and copy across", run = command("Ssh transfer") },
             { label = "Upload to a host", detail = "Type: {host} {local file}... [{remote path}]", run = command_asking("Ssh upload", "Upload (host, local file(s), optional remote path)") },

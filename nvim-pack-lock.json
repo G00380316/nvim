@@ -149,7 +149,7 @@
       "src": "https://github.com/folke/snacks.nvim"
     },
     "ssh-launcher.nvim": {
-      "rev": "392c5d7c7fa43b046803544a02fa210619502fa5",
+      "rev": "42a96a1fa1804ba95b5183ff1918695aed0fd224",
       "src": "https://github.com/G00380316/ssh-launcher.nvim"
     },
     "ts-autotag.nvim": {
