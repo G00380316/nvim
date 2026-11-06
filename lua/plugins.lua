@@ -1845,7 +1845,24 @@ require("sessions").setup()
 require("ssh_launcher").setup({
     -- Remote files open in oil (the explorer) and edit in this Neovim; the
     -- built-in browser is the fallback.
-    remote = { adapter = "oil" },
+    remote = {
+        adapter = "oil",
+        -- Oil lives only in the explorer sidebar; files open in the editor.
+        open = function(url, info)
+            if info.dir then
+                open_oil_sidebar({ focus = true })
+                local sidebar = find_oil_sidebar()
+                if not sidebar then return end
+                vim.api.nvim_win_call(sidebar, function() oil.open(url) end)
+            else
+                if not focus_editor() then
+                    local editor = ide_layout.ensure_editor_window()
+                    if editor then vim.api.nvim_set_current_win(editor) end
+                end
+                vim.cmd((info.command or "edit") .. " " .. vim.fn.fnameescape(url))
+            end
+        end,
+    },
 })
 require("rip-substitute").setup({
     popupWin = {

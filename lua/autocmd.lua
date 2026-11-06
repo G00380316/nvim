@@ -102,7 +102,10 @@ local function clean_dead_buffers()
 
         local name = vim.api.nvim_buf_get_name(bufnr)
 
+        -- oil-ssh://, scp:// and the like are not files on this disk: they are
+        -- read and written by their own handlers.
         if name ~= ""
+            and not name:match("^%a[%w+.-]*://")
             and vim.fn.filereadable(name) == 0
             and vim.fn.isdirectory(name) == 0
         then
