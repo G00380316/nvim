@@ -495,6 +495,33 @@ function M.pick()
     end)
 end
 
+---For install scripts (Mac_Install/install.sh): install everything missing,
+---with no questions, printing what happens, from `nvim --headless`. Commands
+---run on the script's own terminal, so a sudo prompt can be answered.
+---Returns how many are still missing.
+function M.install_missing_headless()
+    M.extend_path()
+    local failed = 0
+    for _, item in ipairs(missing_items()) do
+        local plan, _, reason = M.plan(item)
+        if not plan then
+            io.write(("[SKIP] %s: %s\n"):format(item.name, reason or "no way to install it here"))
+            failed = failed + 1
+        else
+            io.write(("[INSTALL] %s (%s)\n"):format(item.name, item.why))
+            local ok = os.execute(table.concat(plan, " && "))
+            M.extend_path()
+            if not (ok == true or ok == 0) or not M.available(item) then
+                io.write(("[FAILED] %s\n"):format(item.name))
+                failed = failed + 1
+            end
+        end
+    end
+    io.write(failed == 0 and "[OK] every tool Neovim uses is installed\n"
+        or ("[NOTE] %d tool(s) still missing; run :Deps in Neovim\n"):format(failed))
+    return failed
+end
+
 -- -------------------------------------------------------------- the triggers
 
 local asked = {}
