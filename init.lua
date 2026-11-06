@@ -42,6 +42,10 @@ for _, command in ipairs({
 end
 vim.g.this_obsession = nil
 
+-- Tools installed by npm, pipx, cargo, go or Homebrew live in directories a
+-- bare shell or a Dock launch may not have on PATH; language servers need them.
+require("deps").extend_path()
+
 -- molten-nvim is a Python remote plugin: Neovim needs a Python with pynvim and
 -- the Jupyter client libraries. Kept in its own venv so no project's
 -- environment has to carry them.

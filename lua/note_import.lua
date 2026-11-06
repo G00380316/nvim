@@ -270,8 +270,9 @@ local function convert_image(path, ctx, done)
     local body = string.format("![%s](%s)", ctx.stem, relative)
 
     if vim.fn.executable("tesseract") ~= 1 then
+        require("deps").ensure("tesseract", { reason = "reading the text in imported pictures" })
         return done(body, nil, "tesseract is not installed, so only the picture was added. "
-            .. "Install it to read the text in it: brew install tesseract")
+            .. "Install it (:DepsInstall tesseract) to read the text in it, then import again")
     end
 
     run({ "tesseract", path, "stdout" }, nil, function(ok, stdout)

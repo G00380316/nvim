@@ -828,6 +828,21 @@ function M.setup()
         pcall(function() require("image_setup").setup() end)
     end
 
+    -- A notebook needs jupytext to open as Markdown and a Python of its own to
+    -- run cells; offer whichever is missing, once the file is on screen.
+    vim.api.nvim_create_autocmd("BufReadPost", {
+        pattern = "*.ipynb",
+        callback = function()
+            if #vim.api.nvim_list_uis() == 0 or vim.env.NVIM_DEPS_QUIET then return end
+            vim.schedule(function()
+                local deps = require("deps")
+                deps.ensure("jupytext", { reason = "opening notebooks as Markdown" }, function()
+                    if not deps.python_host_ready() then deps.ensure_python_host() end
+                end)
+            end)
+        end,
+    })
+
     vim.api.nvim_create_autocmd("User", {
         pattern = "MoltenDeinitPost",
         callback = function() initialized[vim.api.nvim_get_current_buf()] = nil end,

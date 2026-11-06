@@ -1388,11 +1388,11 @@ vim.keymap.set("n", "gx", function()
     local target = vim.fn.fnamemodify(vim.fn.expand(raw), ":p")
 
     if raw:match("^https?://") then
-        vim.system({ "open", raw })
+        vim.ui.open(raw)
     elseif target:match("^https?://") then
-        vim.system({ "open", target })
+        vim.ui.open(target)
     elseif vim.fn.isdirectory(target) == 1 then
-        vim.system({ "open", target })
+        vim.ui.open(target)
     elseif vim.fn.filereadable(target) == 1 then
         vim.cmd("edit " .. vim.fn.fnameescape(target))
     else

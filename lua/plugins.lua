@@ -614,11 +614,11 @@ oil.setup({
         end,
         ["gd"] = function()
             local path = oil_entry_path()
-            if path then vim.system({ "open", "-R", path }, { detach = true }) end
+            if path then require("deps").reveal(path) end
         end,
         ["go"] = function()
             local path = oil_entry_path()
-            if path then vim.system({ "open", path }, { detach = true }) end
+            if path then vim.ui.open(path) end
         end,
         ["gs"] = { "actions.change_sort", mode = "n" },
         ["gx"] = "actions.open_external",
@@ -1561,9 +1561,12 @@ local function close_lazygit(buf)
     if project and lazygit_buffers[project] == buf then lazygit_buffers[project] = nil end
 end
 
-local function open_lazygit()
+local open_lazygit
+function open_lazygit()
     if vim.fn.executable("lazygit") ~= 1 then
-        vim.notify("lazygit is not installed", vim.log.levels.ERROR)
+        require("deps").ensure("lazygit", {}, function(ok)
+            if ok then vim.schedule(open_lazygit) end
+        end)
         return
     end
 
@@ -1800,6 +1803,7 @@ vim.api.nvim_create_autocmd("FileType", {
 require("markdown_hints").setup()
 require("note_import").setup()
 require("markdown_export").setup()
+require("deps").setup()
 require("ssh_jump").setup()
 
 vim.api.nvim_create_user_command("MarkdownToggleCheckbox", function(args)

@@ -239,7 +239,11 @@ local function open_external_file(args)
     if (kind == "video" or kind == "audio") and vim.fn.executable("mpv") == 1 then
         vim.fn.jobstart({ "mpv", file }, { detach = true })
     else
-        vim.fn.jobstart({ "open", file }, { detach = true })
+        vim.ui.open(file)
+        if kind == "video" or kind == "audio" then
+            -- The system player did it; offer mpv for next time.
+            require("deps").ensure("mpv", { reason = "playing video and audio" })
+        end
     end
 
     vim.schedule(function()

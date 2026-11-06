@@ -367,7 +367,9 @@ end
 ---A new terminal running opencode, full screen.
 function M.opencode()
     if vim.fn.executable("opencode") == 0 then
-        vim.notify("opencode is not installed (brew install anomalyco/tap/opencode)", vim.log.levels.WARN, { title = "Terminal" })
+        require("deps").ensure("opencode", {}, function(ok)
+            if ok then vim.schedule(M.opencode) end
+        end)
         return
     end
     -- Already running: that is the one to show, not a second.

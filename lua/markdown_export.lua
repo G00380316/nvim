@@ -2,7 +2,7 @@ local M = {}
 
 -- Turn the Markdown note you are in into a document you can hand to someone, or
 -- read in a browser. It uses pandoc, and xelatex for the PDF (both are in
--- Mac_Install), and says what is missing rather than failing.
+-- Mac_Install, and offered for install here when missing).
 --
 --   MarkdownPdf       note.md -> note.pdf beside it, then opened
 --   MarkdownHtml      note.md -> note.html beside it (one self-contained file:
@@ -28,6 +28,16 @@ local function notify(message, level)
     vim.notify(message, level or vim.log.levels.INFO, { title = "Markdown export" })
 end
 
+---A program the export needs: here, or offered for install -- and `retry` run
+---again once it is.
+local function need(exe, retry)
+    if vim.fn.executable(exe) == 1 then return true end
+    require("deps").ensure(exe, {}, function(ok)
+        if ok then vim.schedule(retry) end
+    end)
+    return false
+end
+
 ---The note to export: the current buffer, saved first.
 ---@return string? path
 local function current_note()
@@ -35,10 +45,6 @@ local function current_note()
     local file = vim.api.nvim_buf_get_name(buf)
     if file == "" or not file:match("%.[mM][dD]$") and not file:match("%.markdown$") then
         notify("Open a Markdown note first", vim.log.levels.WARN)
-        return nil
-    end
-    if vim.fn.executable("pandoc") == 0 then
-        notify("pandoc is not installed (brew install pandoc)", vim.log.levels.WARN)
         return nil
     end
     if vim.bo[buf].modified then vim.cmd("silent write") end
@@ -76,12 +82,9 @@ local function head_file(refresh)
 end
 
 function M.pdf()
+    if not need("pandoc", M.pdf) or not need("xelatex", M.pdf) then return end
     local file = current_note()
     if not file then return end
-    if vim.fn.executable("xelatex") == 0 then
-        notify("xelatex is not installed (brew install --cask mactex-no-gui), try MarkdownHtml and print to PDF", vim.log.levels.WARN)
-        return
-    end
     local output = vim.fn.fnamemodify(file, ":r") .. ".pdf"
     notify("Making " .. vim.fn.fnamemodify(output, ":t") .. " ...")
     pandoc(file, output, {
@@ -94,6 +97,7 @@ function M.pdf()
 end
 
 function M.html()
+    if not need("pandoc", M.html) then return end
     local file = current_note()
     if not file then return end
     local output = vim.fn.fnamemodify(file, ":r") .. ".html"
@@ -110,6 +114,7 @@ end
 local previews = {}
 
 function M.browser()
+    if not need("pandoc", M.browser) then return end
     local file = current_note()
     if not file then return end
     local dir = vim.fn.stdpath("cache") .. "/markdown_preview"

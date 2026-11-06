@@ -239,6 +239,10 @@ end, {
 -- Neovim-aware Lua settings.
 -- ============================================================
 
+-- The server ships inside oxlint now (`oxlint --lsp`); the old standalone
+-- `oxc_language_server` program is no longer published.
+vim.lsp.config("oxlint", { cmd = { "oxlint", "--lsp" } })
+
 vim.lsp.config("lua_ls", {
     settings = {
         Lua = {
