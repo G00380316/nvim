@@ -1,4 +1,5 @@
----Running a file through the zsh `run` / `runtest` functions, from wherever the
+---Running a file through the zsh `run` / `runtest` functions (or, where the shell
+---has none, a plain command for the language), from wherever the
 ---file is: the buffer you are in, the entry under the cursor in the explorer, or
 ---a file picked in a picker -- with arguments if you want to give some.
 local M = {}
@@ -51,6 +52,74 @@ M.runners = {
     },
 }
 
+-- What to type when the shell has no `run` / `runtest` function (no ~/.zshrc, a
+-- server, a fresh machine). `f` is the quoted file name and `a` the arguments
+-- as typed, already prefixed with a space. Compiled languages build into a
+-- scratch binary, so nothing lands beside the source.
+local scratch = [["${TMPDIR:-/tmp}/nvim_run_$$"]]
+local function compiled(compiler)
+    return function(f, a)
+        return ("%s %s -o %s && %s%s; rm -f %s"):format(compiler, f, scratch, scratch, a, scratch)
+    end
+end
+local function interpreter(program)
+    return function(f, a) return ("%s %s%s"):format(program, f, a) end
+end
+
+M.fallbacks = {
+    run = {
+        extensions = {
+            py = interpreter("python3"), js = interpreter("node"), mjs = interpreter("node"),
+            cjs = interpreter("node"), ts = interpreter("npx --yes tsx"), tsx = interpreter("npx --yes tsx"),
+            mts = interpreter("npx --yes tsx"), cts = interpreter("npx --yes tsx"),
+            lua = interpreter("nvim -l"), sh = interpreter("sh"), bash = interpreter("bash"),
+            zsh = interpreter("zsh"), rb = interpreter("ruby"), php = interpreter("php"),
+            pl = interpreter("perl"), r = interpreter("Rscript"), jl = interpreter("julia"),
+            hs = interpreter("runghc"), swift = interpreter("swift"), java = interpreter("java"),
+            go = interpreter("go run"), dart = interpreter("dart run"), kts = interpreter("kotlin"),
+            sql = interpreter("sqlite3 :memory: <"),
+            c = compiled("cc"), cc = compiled("c++"), cpp = compiled("c++"), cxx = compiled("c++"),
+            rs = compiled("rustc"), zig = interpreter("zig run"),
+            html = interpreter("open"), htm = interpreter("open"), pdf = interpreter("open"),
+            md = interpreter("open"), markdown = interpreter("open"), docx = interpreter("open"),
+        },
+        names = {
+            Makefile = "make", makefile = "make", GNUmakefile = "make",
+            ["Cargo.toml"] = "cargo run", ["go.mod"] = "go run .", ["package.json"] = "npm start",
+            ["Package.swift"] = "swift run", Brewfile = "brew bundle",
+            ["docker-compose.yml"] = "docker compose up", ["docker-compose.yaml"] = "docker compose up",
+            ["compose.yml"] = "docker compose up", ["compose.yaml"] = "docker compose up",
+            Dockerfile = "docker build .", Containerfile = "docker build .",
+            ["requirements.txt"] = "python3 -m pip install -r requirements.txt",
+            ["CMakeLists.txt"] = "cmake -S . -B build && cmake --build build",
+        },
+    },
+    runtest = {
+        extensions = {
+            py = interpreter("python3 -m pytest"), go = function(_, a) return "go test ./..." .. a end,
+            rs = function(_, a) return "cargo test" .. a end,
+            js = function(_, a) return "npm test --" .. a end, jsx = function(_, a) return "npm test --" .. a end,
+            ts = function(_, a) return "npm test --" .. a end, tsx = function(_, a) return "npm test --" .. a end,
+            mjs = function(_, a) return "npm test --" .. a end, cjs = function(_, a) return "npm test --" .. a end,
+            rb = interpreter("rspec"), php = interpreter("phpunit"),
+            swift = function(_, a) return "swift test" .. a end, dart = interpreter("dart test"),
+            java = function(_, a) return "mvn test" .. a end,
+        },
+        names = {},
+    },
+}
+
+---The command to type for `name` on this file when the shell function is
+---missing, or nil when there is nothing sensible to fall back to.
+local function fallback_command(name, basename, extension, args)
+    local table_ = M.fallbacks[name]
+    local suffix = (args and args ~= "") and (" " .. args) or ""
+    local named = table_.names[basename]
+    if named then return named .. suffix end
+    local build = table_.extensions[extension]
+    if build then return build(vim.fn.shellescape(basename), suffix) end
+end
+
 -- The arguments last given for each file, offered again next time.
 local last_args = {}
 
@@ -92,12 +161,13 @@ local function send(name, path, args)
     -- A subshell, so a build artefact lands beside its source without the
     -- terminal you were using changing directory underneath you. The arguments
     -- are the shell's to read, as typed: quotes, globs and variables work.
-    local command = ("(cd %s && %s %s%s)"):format(
-        vim.fn.shellescape(vim.fn.fnamemodify(path, ":p:h")),
-        name,
-        vim.fn.shellescape(basename),
-        (args and args ~= "") and (" " .. args) or ""
-    )
+    local call = ("%s %s%s"):format(name, vim.fn.shellescape(basename), (args and args ~= "") and (" " .. args) or "")
+    -- Your own function when the shell has one; otherwise a plain command.
+    local fallback = fallback_command(name, basename, extension, args)
+    if fallback then
+        call = ("if type %s >/dev/null 2>&1; then %s; else %s; fi"):format(name, call, fallback)
+    end
+    local command = ("(cd %s && %s)"):format(vim.fn.shellescape(vim.fn.fnamemodify(path, ":p:h")), call)
     -- Output shows in the panel and you stay where you are; <C-t> goes down for
     -- a program that wants input.
     require("terminals").send(command, { focus = false })
