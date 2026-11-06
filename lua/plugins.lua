@@ -1842,7 +1842,11 @@ require("notebook").setup()
 require("pack_actions").setup()
 require("sessions").setup()
 
-require("ssh_launcher").setup()
+require("ssh_launcher").setup({
+    -- Remote files open in oil (the explorer) and edit in this Neovim; the
+    -- built-in browser is the fallback.
+    remote = { adapter = "oil" },
+})
 require("rip-substitute").setup({
     popupWin = {
         border = "rounded",
