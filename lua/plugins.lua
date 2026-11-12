@@ -1804,6 +1804,7 @@ require("markdown_hints").setup()
 require("note_import").setup()
 require("markdown_export").setup()
 require("deps").setup()
+require("markdown_tables").setup()
 require("ssh_jump").setup()
 
 vim.api.nvim_create_user_command("MarkdownToggleCheckbox", function(args)
