@@ -22,6 +22,7 @@ local project_actions = {
     { "Close this workspace", "Close its tab, splits and terminals; keep it listed", "WorkspaceClose" },
     { "Forget this workspace", "Remove it from the workspace list; the folder stays", "WorkspaceForget" },
     { "Find this file in the explorer", "Open its folder in the explorer with the cursor on it (<leader>E)", "ExplorerFindFile", "Files" },
+    { "Refresh explorer folders", "List the folders in the explorer again (files added from outside)", "OilRefresh", "Tools" },
     { "Redraw pictures", "Clear images and draw them again where their lines are (when one lingers)", "ImageRedraw", "Tools" },
     { "Check tools and install missing ones", "Programs the configuration uses (language servers, pandoc, ripgrep ...) and whether they are here", "Deps", "Tools" },
     { "Go to an ssh session", "Jump back to an open ssh session, in whichever tab it is", "SshJump", "Tools" },

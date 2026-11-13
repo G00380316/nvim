@@ -713,8 +713,17 @@ local function refresh_visible_oil(force)
         if vim.bo[buf].filetype == "oil" and not vim.bo[buf].modified then
             local directory = oil.get_current_dir(buf)
             local stat = directory and vim.uv.fs_stat(directory)
-            if stat then
-                local stamp = ("%d.%d"):format(stat.mtime.sec, stat.mtime.nsec)
+            if force and not directory then
+                -- A folder on a server has nothing to look at cheaply; a manual refresh lists it again.
+                pcall(vim.api.nvim_win_call, win, function() require("oil.actions").refresh.callback() end)
+            elseif stat then
+                -- The entry count is part of the stamp because some places
+                -- (iCloud, network disks) add files without touching the
+                -- folder's modification time.
+                local count = 0
+                local handle = vim.uv.fs_scandir(directory)
+                while handle and vim.uv.fs_scandir_next(handle) do count = count + 1 end
+                local stamp = ("%d.%d.%d"):format(stat.mtime.sec, stat.mtime.nsec, count)
                 if force or (oil_folder_times[directory] and oil_folder_times[directory] ~= stamp) then
                     pcall(vim.api.nvim_win_call, win, function()
                         require("oil.actions").refresh.callback()
@@ -731,8 +740,12 @@ do
     local timer = vim.uv.new_timer()
     local focused = true
     timer:start(2000, 2000, vim.schedule_wrap(function()
-        if focused and vim.fn.mode() == "n" then refresh_visible_oil(false) end
+        -- Not while typing: insert, replace and command-line modes are left alone.
+        if focused and not vim.fn.mode():match("^[iRc]") then refresh_visible_oil(false) end
     end))
+    vim.api.nvim_create_user_command("OilRefresh", function() refresh_visible_oil(true) end, {
+        desc = "List the folders shown in the explorer again",
+    })
     vim.api.nvim_create_autocmd("FocusGained", {
         group = group,
         callback = function()
