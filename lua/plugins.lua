@@ -685,23 +685,46 @@ local function mark_oil_entry(win, filename)
     end
 end
 
+---Where a buffer's file is, as oil names it: its folder and its name. A file
+---on a server (oil-ssh://host//dir/file) is a remote folder; a file not saved
+---yet is its folder, with nothing to mark.
+local function oil_location(path)
+    if path == "" then return nil end
+    if path:match("^oil%-ssh://") then
+        local directory, filename = path:match("^(.*/)([^/]*)$")
+        return directory, filename, true
+    end
+    local directory = vim.fs.normalize(vim.fs.dirname(path))
+    if vim.fn.isdirectory(directory) ~= 1 then return nil end
+    return directory, vim.fn.filereadable(path) == 1 and vim.fs.basename(path) or nil, false
+end
+
 local function reveal_editor_file_in_oil(path)
     local sidebar = find_oil_sidebar()
-    if not sidebar or path == "" or vim.fn.filereadable(path) ~= 1 then return end
+    if not sidebar then return end
+    local directory, filename, remote = oil_location(path)
+    if not directory then return end
 
-    local directory = vim.fs.normalize(vim.fs.dirname(path))
-    local filename = vim.fs.basename(path)
     local oil_buf = vim.api.nvim_win_get_buf(sidebar)
-    local current_directory = oil.get_current_dir(oil_buf)
+    local shown
+    if remote then
+        shown = vim.api.nvim_buf_get_name(oil_buf)
+        if shown:sub(-1) ~= "/" then shown = shown .. "/" end
+    else
+        shown = oil.get_current_dir(oil_buf)
+        shown = shown and vim.fs.normalize(shown)
+    end
 
-    if current_directory and vim.fs.normalize(current_directory) == directory then
-        mark_oil_entry(sidebar, filename)
+    if shown == directory then
+        if filename then mark_oil_entry(sidebar, filename) end
         return
     end
 
     vim.api.nvim_win_call(sidebar, function()
         oil.open(directory, nil, function()
-            vim.schedule(function() mark_oil_entry(sidebar, filename) end)
+            vim.schedule(function()
+                if filename then mark_oil_entry(sidebar, filename) end
+            end)
         end)
     end)
 end
@@ -989,14 +1012,10 @@ end, { desc = "Open Oil first, then the dashboard in the editor zone" })
 
 vim.api.nvim_create_autocmd("BufEnter", {
     callback = function(args)
-        if not vim.api.nvim_buf_is_valid(args.buf)
-            or vim.bo[args.buf].buftype ~= ""
-            or vim.bo[args.buf].filetype == "oil"
-        then
-            return
-        end
-
+        if not vim.api.nvim_buf_is_valid(args.buf) or vim.bo[args.buf].filetype == "oil" then return end
         local path = vim.api.nvim_buf_get_name(args.buf)
+        -- A file on a server is an acwrite buffer, but still a file being edited.
+        if vim.bo[args.buf].buftype ~= "" and not path:match("^oil%-ssh://") then return end
         vim.schedule(function()
             if vim.api.nvim_buf_is_valid(args.buf)
                 and vim.api.nvim_get_current_buf() == args.buf
