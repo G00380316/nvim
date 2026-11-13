@@ -63,6 +63,28 @@ function M.setup()
             "*.avif",
         },
     })
+    M.guard_render()
+end
+
+---A picture whose line is gone (the file got shorter, or was reloaded from disk)
+---made image.nvim's screenpos() call fail on every redraw. Such a picture is
+---taken off the screen instead, and a failing draw never reaches the user.
+function M.guard_render()
+    local ok, renderer = pcall(require, "image/renderer")
+    if not ok or renderer._guarded then return end
+    renderer._guarded = true
+    local render = renderer.render
+    renderer.render = function(img, ...)
+        local fine, result = pcall(function(...)
+            local buf = img.buffer
+            if buf and vim.api.nvim_buf_is_valid(buf) and img.geometry and img.geometry.y
+                and img.geometry.y + 1 > vim.api.nvim_buf_line_count(buf) then
+                return false
+            end
+            return render(img, ...)
+        end, ...)
+        return fine and result or false
+    end
 end
 
 local timers = {}
