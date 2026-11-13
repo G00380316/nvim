@@ -540,6 +540,11 @@ require("render-markdown").setup({
         },
     },
     render_modes = { "n", "v", "i", "c" },
+    -- Headings, tables and code blocks change line heights after the text is
+    -- drawn; the pictures are put back where their lines moved to.
+    on = {
+        render = function(ctx) require("image_setup").refresh(ctx.buf) end,
+    },
     checkbox = {
         unchecked = { icon = "󰄱 " },
         checked = { icon = " " },

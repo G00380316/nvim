@@ -65,4 +65,52 @@ function M.setup()
     })
 end
 
+local timers = {}
+
+---Put a buffer's images where their text now is. render-markdown draws
+---headings, tables and code blocks a moment after the text is on screen, and
+---that shifts the lines; image.nvim only looks again when the window scrolls,
+---so a picture can stay behind where its line used to be.
+---@param buf integer
+function M.refresh(buf)
+    if not done or not vim.api.nvim_buf_is_valid(buf) then return end
+    if timers[buf] then timers[buf]:stop() else timers[buf] = vim.uv.new_timer() end
+    timers[buf]:start(120, 0, vim.schedule_wrap(function()
+        local ok, image = pcall(require, "image")
+        if not ok then return end
+        pcall(function()
+            for _, img in ipairs(image.get_images({ buffer = buf })) do
+                local moved, y, x = img:has_extmark_moved()
+                if moved and x and y then
+                    img.geometry.y, img.geometry.x = y, x
+                    img.extmark.row, img.extmark.col = y, x
+                end
+                img:render()
+            end
+        end)
+    end))
+end
+
+---Take every picture off the screen and draw them again where they belong.
+function M.redraw()
+    if not done then return end
+    pcall(function()
+        local image = require("image")
+        for _, img in ipairs(image.get_images()) do
+            img:clear()
+            img:render()
+        end
+    end)
+end
+
+vim.api.nvim_create_autocmd("WinScrolled", {
+    group = vim.api.nvim_create_augroup("ImageSettle", { clear = true }),
+    callback = function(args)
+        local win = tonumber(args.match)
+        if win and vim.api.nvim_win_is_valid(win) then M.refresh(vim.api.nvim_win_get_buf(win)) end
+    end,
+})
+
+vim.api.nvim_create_user_command("ImageRedraw", M.redraw, { desc = "Clear pictures and draw them again where their lines are" })
+
 return M
