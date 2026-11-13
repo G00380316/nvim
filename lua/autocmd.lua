@@ -471,7 +471,8 @@ vim.api.nvim_create_autocmd("FileChangedShellPost", {
 -- Inside archives
 -- A zip opens as a listing; opening an entry shows the file in a buffer named
 -- zip:///path/x.zip/entry. Neither has a way back up, so `-` is it, as in the
--- explorer: from an entry to the listing, from the listing to where you were.
+-- explorer: from an entry to the listing, up through the archive's folders,
+-- and from its top to where you were.
 -- ============================================================
 
 local archive_group = vim.api.nvim_create_augroup("ArchiveUp", { clear = true })
@@ -497,7 +498,13 @@ vim.api.nvim_create_autocmd("FileType", {
     pattern = "zip",
     callback = function(args)
         vim.keymap.set("n", "-", function()
-            -- Where you were before the archive, if that was a file; else the explorer.
+            -- Inside a folder of the archive: up to the folder above it.
+            local state = vim.b[args.buf].nvim_zip
+            if type(state) == "table" and (state.prefix or "") ~= "" then
+                vim.api.nvim_feedkeys(vim.keycode("<Plug>(nvim-dir-up)"), "m", false)
+                return
+            end
+            -- At the top of the archive: where you were before it, if that was a file; else the explorer.
             local alternate = vim.fn.bufnr("#")
             if alternate > 0 and alternate ~= args.buf and vim.bo[alternate].buflisted then
                 vim.cmd("buffer #")
