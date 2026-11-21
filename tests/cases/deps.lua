@@ -64,3 +64,11 @@ commands, via = plan_for("lua-language-server")
 T.eq(commands, { "brew install lua-language-server" }, "linux: brew fills the gaps the system manager has")
 
 deps._platform, deps._exists = nil, nil
+
+-- Checked against the real Arch repositories: pandoc is pandoc-cli there, and
+-- XeLaTeX is texlive-xetex.
+machine("linux", { "pacman" })
+commands = plan_for("pandoc")
+T.eq(commands, { "sudo pacman -S --needed --noconfirm pandoc-cli" }, "pacman: pandoc is pandoc-cli")
+commands = plan_for("xelatex")
+T.eq(commands, { "sudo pacman -S --needed --noconfirm texlive-xetex texlive-latexextra texlive-fontsrecommended" }, "pacman: XeLaTeX")

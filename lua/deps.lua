@@ -63,10 +63,11 @@ M.entries = {
     -- Features.
     entry({ exe = "magick", name = "ImageMagick", why = "pictures in notes and notebooks",
         brew = "imagemagick", native = "imagemagick" }),
-    entry({ exe = "pandoc", name = "pandoc", why = "exporting and importing notes", brew = "pandoc", native = "pandoc" }),
+    entry({ exe = "pandoc", name = "pandoc", why = "exporting and importing notes", brew = "pandoc", native = "pandoc",
+        pacman = "pandoc-cli" }),
     entry({ exe = "xelatex", name = "XeLaTeX", why = "saving a note as a PDF",
         cask = "mactex-no-gui", apt = "texlive-xetex", dnf = "texlive-xetex",
-        pacman = "texlive-bin texlive-latexextra texlive-fontsrecommended", zypper = "texlive-xetex" }),
+        pacman = "texlive-xetex texlive-latexextra texlive-fontsrecommended", zypper = "texlive-xetex" }),
     entry({ exe = "tesseract", name = "Tesseract", why = "reading the text in imported pictures",
         brew = "tesseract", apt = "tesseract-ocr", dnf = "tesseract", pacman = "tesseract tesseract-data-eng",
         zypper = "tesseract-ocr", apk = "tesseract-ocr" }),
