@@ -1844,12 +1844,20 @@ end
 -- `[ | ]` with two spaces. Right for code, wrong for Markdown, where `[ ]` is
 -- a task-list checkbox and `[  ]` is not one: it neither renders as a box nor
 -- toggles. The same space is left alone there, and only there.
-vim.fn["lexima#add_rule"]({
-    char = "<Space>",
-    at = [=[\[\%#\]]=],
-    input = "<Space>",
-    filetype = { "markdown" },
-    priority = 10,
+-- Added on the first insert: lexima loads its rules then anyway, and adding one
+-- earlier loads them all at startup (about 60 ms).
+vim.api.nvim_create_autocmd("InsertEnter", {
+    group = vim.api.nvim_create_augroup("LeximaRules", { clear = true }),
+    once = true,
+    callback = function()
+        vim.fn["lexima#add_rule"]({
+            char = "<Space>",
+            at = [=[\[\%#\]]=],
+            input = "<Space>",
+            filetype = { "markdown" },
+            priority = 10,
+        })
+    end,
 })
 
 
