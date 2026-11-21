@@ -360,21 +360,24 @@ function M.nav_locked()
     if not M.full_active() then return false end
     local buf = vim.api.nvim_win_get_buf(full_win)
     if not vim.b[buf].terminal_full_program then return false end
-    vim.notify("Hide it first with <C-]> (opencode keys: <leader>k)", vim.log.levels.INFO, { title = "Full-screen program" })
+    vim.notify("Hide it first with <C-]> (editor keys: <leader>k)", vim.log.levels.INFO, { title = "Full-screen program" })
     return true
 end
 
----A new terminal running opencode, full screen.
-function M.opencode()
-    if vim.fn.executable("opencode") == 0 then
-        require("deps").ensure("opencode", {}, function(ok)
-            if ok then vim.schedule(M.opencode) end
+---A full-screen terminal running `exe` (opencode, claude): the running one is
+---shown (or hidden when it already is), else a new one is started.
+---@param exe string
+local function open_program(exe)
+    if vim.fn.executable(exe) == 0 then
+        require("deps").ensure(exe, {}, function(ok)
+            if ok then vim.schedule(function() open_program(exe) end) end
         end)
         return
     end
     -- Already running: that is the one to show, not a second.
     for _, buf in ipairs(M.list()) do
-        if vim.b[buf].terminal_full_program and vim.b[buf].terminal_job_id then
+        if vim.b[buf].terminal_full_program and vim.b[buf].terminal_job_id
+            and (vim.b[buf].terminal_program_name or "opencode") == exe then
             if M.full_active() and vim.api.nvim_win_get_buf(full_win) == buf then
                 M.toggle_full() -- already on screen: hide it
             else
@@ -389,11 +392,18 @@ function M.opencode()
     vim.cmd("TerminalNew")
     local buf = vim.api.nvim_get_current_buf()
     if vim.bo[buf].filetype ~= "floaterm" then return end
-    M.send("opencode", { focus = false, wait = true })
+    M.send(exe, { focus = false, wait = true })
     M.toggle_full(buf)
     vim.b[buf].terminal_full_program = true
+    vim.b[buf].terminal_program_name = exe
     vim.b[buf].terminal_full_since = vim.uv.hrtime()
 end
+
+---A new terminal running opencode, full screen.
+function M.opencode() open_program("opencode") end
+
+---A new terminal running Claude Code, full screen.
+function M.claude() open_program("claude") end
 
 -- --------------------------------------------------------- closing cleanly
 
@@ -499,7 +509,7 @@ local app_programs = {
     htop = true, btop = true, top = true, less = true, man = true, lazygit = true,
     ssh = false, node = false,
 }
-local full_programs = { opencode = true, ["leetcode.nvim"] = true }
+local full_programs = { opencode = true, claude = true, ["leetcode.nvim"] = true }
 
 ---The names of the programs running under a shell, from one process listing.
 ---@param shell_pid integer
@@ -561,7 +571,10 @@ function M.scan_programs()
                     local wants_app, wants_full = false, false
                     for name in pairs(running) do
                         if app_programs[name] then wants_app = true end
-                        if full_programs[name] then wants_full = true end
+                        if full_programs[name] then
+                            wants_full = true
+                            vim.b[buf].terminal_program_name = vim.b[buf].terminal_program_name or name
+                        end
                     end
 
                     if wants_app and not vim.b[buf].terminal_app then
@@ -1187,6 +1200,9 @@ function M.setup()
     })
     vim.api.nvim_create_user_command("OpenCode", M.opencode, {
         desc = "Open opencode in a new full-screen terminal",
+    })
+    vim.api.nvim_create_user_command("Claude", M.claude, {
+        desc = "Open Claude Code in a new full-screen terminal",
     })
 
     -- Sample on the events that change which terminal you are looking at, and

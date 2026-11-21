@@ -76,6 +76,8 @@ M.entries = {
         go = "github.com/jesseduffield/lazygit@latest" }),
     entry({ exe = "opencode", name = "opencode", why = "the opencode terminal",
         brew = "anomalyco/tap/opencode", npm = "opencode-ai" }),
+    entry({ exe = "claude", name = "Claude Code", why = "the Claude terminal",
+        cask = "claude-code", npm = "@anthropic-ai/claude-code" }),
     entry({ exe = "jupytext", name = "jupytext", why = "opening notebooks as Markdown", pipx = "jupytext" }),
     entry({ exe = "sourcekit-lsp", name = "the Swift toolchain", why = "Swift, and C family files in Xcode projects",
         manual = sysname_is_mac and "Run: xcode-select --install" or "Install the Swift toolchain from https://swift.org/install" }),

@@ -100,6 +100,7 @@ local menus = {
             { label = "Full-screen terminal", detail = "Toggle: this terminal over the whole window and back (<C-]> inside it)", run = command("TerminalFull") },
             { label = "App mode", detail = "Toggle: every key goes to the program; <C-Up>/<C-Down> page it (no mouse here)", run = command("TerminalApp") },
             { label = "Open opencode", detail = "Show the running one full screen (hide it again with the same action or <C-]>), or start one", run = command("OpenCode") },
+            { label = "Open Claude Code", detail = "Show the running one full screen (hide it again with the same action or <C-]>), or start one", run = command("Claude") },
             { label = "Choose terminal", detail = "Search the current workspace's live shells", run = command("TerminalList") },
             { label = "Edit terminal output", detail = "Copy output into an editable, saveable buffer", run = command("TerminalEdit"), at_origin = true },
         },
