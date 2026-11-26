@@ -32,6 +32,12 @@ local project_actions = {
     { "Save note as PDF", "Make a PDF of this Markdown note beside it, and open it", "MarkdownPdf", "Notes" },
     { "Save note as web page", "A self-contained HTML file of this note, opened in the browser", "MarkdownHtml", "Notes" },
     { "Preview note in browser", "Render this note in the browser; it updates when you save", "MarkdownBrowser", "Notes" },
+    { "Run R chunk", "Run the {r} chunk under the cursor in an R session (<leader>n)", "RmdRunChunk", "Run" },
+    { "Run all R chunks", "Every R chunk in this file, top to bottom", "RmdRunAll", "Run" },
+    { "Run R chunks above", "The R chunks up to and including this one", "RmdRunAbove", "Run" },
+    { "Show the R session", "Start or show R in a terminal", "RmdConsole", "Run" },
+    { "End the R session", "Quit R in its terminal", "RmdStop", "Run" },
+    { "Render R Markdown", "Make a web page of this .Rmd or .qmd and open it (:RmdRender pdf or word for those)", "RmdRender", "Notes" },
     { "Show note hints", "The Markdown cheat sheet beside the note", "MarkdownHints", "Notes" },
     { "Mobile device hub", "Boot, run and watch simulators and emulators", "MobileDevices", "Tools" },
 }

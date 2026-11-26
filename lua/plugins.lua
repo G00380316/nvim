@@ -1873,6 +1873,7 @@ if not jupytext_ok then
 end
 
 require("notebook").setup()
+require("rmarkdown").setup()
 require("pack_actions").setup()
 require("sessions").setup()
 
