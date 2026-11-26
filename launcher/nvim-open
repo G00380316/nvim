@@ -17,8 +17,12 @@ SOCK="${NVIM_LAUNCHER_SOCKET:-${XDG_STATE_HOME:-$HOME/.local/state}/nvim/launche
 mkdir -p "$(dirname "$SOCK")"
 
 # A GUI-launched script has a bare PATH.
-PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
-NVIM="$(command -v nvim)" || { echo "nvim-open: nvim not found" >&2; exit 1; }
+PATH="$HOME/.local/share/bob/nvim-bin:/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
+NVIM="$(command -v nvim)"
+# Not on that PATH (a version manager's shim folder, say): ask the login shell,
+# which has the PATH from the shell configuration.
+[ -z "$NVIM" ] && NVIM="$("${SHELL:-/bin/zsh}" -lc 'command -v nvim' 2>/dev/null | tail -1)"
+[ -x "$NVIM" ] || { echo "nvim-open: nvim not found" >&2; osascript -e 'display alert "Neovim was not found" message "nvim-open could not find nvim on the PATH."' >/dev/null 2>&1; exit 1; }
 KITTY=""
 for candidate in /Applications/kitty.app "$HOME/Applications/kitty.app"; do
     [ -x "$candidate/Contents/MacOS/kitty" ] && { KITTY="$candidate/Contents/MacOS/kitty"; break; }
