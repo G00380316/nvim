@@ -1,14 +1,21 @@
 ---Formatting files with the tool the project uses instead of the language
 ---server's plainer formatting. TypeScript, TSX, JavaScript, JSX, JSON, CSS and
 ---HTML: Biome when the project has a biome.json, otherwise Prettier (its own copy
----first). Python: Ruff. Saving a file runs it; `:Format` runs it by hand. A file
+---first). Python: Ruff. Lua: StyLua. Shell: shfmt. Saving a file runs it; `:Format` runs it by hand. A file
 ---of another kind, or no formatter at all, falls back to the language server.
 local M = {}
 
 local filetypes = {
     typescript = true, typescriptreact = true, javascript = true, javascriptreact = true,
     json = true, jsonc = true, css = true, scss = true, html = true,
-    python = true,
+    python = true, lua = true, sh = true, bash = true,
+}
+
+-- The tools for languages that have just one, and the install they are offered.
+local single = {
+    lua = { exe = "stylua", reason = "formatting Lua", args = function(file) return { "--stdin-filepath", file, "-" } end },
+    sh = { exe = "shfmt", reason = "formatting shell scripts", args = function(file) return { "-filename", file } end },
+    bash = { exe = "shfmt", reason = "formatting shell scripts", args = function(file) return { "-filename", file } end },
 }
 
 local function find_up(start, names)
@@ -28,7 +35,18 @@ function M.command_for(file)
     end
 
     local bufnr = vim.fn.bufnr(file)
-    if file:match("%.pyi?$") or (bufnr > 0 and vim.bo[bufnr].filetype == "python") then
+    local filetype = bufnr > 0 and vim.bo[bufnr].filetype or vim.filetype.match({ filename = file }) or ""
+    local one = single[filetype]
+    if one then
+        local bin = local_bin(one.exe)
+        if bin then
+            local command = { bin }
+            vim.list_extend(command, one.args(file))
+            return command, one.exe
+        end
+        return
+    end
+    if filetype == "python" then
         -- Ruff reads the project's own settings (pyproject.toml, ruff.toml).
         local ruff = local_bin("ruff")
         if ruff then return { ruff, "format", "--stdin-filename", file, "-" }, "ruff" end
@@ -73,13 +91,16 @@ function M.run(buf, opts)
 
     local command, name = M.command_for(file)
     if not command then
-        local python = vim.bo[buf].filetype == "python"
-        local tool = python and "ruff" or "prettier"
+        local filetype = vim.bo[buf].filetype
+        local tool, reason = "prettier", "formatting TypeScript, JavaScript, CSS and JSON"
+        if filetype == "python" then
+            tool, reason = "ruff", "formatting Python"
+        elseif single[filetype] then
+            tool, reason = single[filetype].exe, single[filetype].reason
+        end
         if not opts.quiet and vim.fn.executable(tool) == 0 and not vim.g["format_offered_" .. tool] then
             vim.g["format_offered_" .. tool] = true
-            require("deps").ensure(tool, {
-                reason = python and "formatting Python" or "formatting TypeScript, JavaScript, CSS and JSON",
-            })
+            require("deps").ensure(tool, { reason = reason })
         end
         return false
     end
@@ -102,7 +123,7 @@ function M.setup()
             local ok = pcall(vim.lsp.buf.format, { async = false })
             if not ok then vim.notify("Nothing to format this file with", vim.log.levels.INFO, { title = "Format" }) end
         end
-    end, { desc = "Format this file (Prettier or Biome for web files, Ruff for Python, else the language server)" })
+    end, { desc = "Format this file (Prettier or Biome for web files, Ruff for Python, StyLua for Lua, shfmt for shell, else the language server)" })
 end
 
 return M

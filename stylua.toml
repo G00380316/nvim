@@ -1,0 +1,6 @@
+# How this configuration's own Lua is formatted (4 spaces, long lines allowed).
+indent_type = "Spaces"
+indent_width = 4
+column_width = 120
+quote_style = "AutoPreferDouble"
+call_parentheses = "Always"

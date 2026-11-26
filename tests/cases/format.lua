@@ -35,3 +35,21 @@ if vim.fn.executable("ruff") == 1 then
     T.eq(command[2], "format", "ruff format")
     vim.cmd("bwipeout!")
 end
+
+-- Lua goes to StyLua and shell to shfmt, when they are installed.
+local bindir = vim.fn.tempname()
+vim.fn.mkdir(bindir, "p")
+for _, tool in ipairs({ "stylua", "shfmt" }) do
+    local path = bindir .. "/" .. tool
+    vim.fn.writefile({ "#!/bin/sh" }, path)
+    vim.fn.setfperm(path, "rwxr-xr-x")
+end
+local saved_path = vim.env.PATH
+vim.env.PATH = bindir .. ":" .. saved_path
+command, name = format.command_for("/somewhere/x.lua")
+T.eq(name, "stylua", "lua: stylua")
+T.eq(command[#command], "-", "stylua reads stdin")
+command, name = format.command_for("/somewhere/x.sh")
+T.eq(name, "shfmt", "shell: shfmt")
+vim.env.PATH = saved_path
+vim.fn.delete(bindir, "rf")
