@@ -405,6 +405,29 @@ function M.opencode() open_program("opencode") end
 ---A new terminal running Claude Code, full screen.
 function M.claude() open_program("claude") end
 
+---Play a sound file in a terminal of its own with mpv, which draws a progress
+---line there and answers the keys you would expect: <Space> pauses, <Left> and
+---<Right> seek, 9 and 0 change the volume, q stops it and closes the terminal.
+---(Run with no window and nothing to look at, a song would play on with no way
+---to stop it.)
+---@param file string
+function M.play(file)
+    if vim.fn.executable("mpv") == 0 then
+        require("deps").ensure("mpv", { reason = "playing audio" }, function(ok)
+            if ok then vim.schedule(function() M.play(file) end) end
+        end)
+        return
+    end
+    if M.full_active() then M.toggle_full() end
+    vim.cmd("TerminalNew")
+    local buf = vim.api.nvim_get_current_buf()
+    if vim.bo[buf].filetype ~= "floaterm" then return end
+    -- exec: the shell becomes mpv, so the terminal ends when the song does.
+    M.send("exec mpv --no-video --no-audio-display " .. vim.fn.shellescape(file), { wait = true })
+    M.mark_app(buf, true)
+    vim.notify("<Space> pause   <Left>/<Right> seek   q stop", vim.log.levels.INFO, { title = vim.fn.fnamemodify(file, ":t") })
+end
+
 -- --------------------------------------------------------- closing cleanly
 
 ---Every process below `shell_pid`, deepest first.
@@ -506,7 +529,7 @@ end
 -- full_apps also go full screen, then back when the program exits.
 local app_programs = {
     opencode = true, claude = true, codex = true, nvim = true, vim = true, vi = true,
-    htop = true, btop = true, top = true, less = true, man = true, lazygit = true,
+    htop = true, btop = true, top = true, less = true, man = true, lazygit = true, mpv = true,
     ssh = false, node = false,
 }
 local full_programs = { opencode = true, claude = true, ["leetcode.nvim"] = true }

@@ -203,7 +203,8 @@ vim.api.nvim_create_autocmd("WinLeave", {
 -- ============================================================
 
 -- By extension. A document goes to whatever macOS opens it with; a video goes
--- to mpv, when it is installed (as is audio).
+-- to mpv, when it is installed; audio plays in a terminal with mpv, so it can
+-- be paused and stopped.
 --
 -- .ts is not here: it is TypeScript far more often than it is an MPEG transport
 -- stream, and listing it opened every TypeScript file in a video player and
@@ -212,10 +213,10 @@ local external_documents = {
     "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp",
     "pages", "numbers", "key", "epub", "mobi",
 }
-local external_videos = { "mp4", "mkv", "mov", "avi", "webm", "m4v", "flv", "wmv", "m2ts" }
+local external_videos = { "mp4", "mkv", "mov", "avi", "webm", "m4v", "flv", "wmv", "m2ts", "mpg", "mpeg", "3gp", "ogv" }
 -- Sound and design files: binary, so a buffer of them is garbage, and each has
 -- an app made for it. Audio goes to mpv like video does.
-local external_audio = { "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "aiff" }
+local external_audio = { "mp3", "wav", "flac", "m4a", "aac", "ogg", "opus", "aiff", "wma", "mka" }
 local external_design = { "psd", "ai", "sketch", "fig", "xd", "indd", "heic" }
 
 local external_by_extension = {}
@@ -236,7 +237,10 @@ local function open_external_file(args)
     -- the document was opened from.
     local previous = vim.fn.bufnr("#")
 
-    if (kind == "video" or kind == "audio") and vim.fn.executable("mpv") == 1 then
+    if kind == "audio" then
+        -- Played in a terminal (progress, pause, seek, stop), after the buffer
+        -- is out of the way, below.
+    elseif kind == "video" and vim.fn.executable("mpv") == 1 then
         vim.fn.jobstart({ "mpv", file }, { detach = true })
     else
         vim.ui.open(file)
@@ -260,6 +264,8 @@ local function open_external_file(args)
         if vim.api.nvim_buf_is_valid(doc) then
             pcall(vim.api.nvim_buf_delete, doc, { force = true })
         end
+
+        if kind == "audio" then require("terminals").play(file) end
     end)
 end
 
