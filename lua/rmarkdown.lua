@@ -172,6 +172,40 @@ local function rmarkdown_installed()
     return result.code == 0
 end
 
+---The R packages an error says are missing ("there is no package called
+---'tidyverse'"), each once.
+---@param text string
+---@return string[]
+function M.missing_packages(text)
+    local found, seen = {}, {}
+    -- R quotes with ' or the curly pair, depending on the locale.
+    text = text:gsub("\226\128[\152\153]", "'")
+    for name in text:gmatch("no package called [\"'`]([%w%.]+)") do
+        if not seen[name] then
+            seen[name] = true
+            found[#found + 1] = name
+        end
+    end
+    return found
+end
+
+---Offer to install the packages a failed render was missing.
+---@param text string the render's error output
+function M.offer_packages(text)
+    local missing = M.missing_packages(text)
+    if #missing == 0 then return end
+    local list = table.concat(missing, ", ")
+    if vim.fn.confirm(("The document needs R packages that are not installed: %s. Install them now?"):format(list),
+        "&Install\n&Not now", 1) ~= 1 then
+        return
+    end
+    local quoted = vim.tbl_map(function(name) return ('"%s"'):format(name) end, missing)
+    require("terminals").send(
+        ("Rscript -e 'install.packages(c(%s), repos = \"https://cloud.r-project.org\")'"):format(table.concat(quoted, ", ")),
+        { focus = false })
+    notify(("Installing %s in the terminal; render again when it finishes"):format(list))
+end
+
 ---Render the file to `format` (html, pdf or word) and open the result.
 ---@param format? string
 function M.render(format)
@@ -197,6 +231,7 @@ function M.render(format)
             if result.code ~= 0 then
                 local tail = vim.trim(result.stderr or "")
                 notify("Render failed:\n" .. tail:sub(-600), vim.log.levels.ERROR)
+                M.offer_packages(tail)
                 return
             end
             notify("Rendered " .. vim.fs.basename(output))

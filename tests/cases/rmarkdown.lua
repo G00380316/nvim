@@ -23,3 +23,9 @@ T.eq({ chunks[1].first, chunks[1].last }, { 3, 3 }, "first chunk lines")
 T.eq(chunks[2].lang, "python", "second is python")
 T.eq(chunks[3].lang, "r", "a plain ```r fence is R")
 T.eq(rmarkdown.is_rmd(buf), false, "a scratch buffer is not an Rmd")
+
+-- A failed render names the packages it lacked.
+T.eq(rmarkdown.missing_packages("Error in `library()`:\n! there is no package called 'tidyverse'"), { "tidyverse" }, "straight quotes")
+T.eq(rmarkdown.missing_packages("there is no package called ‘ggplot2’\nthere is no package called ‘dplyr’\nthere is no package called ‘ggplot2’"),
+    { "ggplot2", "dplyr" }, "curly quotes, each once")
+T.eq(rmarkdown.missing_packages("some other error"), {}, "nothing missing")
