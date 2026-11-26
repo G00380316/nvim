@@ -527,9 +527,17 @@ vim.api.nvim_create_autocmd("FileType", {
 do
     local function ensure_cwd()
         if vim.uv.cwd() then return end
-        for _, candidate in ipairs({ vim.g.workspace_root, vim.env.HOME }) do
-            if candidate and vim.fn.isdirectory(candidate) == 1 and pcall(vim.cmd.cd, candidate) then
-                vim.notify("The working directory was gone; now in " .. candidate, vim.log.levels.WARN)
+        -- A folder can exist and still be unreadable (macOS withholds Documents,
+        -- Desktop and Downloads from a program that was not given access), so
+        -- each candidate is checked by asking for the working directory again.
+        for _, candidate in ipairs({ vim.g.workspace_root, vim.env.HOME, "/" }) do
+            if candidate and vim.fn.isdirectory(candidate) == 1 and pcall(vim.cmd.cd, candidate) and vim.uv.cwd() then
+                vim.notify(
+                    "The working directory was gone or unreadable; now in " .. candidate
+                        .. (candidate ~= vim.g.workspace_root and vim.g.workspace_root
+                            and ("\n" .. vim.g.workspace_root .. " cannot be read: allow the program that started Neovim under System Settings > Privacy & Security > Files and Folders") or ""),
+                    vim.log.levels.WARN
+                )
                 return
             end
         end
