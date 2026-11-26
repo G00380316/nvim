@@ -48,3 +48,17 @@ plutil -replace CFBundleDocumentTypes -json '[{"CFBundleTypeName":"Anything","CF
 touch "$APP"
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP" >/dev/null 2>&1 || true
 echo "Installed $APP"
+
+# Make it the app that opens text and code files from Finder (what Get Info >
+# Open with > Change All does, one type at a time). Needs `brew install duti`;
+# `sh install.sh --no-defaults` leaves your file associations alone.
+if [ "$1" != "--no-defaults" ]; then
+    if command -v duti >/dev/null 2>&1; then
+        for ext in md markdown Rmd rmd qmd txt lua json yaml yml toml py js ts tsx jsx sh zsh conf ini log csv; do
+            duti -s local.nvim-launcher ".$ext" all >/dev/null 2>&1 || true
+        done
+        echo "Neovim is now the default app for text and code files."
+    else
+        echo "Install duti (brew install duti) and run this again to make Neovim the default for text and code files."
+    fi
+fi

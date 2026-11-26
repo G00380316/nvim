@@ -22,6 +22,7 @@ vim.lsp.enable({
     "sourcekit",              -- Swift / Objective-C
     "superhtml",              -- HTML
     "tailwindcss",            -- Tailwind CSS
+    "emmet_language_server",  -- Emmet abbreviations (div.card>ul>li*3) in JSX / TSX
     "tinymist",               -- Typst
     "clangd",                 -- C / C++ / Objective-C
     "ty",                     -- Python type checker
@@ -241,6 +242,9 @@ end, {
 
 -- The server ships inside oxlint now (`oxlint --lsp`); the old standalone
 -- `oxc_language_server` program is no longer published.
+-- Only where HTML is typed by hand in JavaScript; plain HTML and CSS have servers of their own.
+vim.lsp.config("emmet_language_server", { filetypes = { "javascriptreact", "typescriptreact" } })
+
 vim.lsp.config("oxlint", { cmd = { "oxlint", "--lsp" } })
 
 vim.lsp.config("lua_ls", {

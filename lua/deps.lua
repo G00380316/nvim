@@ -107,6 +107,8 @@ M.entries = {
         manual = "Build it from https://github.com/kristoff-it/superhtml" }),
     entry({ exe = "tailwindcss-language-server", lsp = "tailwindcss", name = "tailwindcss-language-server", why = "Tailwind CSS",
         npm = "@tailwindcss/language-server" }),
+    entry({ exe = "emmet-language-server", lsp = "emmet_language_server", name = "emmet-language-server",
+        why = "Emmet abbreviations in JSX", npm = "@olrtg/emmet-language-server" }),
     entry({ exe = "tinymist", lsp = "tinymist", name = "tinymist", why = "Typst", brew = "tinymist", pacman = "tinymist",
         manual = "Download it from https://github.com/Myriad-Dreamin/tinymist/releases" }),
     entry({ exe = "clangd", lsp = "clangd", name = "clangd", why = "C and C++",

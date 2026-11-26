@@ -1875,6 +1875,7 @@ end
 require("notebook").setup()
 require("rmarkdown").setup()
 require("external_open").setup()
+require("web").setup()
 require("pack_actions").setup()
 require("sessions").setup()
 
