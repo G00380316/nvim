@@ -270,7 +270,7 @@ local function save_current_file()
     end
 
     local function write_buffer()
-        if vim.bo[bufnr].filetype ~= "oil" and has_lsp(bufnr) then
+        if vim.bo[bufnr].filetype ~= "oil" and not require("format").run(bufnr) and has_lsp(bufnr) then
             pcall(vim.lsp.buf.format, { async = false })
         end
 
