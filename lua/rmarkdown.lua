@@ -43,13 +43,6 @@ function M.chunks(buf)
     return chunks
 end
 
----The chunk containing `line`, or nil.
-local function chunk_at(buf, line)
-    for _, chunk in ipairs(M.chunks(buf)) do
-        if line >= chunk.first - 1 and line <= chunk.last + 1 then return chunk end
-    end
-end
-
 -- --------------------------------------------------------------- R session
 
 local function session_job()
@@ -102,45 +95,183 @@ local function send_code(code)
     end)
 end
 
----Whether a chunk should be run here: R chunks only, and not one marked eval=FALSE.
-local function runnable(chunk)
+---Whether a chunk's options say not to run it: eval=FALSE in the header
+---({r, eval=FALSE}), or `#| eval: false` as the first lines of a Quarto chunk.
+local function eval_off(buf, chunk)
+    if chunk.options:match("eval%s*=%s*F") then return true end
+    for _, line in ipairs(vim.api.nvim_buf_get_lines(buf, chunk.first - 1, chunk.last, false)) do
+        local option = line:match("^#|%s*(.-)%s*$")
+        if not option then break end
+        if option:match("^eval:%s*false$") or option:match("^eval:%s*no$") then return true end
+    end
+    return false
+end
+
+---Whether a chunk should be run here: R chunks only, not one marked off.
+local function runnable(buf, chunk)
     if chunk.lang ~= "r" then
         notify(("Only R chunks run here; this one is %s"):format(chunk.lang), vim.log.levels.WARN)
         return false
     end
-    if chunk.options:match("eval%s*=%s*F") then return false end
-    return true
+    return not eval_off(buf, chunk)
 end
 
 local function chunk_code(buf, chunk)
     return table.concat(vim.api.nvim_buf_get_lines(buf, chunk.first - 1, chunk.last, false), "\n")
 end
 
-function M.run_chunk()
-    local buf = vim.api.nvim_get_current_buf()
-    local chunk = chunk_at(buf, vim.api.nvim_win_get_cursor(0)[1])
-    if not chunk then
-        notify("The cursor is not in a code chunk")
+-- ------------------------------------------------------------ inline plots
+
+-- Plots are drawn by R into PNG files (a device per chunk), and the last plot of
+-- each chunk is shown in the note under the chunk, as notebook plots are, when
+-- the terminal can draw pictures (kitty). Elsewhere the file is opened.
+
+local cache_dir = vim.fn.stdpath("cache") .. "/rmarkdown"
+local helper_file = cache_dir .. "/helper.R"
+local run_counter = 0
+local images = {} -- [buf][chunk index] = image
+M.on_done = nil -- test hook: function(run) called when a run has finished
+
+local helper = [==[
+.nvim_mark <- function(dir) {
+  graphics.off()
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  assign(".nvim_dir", dir, globalenv())
+  options(device = function(...) grDevices::png(file.path(.nvim_dir, "p%03d.png"), width = 900, height = 600, res = 110))
+}
+.nvim_run <- function(file, id) {
+  on.exit({ graphics.off(); cat(paste0("\n[[nvim-done ", id, "]]\n")) })
+  source(file, echo = TRUE, max.deparse.length = Inf)
+}
+]==]
+
+local function can_draw()
+    return (vim.env.KITTY_WINDOW_ID or (vim.env.TERM or ""):match("kitty")) and pcall(require, "image")
+end
+
+---Show the last plot of a chunk under it, replacing the one from the last run.
+local function show_plot(buf, index, fence_row, files)
+    images[buf] = images[buf] or {}
+    local old = images[buf][index]
+    if old then pcall(function() old:clear() end) end
+    images[buf][index] = nil
+    if #files == 0 then return end
+    local file = files[#files]
+    if not can_draw() then
+        vim.ui.open(file)
         return
     end
-    if runnable(chunk) and chunk.last >= chunk.first then send_code(chunk_code(buf, chunk)) end
+    pcall(function() require("image_setup").setup() end)
+    local win = vim.fn.win_findbuf(buf)[1]
+    local ok, image = pcall(function()
+        local img = require("image").from_file(file, {
+            buffer = buf, window = win, with_virtual_padding = true, x = 0, y = fence_row,
+        })
+        img:render()
+        return img
+    end)
+    if ok then images[buf][index] = image end
+end
+
+---Remove every plot shown in this note.
+function M.clear_plots()
+    local buf = vim.api.nvim_get_current_buf()
+    for _, img in pairs(images[buf] or {}) do pcall(function() img:clear() end) end
+    images[buf] = nil
+end
+
+---Open the plots of the last run in the default viewer.
+local last_files = {}
+function M.open_plots()
+    if #last_files == 0 then
+        notify("No plots from the last run")
+        return
+    end
+    for _, file in ipairs(last_files) do vim.ui.open(file) end
+end
+
+---Run these chunks in the R session, in order, as one script, and show their plots.
+---@param buf integer
+---@param items { index: integer, chunk: table }[]
+local function run_chunks(buf, items)
+    vim.fn.mkdir(cache_dir, "p")
+    vim.fn.writefile(vim.split(helper, "\n", { plain = true }), helper_file)
+
+    run_counter = run_counter + 1
+    local id = ("%d-%d"):format(os.time(), run_counter)
+    local base = ("%s/run-%s"):format(cache_dir, id)
+    local script, order = {}, {}
+    for _, item in ipairs(items) do
+        local dir = ("%s/chunk-%d"):format(base, item.index)
+        script[#script + 1] = (".nvim_mark(%q)"):format(dir)
+        script[#script + 1] = chunk_code(buf, item.chunk)
+        order[#order + 1] = { index = item.index, dir = dir, row = item.chunk.last }
+    end
+    local script_file = ("%s/run-%s.R"):format(cache_dir, id)
+    vim.fn.writefile(vim.split(table.concat(script, "\n"), "\n", { plain = true }), script_file)
+
+    M.console(function()
+        local job = session_job()
+        if not job then return end
+        reveal(session)
+        vim.fn.chansend(job, ('source(%q); .nvim_run(%q, %q)\n'):format(helper_file, script_file, id))
+
+        local sentinel = "[[nvim-done " .. id .. "]]"
+        local timer = vim.uv.new_timer()
+        local started = vim.uv.hrtime()
+        timer:start(300, 300, vim.schedule_wrap(function()
+            local finished = false
+            if session and vim.api.nvim_buf_is_valid(session) then
+                local lines = vim.api.nvim_buf_get_lines(session, 0, -1, false)
+                for i = #lines, 1, -1 do
+                    if lines[i]:find(sentinel, 1, true) then finished = true break end
+                end
+            end
+            -- Stop looking after ten minutes, or when the session has gone.
+            if not finished and (vim.uv.hrtime() - started < 6e11) and session_job() then return end
+            timer:stop()
+            timer:close()
+            if not finished then return end
+            last_files = {}
+            for _, entry in ipairs(order) do
+                local files = vim.fn.glob(entry.dir .. "/p*.png", false, true)
+                table.sort(files)
+                vim.list_extend(last_files, files)
+                if vim.api.nvim_buf_is_valid(buf) then show_plot(buf, entry.index, entry.row, files) end
+            end
+            if M.on_done then M.on_done({ id = id, files = last_files, order = order }) end
+        end))
+    end)
+end
+
+function M.run_chunk()
+    local buf = vim.api.nvim_get_current_buf()
+    local chunks = M.chunks(buf)
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    for index, chunk in ipairs(chunks) do
+        if row >= chunk.first - 1 and row <= chunk.last + 1 then
+            if runnable(buf, chunk) and chunk.last >= chunk.first then run_chunks(buf, { { index = index, chunk = chunk } }) end
+            return
+        end
+    end
+    notify("The cursor is not in a code chunk")
 end
 
 ---Run every R chunk (or those up to the cursor), top to bottom, as one go.
 local function run_many(upto)
     local buf = vim.api.nvim_get_current_buf()
-    local parts = {}
-    for _, chunk in ipairs(M.chunks(buf)) do
+    local items = {}
+    for index, chunk in ipairs(M.chunks(buf)) do
         if upto and chunk.first > upto + 1 then break end
-        if chunk.lang == "r" and not chunk.options:match("eval%s*=%s*F") and chunk.last >= chunk.first then
-            parts[#parts + 1] = chunk_code(buf, chunk)
+        if chunk.lang == "r" and not eval_off(buf, chunk) and chunk.last >= chunk.first then
+            items[#items + 1] = { index = index, chunk = chunk }
         end
     end
-    if #parts == 0 then
+    if #items == 0 then
         notify("No R chunks to run")
         return
     end
-    send_code(table.concat(parts, "\n"))
+    run_chunks(buf, items)
 end
 
 function M.run_all() run_many(nil) end
@@ -240,11 +371,11 @@ function M.render(format)
     end
 
     if is_quarto(buf) then
-        if vim.fn.executable("quarto") == 0 then
-            notify("Quarto is not installed (brew install --cask quarto)", vim.log.levels.ERROR)
-            return
-        end
-        return run({ "quarto", "render", name, "--to", spec.quarto })
+        local function with_quarto() run({ "quarto", "render", name, "--to", spec.quarto }) end
+        if vim.fn.executable("quarto") == 1 then return with_quarto() end
+        return require("deps").ensure("quarto", { reason = "rendering .qmd files" }, function(ok)
+            if ok then vim.schedule(with_quarto) end
+        end)
     end
 
     local function with_r()
@@ -302,6 +433,8 @@ function M.setup()
         { "RmdRunAbove", M.run_above, "Run the R chunks up to and including this one" },
         { "RmdConsole", function() M.console(function() end) end, "Start (or show) the R session" },
         { "RmdStop", M.stop, "End the R session" },
+        { "RmdClearPlots", M.clear_plots, "Remove the plots shown in this note" },
+        { "RmdPlots", M.open_plots, "Open the plots of the last run in the default viewer" },
     }
     for _, c in ipairs(commands) do
         vim.api.nvim_create_user_command(c[1], c[2], { nargs = 0, desc = c[3] })

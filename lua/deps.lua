@@ -81,6 +81,8 @@ M.entries = {
         cask = "claude-code", npm = "@anthropic-ai/claude-code" }),
     entry({ exes = { "R", "Rscript" }, name = "R", why = "running R Markdown and R code",
         brew = "r", apt = "r-base", dnf = "R", pacman = "r", zypper = "R-base", apk = "R" }),
+    entry({ exe = "quarto", name = "Quarto", why = "rendering .qmd files",
+        cask = "quarto", manual = "Download it from https://quarto.org/docs/get-started/" }),
     entry({ exe = "jupytext", name = "jupytext", why = "opening notebooks as Markdown", pipx = "jupytext" }),
     entry({ exe = "sourcekit-lsp", name = "the Swift toolchain", why = "Swift, and C family files in Xcode projects",
         manual = sysname_is_mac and "Run: xcode-select --install" or "Install the Swift toolchain from https://swift.org/install" }),

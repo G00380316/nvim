@@ -36,6 +36,8 @@ local project_actions = {
     { "Run R chunk", "Run the {r} chunk under the cursor in an R session (<leader>n)", "RmdRunChunk", "Run" },
     { "Run all R chunks", "Every R chunk in this file, top to bottom", "RmdRunAll", "Run" },
     { "Run R chunks above", "The R chunks up to and including this one", "RmdRunAbove", "Run" },
+    { "Clear R plots", "Remove the plots shown in this note", "RmdClearPlots", "Run" },
+    { "Open R plots", "The plots of the last run in the default viewer", "RmdPlots", "Run" },
     { "Show the R session", "Start or show R in a terminal", "RmdConsole", "Run" },
     { "End the R session", "Quit R in its terminal", "RmdStop", "Run" },
     { "Render R Markdown", "Make a web page of this .Rmd or .qmd and open it (:RmdRender pdf or word for those)", "RmdRender", "Notes" },

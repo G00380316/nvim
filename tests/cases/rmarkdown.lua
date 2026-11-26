@@ -29,3 +29,18 @@ T.eq(rmarkdown.missing_packages("Error in `library()`:\n! there is no package ca
 T.eq(rmarkdown.missing_packages("there is no package called ‘ggplot2’\nthere is no package called ‘dplyr’\nthere is no package called ‘ggplot2’"),
     { "ggplot2", "dplyr" }, "curly quotes, each once")
 T.eq(rmarkdown.missing_packages("some other error"), {}, "nothing missing")
+
+-- Quarto options: `#| eval: false` turns a chunk off, like eval=FALSE does.
+local q = vim.api.nvim_create_buf(false, true)
+vim.api.nvim_buf_set_lines(q, 0, -1, false, {
+    "```{r}",
+    "#| eval: false",
+    "x <- 1",
+    "```",
+    "```{r}",
+    "#| echo: false",
+    "y <- 2",
+    "```",
+})
+local qchunks = rmarkdown.chunks(q)
+T.eq(#qchunks, 2, "two quarto chunks")
