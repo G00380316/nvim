@@ -24,3 +24,14 @@ command, name = format.command_for(file)
 T.eq(name, "biome", "biome.json: biome")
 T.eq(command[2], "format", "biome format")
 vim.fn.delete(root, "rf")
+
+-- Python goes to Ruff, reading the project's own settings.
+if vim.fn.executable("ruff") == 1 then
+    local py = vim.fn.tempname() .. ".py"
+    vim.fn.writefile({ "x=1" }, py)
+    vim.cmd("edit " .. py)
+    command, name = format.command_for(py)
+    T.eq(name, "ruff", "python: ruff")
+    T.eq(command[2], "format", "ruff format")
+    vim.cmd("bwipeout!")
+end

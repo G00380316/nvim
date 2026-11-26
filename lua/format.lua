@@ -1,13 +1,14 @@
----Formatting TypeScript, TSX, JavaScript, JSX, JSON, CSS and HTML files with
----the tool the project uses -- Biome when it has a biome.json, otherwise
----Prettier (the project's own copy first) -- instead of the language server's
----plainer formatting. Saving a file runs it; `:Format` runs it by hand. A file
+---Formatting files with the tool the project uses instead of the language
+---server's plainer formatting. TypeScript, TSX, JavaScript, JSX, JSON, CSS and
+---HTML: Biome when the project has a biome.json, otherwise Prettier (its own copy
+---first). Python: Ruff. Saving a file runs it; `:Format` runs it by hand. A file
 ---of another kind, or no formatter at all, falls back to the language server.
 local M = {}
 
 local filetypes = {
     typescript = true, typescriptreact = true, javascript = true, javascriptreact = true,
     json = true, jsonc = true, css = true, scss = true, html = true,
+    python = true,
 }
 
 local function find_up(start, names)
@@ -24,6 +25,14 @@ function M.command_for(file)
         local found = find_up(dir, { "node_modules/.bin/" .. name })
         if found then return found end
         if vim.fn.executable(name) == 1 then return name end
+    end
+
+    local bufnr = vim.fn.bufnr(file)
+    if file:match("%.pyi?$") or (bufnr > 0 and vim.bo[bufnr].filetype == "python") then
+        -- Ruff reads the project's own settings (pyproject.toml, ruff.toml).
+        local ruff = local_bin("ruff")
+        if ruff then return { ruff, "format", "--stdin-filename", file, "-" }, "ruff" end
+        return
     end
 
     local biome_config = find_up(dir, { "biome.json", "biome.jsonc" })
@@ -64,9 +73,13 @@ function M.run(buf, opts)
 
     local command, name = M.command_for(file)
     if not command then
-        if not opts.quiet and vim.fn.executable("prettier") == 0 and not vim.g.format_offered then
-            vim.g.format_offered = true
-            require("deps").ensure("prettier", { reason = "formatting TypeScript, JavaScript, CSS and JSON" })
+        local python = vim.bo[buf].filetype == "python"
+        local tool = python and "ruff" or "prettier"
+        if not opts.quiet and vim.fn.executable(tool) == 0 and not vim.g["format_offered_" .. tool] then
+            vim.g["format_offered_" .. tool] = true
+            require("deps").ensure(tool, {
+                reason = python and "formatting Python" or "formatting TypeScript, JavaScript, CSS and JSON",
+            })
         end
         return false
     end
@@ -89,7 +102,7 @@ function M.setup()
             local ok = pcall(vim.lsp.buf.format, { async = false })
             if not ok then vim.notify("Nothing to format this file with", vim.log.levels.INFO, { title = "Format" }) end
         end
-    end, { desc = "Format this file (Prettier or Biome for web files, else the language server)" })
+    end, { desc = "Format this file (Prettier or Biome for web files, Ruff for Python, else the language server)" })
 end
 
 return M
