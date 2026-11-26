@@ -6,14 +6,24 @@
 #
 # NVIM_LAUNCHER_SOCKET changes where the running one is looked for.
 
+# Everything it says goes to a log, since it usually runs with no terminal
+# (Finder's Open With): ~/.local/state/nvim/launcher.log
+LOG="${XDG_STATE_HOME:-$HOME/.local/state}/nvim/launcher.log"
+mkdir -p "$(dirname "$LOG")"
+exec >>"$LOG" 2>&1
+echo "--- $(date '+%F %T') nvim-open $*"
+
 SOCK="${NVIM_LAUNCHER_SOCKET:-${XDG_STATE_HOME:-$HOME/.local/state}/nvim/launcher.sock}"
 mkdir -p "$(dirname "$SOCK")"
 
 # A GUI-launched script has a bare PATH.
 PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
 NVIM="$(command -v nvim)" || { echo "nvim-open: nvim not found" >&2; exit 1; }
-KITTY="$(command -v kitty)"
-[ -z "$KITTY" ] && [ -x /Applications/kitty.app/Contents/MacOS/kitty ] && KITTY=/Applications/kitty.app/Contents/MacOS/kitty
+KITTY=""
+for candidate in /Applications/kitty.app "$HOME/Applications/kitty.app"; do
+    [ -x "$candidate/Contents/MacOS/kitty" ] && { KITTY="$candidate/Contents/MacOS/kitty"; break; }
+done
+[ -z "$KITTY" ] && KITTY="$(command -v kitty)"
 [ -z "$KITTY" ] && { echo "nvim-open: kitty not found" >&2; exit 1; }
 
 # Absolute paths, so they mean the same inside the running Neovim (and in the
@@ -43,8 +53,17 @@ fi
 # Not running: a stale socket file would stop a new one from listening.
 rm -f "$SOCK"
 rm -f "$LIST"
+
+# kitty is started through Launch Services, not as a child of this script: macOS
+# decides which app may read Documents, Desktop and Downloads from the program
+# that started the process, and a kitty started from here would count as part of
+# Neovim.app (which has no such permission) instead of as kitty (which has it).
+# --single-instance hands the new window to a kitty that is already running.
 # The files go in as ordinary arguments, so startup treats them as it always does.
-case "$#" in
-    0) exec "$KITTY" --single-instance --title Neovim "$NVIM" --listen "$SOCK" ;;
-    *) exec "$KITTY" --single-instance --title Neovim "$NVIM" --listen "$SOCK" -- "$@" ;;
-esac
+APP="${KITTY%/Contents/MacOS/*}"
+if [ "$APP" != "$KITTY" ] && [ -d "$APP" ]; then
+    exec open -n -a "$APP" --args --single-instance --title Neovim --directory "$HOME" \
+        "$NVIM" --listen "$SOCK" "$@"
+else
+    exec "$KITTY" --single-instance --title Neovim --directory "$HOME" "$NVIM" --listen "$SOCK" "$@"
+fi

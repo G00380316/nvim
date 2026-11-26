@@ -514,3 +514,30 @@ vim.api.nvim_create_autocmd("FileType", {
         end, { buffer = args.buf, desc = "Back out of the archive" })
     end,
 })
+
+
+-- ============================================================
+-- A working directory that is gone
+-- ============================================================
+
+-- Deleting the folder you are in (from the explorer, a shell) or starting with
+-- no permission to read it leaves Neovim with no working directory, and then
+-- anything that makes a path absolute asserts -- the language servers did, on
+-- every buffer. Move to the workspace, or home, as soon as it is noticed.
+do
+    local function ensure_cwd()
+        if vim.uv.cwd() then return end
+        for _, candidate in ipairs({ vim.g.workspace_root, vim.env.HOME }) do
+            if candidate and vim.fn.isdirectory(candidate) == 1 and pcall(vim.cmd.cd, candidate) then
+                vim.notify("The working directory was gone; now in " .. candidate, vim.log.levels.WARN)
+                return
+            end
+        end
+    end
+    ensure_cwd()
+    vim.api.nvim_create_autocmd({ "VimEnter", "BufEnter", "FocusGained", "DirChanged" }, {
+        group = vim.api.nvim_create_augroup("EnsureCwd", { clear = true }),
+        callback = ensure_cwd,
+        desc = "Leave a working directory that no longer exists",
+    })
+end

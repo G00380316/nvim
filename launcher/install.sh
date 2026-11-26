@@ -21,11 +21,19 @@ on open theItems
 	repeat with anItem in theItems
 		set args to args & " " & quoted form of POSIX path of anItem
 	end repeat
-	do shell script quoted form of "$SCRIPT" & args & " >/dev/null 2>&1 &"
+	try
+		do shell script quoted form of "$SCRIPT" & args & " >/dev/null 2>&1 &"
+	on error errText
+		display alert "Neovim could not be started" message errText
+	end try
 end open
 
 on run
-	do shell script quoted form of "$SCRIPT" & " >/dev/null 2>&1 &"
+	try
+		do shell script quoted form of "$SCRIPT" & " >/dev/null 2>&1 &"
+	on error errText
+		display alert "Neovim could not be started" message errText
+	end try
 end run
 APPLESCRIPT
 osacompile -o "$APP" "$TMP"
@@ -36,7 +44,7 @@ PLIST="$APP/Contents/Info.plist"
 plutil -replace CFBundleName -string "Neovim" "$PLIST"
 plutil -replace CFBundleIdentifier -string "local.nvim-launcher" "$PLIST"
 plutil -replace LSUIElement -bool true "$PLIST"
-plutil -replace CFBundleDocumentTypes -json '[{"CFBundleTypeName":"Anything","CFBundleTypeRole":"Editor","LSHandlerRank":"Alternate","LSItemContentTypes":["public.data","public.text","public.folder","public.plain-text","public.source-code"]}]' "$PLIST"
+plutil -replace CFBundleDocumentTypes -json '[{"CFBundleTypeName":"Anything","CFBundleTypeRole":"Editor","LSHandlerRank":"Alternate","CFBundleTypeExtensions":["*"],"CFBundleTypeOSTypes":["****"],"LSItemContentTypes":["public.data","public.text","public.folder","public.plain-text","public.source-code","public.item"]}]' "$PLIST"
 touch "$APP"
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP" >/dev/null 2>&1 || true
 echo "Installed $APP"
