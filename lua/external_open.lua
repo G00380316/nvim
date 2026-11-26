@@ -39,4 +39,36 @@ function M.open_list(list_file)
     M.open(vim.tbl_filter(function(line) return line ~= "" end, lines))
 end
 
+---Where the shared Neovim listens; the launcher script looks here.
+function M.socket()
+    return vim.env.NVIM_LAUNCHER_SOCKET
+        or ((vim.env.XDG_STATE_HOME or (vim.env.HOME .. "/.local/state")) .. "/nvim/launcher.sock")
+end
+
+---The first Neovim you start by hand listens on the launcher's socket too, so
+---Finder and `nvim-open` reuse it rather than starting another. A second one
+---finds it taken and stays as it is. Not for a Neovim run inside a Neovim
+---terminal, a headless one, or when NVIM_NO_LAUNCHER_SOCKET is set.
+function M.setup()
+    vim.api.nvim_create_autocmd("VimEnter", {
+        group = vim.api.nvim_create_augroup("ExternalOpenSocket", { clear = true }),
+        once = true,
+        callback = function()
+            if #vim.api.nvim_list_uis() == 0 or vim.env.NVIM or vim.env.NVIM_NO_LAUNCHER_SOCKET then return end
+            if vim.v.servername ~= "" and vim.v.servername == M.socket() then return end
+            local socket = M.socket()
+            if vim.uv.fs_stat(socket) then
+                local ok, channel = pcall(vim.fn.sockconnect, "pipe", socket, { rpc = true })
+                if ok and channel > 0 then
+                    pcall(vim.fn.chanclose, channel)
+                    return -- another Neovim has it
+                end
+                vim.uv.fs_unlink(socket)
+            end
+            vim.fn.mkdir(vim.fs.dirname(socket), "p")
+            pcall(vim.fn.serverstart, socket)
+        end,
+    })
+end
+
 return M

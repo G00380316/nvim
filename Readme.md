@@ -29,4 +29,4 @@ tree-sitter, a C compiler and node. The command runs in the terminal panel so a
 
 `sh launcher/install.sh` makes `~/Applications/Neovim.app`, which hands Finder's files to it. Then once: select a file in Finder, Get Info, Open with, Neovim, Change All (per file type).
 
-Only a Neovim started by the launcher listens on that socket; one you start by hand in kitty is a separate instance.
+The first Neovim you start (by hand or by the launcher) listens on that socket; a second one you start by hand is a separate instance. Set `NVIM_NO_LAUNCHER_SOCKET=1` to turn the sharing off.
