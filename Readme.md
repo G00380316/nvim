@@ -22,3 +22,11 @@ tree-sitter, a C compiler and node. The command runs in the terminal panel so a
 - `vim.g.deps_auto_install = true` skips the question.
 - A few things have no package and are told to you instead: the Swift toolchain,
   superhtml, tinymist without Homebrew.
+
+## Opening files from outside (Mac)
+
+`launcher/nvim-open [file-or-folder ...]` opens them in Neovim inside kitty, reusing the Neovim that is already running (it listens on `~/.local/state/nvim/launcher.sock`) or starting one. A file's project becomes the workspace; a folder opens as a workspace.
+
+`sh launcher/install.sh` makes `~/Applications/Neovim.app`, which hands Finder's files to it. Then once: select a file in Finder, Get Info, Open with, Neovim, Change All (per file type).
+
+Only a Neovim started by the launcher listens on that socket; one you start by hand in kitty is a separate instance.

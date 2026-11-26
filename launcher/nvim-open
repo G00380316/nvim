@@ -1,0 +1,50 @@
+#!/bin/sh
+# Open files (or folders) in Neovim, in kitty, from anywhere: Finder's Open With,
+# another app's "edit" command, a shell. One Neovim is reused: when it is already
+# running it is given the files and brought to the front; otherwise kitty starts
+# it. Usage: nvim-open [file-or-folder ...]
+#
+# NVIM_LAUNCHER_SOCKET changes where the running one is looked for.
+
+SOCK="${NVIM_LAUNCHER_SOCKET:-${XDG_STATE_HOME:-$HOME/.local/state}/nvim/launcher.sock}"
+mkdir -p "$(dirname "$SOCK")"
+
+# A GUI-launched script has a bare PATH.
+PATH="/opt/homebrew/bin:/usr/local/bin:$HOME/.local/bin:$PATH"
+NVIM="$(command -v nvim)" || { echo "nvim-open: nvim not found" >&2; exit 1; }
+KITTY="$(command -v kitty)"
+[ -z "$KITTY" ] && [ -x /Applications/kitty.app/Contents/MacOS/kitty ] && KITTY=/Applications/kitty.app/Contents/MacOS/kitty
+[ -z "$KITTY" ] && { echo "nvim-open: kitty not found" >&2; exit 1; }
+
+# Absolute paths, so they mean the same inside the running Neovim (and in the
+# new one, which kitty starts somewhere else).
+LIST="$(mktemp "${TMPDIR:-/tmp}/nvim-open.XXXXXX")"
+for arg in "$@"; do
+    case "$arg" in
+        /*) path="$arg" ;;
+        *) path="$PWD/$arg" ;;
+    esac
+    printf '%s\n' "$path" >> "$LIST"
+    set -- "$@" "$path"
+    shift
+done
+
+if [ -S "$SOCK" ] && "$NVIM" --server "$SOCK" --remote-expr '1' >/dev/null 2>&1; then
+    if [ -s "$LIST" ]; then
+        "$NVIM" --server "$SOCK" --remote-expr "luaeval('require(\"external_open\").open_list(_A)', '$LIST')" >/dev/null 2>&1
+    else
+        rm -f "$LIST"
+    fi
+    # Bring kitty forward (the window holding Neovim comes with it).
+    osascript -e 'tell application "kitty" to activate' >/dev/null 2>&1
+    exit 0
+fi
+
+# Not running: a stale socket file would stop a new one from listening.
+rm -f "$SOCK"
+rm -f "$LIST"
+# The files go in as ordinary arguments, so startup treats them as it always does.
+case "$#" in
+    0) exec "$KITTY" --single-instance --title Neovim "$NVIM" --listen "$SOCK" ;;
+    *) exec "$KITTY" --single-instance --title Neovim "$NVIM" --listen "$SOCK" -- "$@" ;;
+esac
